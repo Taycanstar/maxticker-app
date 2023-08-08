@@ -25,6 +25,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "36b345e2-9d8c-4fbb-8eba-732bde4891d0"
+      }
+    },
+    "owner": "dimixpo"
   }
 }
