@@ -67,6 +67,7 @@ export const signup = createAsyncThunk(
       const response = await api.post(`/u/signup`, userData);
 
       // Save the token to AsyncStorage
+      await AsyncStorage.setItem("token", response.data.token);
       return response.data;
     } catch (error: any) {
       console.log(error);
@@ -235,14 +236,11 @@ export const sendCode = createAsyncThunk(
 export const confirmPhoneNumber = createAsyncThunk(
   "user/confirmPhoneNumber",
   async (
-    data: { id: string; phoneNumber: string; otpCode: string },
+    data: { phoneNumber: string; otpCode: string },
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.post(
-        `/u/confirm-phone-number/${data.id}`,
-        data
-      );
+      const response = await api.post(`/u/confirm-phone-number`, data);
       console.log(response);
       return response.data;
     } catch (error: any) {
@@ -344,6 +342,19 @@ const userSlice = createSlice({
         state.status = "loading";
       })
       .addCase(loginUser.fulfilled, (state, action) => {
+        state.status = "loggedIn";
+        state.data = action.payload;
+        state.error = null;
+        state.token = action.payload.token;
+      })
+      .addCase(signup.rejected, (state, action) => {
+        state.status = "error";
+        state.error = action.payload;
+      })
+      .addCase(signup.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(signup.fulfilled, (state, action) => {
         state.status = "loggedIn";
         state.data = action.payload;
         state.error = null;

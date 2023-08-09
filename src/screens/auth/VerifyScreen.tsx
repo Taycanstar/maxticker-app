@@ -27,7 +27,7 @@ import {
   type StackNavigation,
 } from "../../navigation/AppNavigator";
 import CustomInput from "../../components/CustomInput";
-import { confirmOtp, signup, loginUser } from "../../store/user";
+import { confirmPhoneNumber, signup, loginUser } from "../../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
 
@@ -45,6 +45,7 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
   const dispatch = useDispatch<AppDispatch>();
   const [isError, setIsError] = useState<boolean>(false);
   const [errorText, setErrorText] = useState<string>("");
+  const [codePlaceholder, setCodePlaceholder] = useState<string>("Enter code");
   const theme = useTheme();
   if (!route.params) {
     return null; // or any other fallback JSX/render
@@ -72,7 +73,12 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
   const onSubmit = useCallback(async () => {
     setLoading(true);
 
-    let action = await dispatch(confirmOtp({ confirmationToken: code, email }));
+    let action = await dispatch(
+      confirmPhoneNumber({
+        phoneNumber,
+        otpCode: code,
+      })
+    );
 
     if (handleActionError(action)) return;
 
@@ -90,9 +96,9 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
     if (handleActionError(action2)) return;
 
     // Continue with the success case if no error
-    const action3 = await dispatch(loginUser({ email, password }));
+    // const action3 = await dispatch(loginUser({ email, password }));
 
-    if (handleActionError(action3)) return;
+    // if (handleActionError(action3)) return;
 
     // Add any further logic if needed
   }, [code, email, password, phoneNumber, birthday, firstName, lastName]); // make sure to include all dependencies used within the callback
@@ -139,21 +145,9 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
               Enter the code that was sent to your phone number.
             </Text>
           </View>
-          {/* <View style={styles.inputContainer}>
-            <Input
-              status="warning"
-              style={{
-                backgroundColor: theme["input-background-color-1"],
-                borderColor: theme["input-border-color-1"],
-              }}
-              size="large"
-              value={email}
-              placeholder="Enter code"
-              onChangeText={(nextValue) => setEmail(nextValue)}
-            />
-          </View> */}
+
           <CustomInput
-            placeholder="Enter code"
+            placeholder={codePlaceholder}
             textColor={theme["text-basic-color"]}
             bgColor={theme["input-background-color-1"]}
             borderColor={theme["input-border-color-1"]}
@@ -162,6 +156,8 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
             value={code}
             inputMode="numeric"
             placeholderColor={theme["input-placeholder-color"]}
+            onFocus={() => setCodePlaceholder("000000")}
+            onBlur={() => setCodePlaceholder("Enter code")}
           />
 
           <View style={styles.btnContainer}>

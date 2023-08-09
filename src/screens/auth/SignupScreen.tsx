@@ -37,28 +37,37 @@ const LoginScreen: React.FC = () => {
   };
 
   const onContinuePress = () => {
-    if (isValidEmail(email)) {
-      dispatch(emailExists(email))
-        .unwrap()
-        .then((payload) => {
-          navigate("Details", { email, password });
-          console.log("success");
-        })
-        .catch((error) => {
-          setIsError(true);
-          setErrorText(error.message);
-          setTimeout(() => {
-            setIsError(false);
-          }, 4000);
-          console.log(`Error on Screen`, error.message);
-        });
+    if (isValidPassword(password)) {
+      if (isValidEmail(email)) {
+        dispatch(emailExists(email))
+          .unwrap()
+          .then((payload) => {
+            navigate("Details", { email, password });
+            console.log("success");
+          })
+          .catch((error) => {
+            setIsError(true);
+            setErrorText(error.message);
+            setTimeout(() => {
+              setIsError(false);
+            }, 4000);
+            console.log(`Error on Screen`, error.message);
+          });
+      } else {
+        setIsError(true);
+        setErrorText("Email is not valid");
+        setTimeout(() => {
+          setIsError(false);
+        }, 4000);
+        console.log(`Error on Screen`, "Email is not valid");
+      }
     } else {
       setIsError(true);
-      setErrorText("Email is not valid");
+      setErrorText("Password should be at least 8 characters long");
       setTimeout(() => {
         setIsError(false);
       }, 4000);
-      console.log(`Error on Screen`, "Email is not valid");
+      console.log(`Error on Screen`, "Password is too short");
     }
   };
 
@@ -70,6 +79,10 @@ const LoginScreen: React.FC = () => {
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
     return emailRegex.test(email);
   }
+
+  const isValidPassword = (password: string): boolean => {
+    return password.length >= 8;
+  };
 
   return (
     <Layout style={[styles.container, { backgroundColor: Colors.lightGreen }]}>
@@ -109,9 +122,6 @@ const LoginScreen: React.FC = () => {
             inputMode="email"
             placeholderColor={theme["input-placeholder-color"]}
           />
-          <View style={{ width: "100%" }}>
-            {isError && <ErrorText text={errorText} />}
-          </View>
 
           <CustomPasswordInput
             secureTextEntry={secureTextEntry}
@@ -127,6 +137,9 @@ const LoginScreen: React.FC = () => {
             isPasswordVisible={!secureTextEntry}
             maxLength={28}
           />
+          <View style={{ width: "100%", marginTop: 10 }}>
+            {isError && <ErrorText text={errorText} />}
+          </View>
 
           <View style={styles.btnContainer}>
             <Button

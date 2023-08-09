@@ -18,6 +18,8 @@ type Props = {
   placeholder?: string;
   placeholderColor?: string;
   inputMode?: any;
+  onBlur?: () => void;
+  onFocus?: () => void;
 };
 
 const CustomInput: React.FC<Props> = ({
@@ -31,6 +33,8 @@ const CustomInput: React.FC<Props> = ({
   placeholder,
   inputMode,
   placeholderColor,
+  onBlur,
+  onFocus,
 }) => {
   return (
     <View
@@ -62,6 +66,8 @@ const CustomInput: React.FC<Props> = ({
         autoCapitalize={autoCapitalize}
         placeholderTextColor={placeholderColor}
         inputMode={inputMode}
+        onBlur={onBlur}
+        onFocus={onFocus}
       />
     </View>
   );

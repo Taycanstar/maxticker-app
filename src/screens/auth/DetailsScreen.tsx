@@ -54,6 +54,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
   const { email, password } = route.params;
   const [loading, setLoading] = useState<boolean>(false);
   const dispatch = useDispatch<AppDispatch>();
+  const [birthdayPlaceholder, setBirthdayPlaceholder] =
+    useState<string>("Birthday");
 
   const onContinuePressx = () => {
     navigate("Verify", {
@@ -190,7 +192,7 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
             </View>
           </View>
           <CustomInput
-            placeholder="Birthday"
+            placeholder={birthdayPlaceholder}
             textColor={theme["text-basic-color"]}
             bgColor={theme["input-background-color-1"]}
             borderColor={theme["input-border-color-1"]}
@@ -199,6 +201,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
             value={birthday}
             inputMode="numeric"
             placeholderColor={theme["input-placeholder-color"]}
+            onFocus={() => setBirthdayPlaceholder("MM/DD/YYYY")}
+            onBlur={() => setBirthdayPlaceholder("Birthday")}
           />
 
           <View style={styles.phContainer}>
