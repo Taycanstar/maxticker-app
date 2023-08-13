@@ -27,9 +27,15 @@ import {
   type StackNavigation,
 } from "../../navigation/AppNavigator";
 import CustomInput from "../../components/CustomInput";
-import { confirmPhoneNumber, signup, loginUser } from "../../store/user";
+import {
+  confirmPhoneNumber,
+  signup,
+  loginUser,
+  resendCode,
+} from "../../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
+import ErrorText from "../../components/ErrorText";
 
 type Props = {};
 
@@ -47,6 +53,8 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
   const [errorText, setErrorText] = useState<string>("");
   const [codePlaceholder, setCodePlaceholder] = useState<string>("Enter code");
   const theme = useTheme();
+  const [resend, setResend] = useState<string>("Resend");
+
   if (!route.params) {
     return null; // or any other fallback JSX/render
   }
@@ -94,16 +102,17 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
     );
 
     if (handleActionError(action2)) return;
-
-    // Continue with the success case if no error
-    // const action3 = await dispatch(loginUser({ email, password }));
-
-    // if (handleActionError(action3)) return;
+    setLoading(false);
 
     // Add any further logic if needed
   }, [code, email, password, phoneNumber, birthday, firstName, lastName]); // make sure to include all dependencies used within the callback
 
-  const onContinuePress = () => {};
+  const onResend = async () => {
+    setResend("Sent.");
+    const res = await dispatch(resendCode(phoneNumber));
+    if (handleActionError(res)) return;
+    setTimeout(() => setResend("Resend"), 15000);
+  };
   const onBackPress = () => {
     navigation.goBack();
   };
@@ -159,29 +168,22 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
             onFocus={() => setCodePlaceholder("000000")}
             onBlur={() => setCodePlaceholder("Enter code")}
           />
-
-          <View style={styles.btnContainer}>
-            <Button
-              status="success"
-              size="large"
-              style={{ borderRadius: 15 }}
-              onPress={onContinuePress}
-            >
-              {(evaProps) => (
-                <Text
-                  {...evaProps}
-                  style={{
-                    color: theme["success-btn-text"],
-                    fontWeight: "600",
-                    fontSize: 17,
-                    letterSpacing: 0.25,
-                  }}
-                >
-                  Resend
-                </Text>
-              )}
-            </Button>
+          <View style={{ width: "100%" }}>
+            {isError && <ErrorText text={errorText} />}
           </View>
+          <TouchableOpacity
+            onPress={() => {
+              if (resend === "Resend") {
+                onResend();
+              }
+            }}
+          >
+            <Text
+              style={{ color: theme["text-basic-color"], fontWeight: "600" }}
+            >
+              {resend}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Layout>

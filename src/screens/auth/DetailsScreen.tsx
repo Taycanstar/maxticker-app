@@ -6,6 +6,7 @@ import {
   TouchableWithoutFeedback,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -32,6 +33,7 @@ import CustomInput from "../../components/CustomInput";
 import { sendCode } from "../../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
+import ErrorText from "../../components/ErrorText";
 
 type Props = {};
 type DetailsScreenProps = {
@@ -56,6 +58,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
   const dispatch = useDispatch<AppDispatch>();
   const [birthdayPlaceholder, setBirthdayPlaceholder] =
     useState<string>("Birthday");
+  const [isError, setIsError] = useState<boolean>(false);
+  const [errorText, setErrorText] = useState<string>("");
 
   const onContinuePressx = () => {
     navigate("Verify", {
@@ -87,25 +91,46 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
 
     setBirthday(formattedDate);
   };
+
   const onContinuePress = async () => {
-    try {
-      // Dispatch the confirmUser action with the necessary payload
-      setLoading(true);
-      const res = await dispatch(sendCode(phoneNumber));
-      console.log(res, "response");
+    if (firstName !== "" && lastName !== "" && birthday.length >= 10) {
+      try {
+        // Dispatch the confirmUser action with the necessary payload
+        setLoading(true);
+        const res = await dispatch(sendCode(phoneNumber));
+        console.log(res, "response");
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
+        if ("error" in res) {
+          setIsError(true);
+          setErrorText("Phone number is not valid");
+          setTimeout(() => {
+            setIsError(false);
+          }, 4000);
+        } else {
+          setLoading(false);
+          navigate("Verify", {
+            email,
+            password,
+            phoneNumber,
+            birthday,
+            firstName,
+            lastName,
+          });
+        }
+      } catch (error) {
+        console.log(error);
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
+      }
+    } else {
+      setIsError(true);
+      setErrorText("Personal details are required");
       setTimeout(() => {
-        setLoading(false);
-      }, 500);
-      navigate("Verify", {
-        email,
-        password,
-        phoneNumber,
-        birthday,
-        firstName,
-        lastName,
-      });
-    } catch (error) {
-      console.log(error);
+        setIsError(false);
+      }, 4000);
     }
   };
 
@@ -157,7 +182,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
                   {
                     width: "100%",
                     fontSize: 15,
-                    marginHorizontal: 8,
+                    paddingVertical: 11,
+                    paddingHorizontal: 16,
                     color: theme["text-basic-color"],
                   },
                 ]}
@@ -182,7 +208,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
                   styles.input2,
                   {
                     fontSize: 15,
-                    marginHorizontal: 8,
+                    paddingVertical: 11,
+                    paddingHorizontal: 16,
                     width: "100%",
                     color: theme["text-basic-color"],
                     borderColor: theme["input-border-color-1"],
@@ -226,6 +253,9 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
               onChangePhoneNumber={(newText) => setPhoneNumber(newText)}
             />
           </View>
+          <View style={{ width: "100%", marginTop: 10 }}>
+            {isError && <ErrorText text={errorText} />}
+          </View>
           <View style={{ marginBottom: 15 }}>
             <Text
               style={{
@@ -245,18 +275,22 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
               style={{ borderRadius: 15 }}
               onPress={onContinuePress}
             >
-              {(evaProps) => (
-                <Text
-                  {...evaProps}
-                  style={{
-                    color: theme["success-btn-text"],
-                    fontWeight: "600",
-                    fontSize: 17,
-                    letterSpacing: 0.25,
-                  }}
-                >
-                  Continue
-                </Text>
+              {loading ? (
+                <ActivityIndicator />
+              ) : (
+                (evaProps) => (
+                  <Text
+                    {...evaProps}
+                    style={{
+                      color: theme["success-btn-text"],
+                      fontWeight: "600",
+                      fontSize: 17,
+                      letterSpacing: 0.25,
+                    }}
+                  >
+                    Continue
+                  </Text>
+                )
               )}
             </Button>
           </View>
@@ -337,22 +371,20 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   inputCnt: {
-    paddingHorizontal: 8,
     minHeight: 48,
     borderRadius: 5,
     borderWidth: 2,
-    paddingVertical: 11,
+
     flexDirection: "row",
     alignItems: "center",
     flex: 0.5,
     marginBottom: 10,
   },
   inputCnt2: {
-    paddingHorizontal: 8,
     minHeight: 48,
     borderRadius: 5,
     borderWidth: 2,
-    paddingVertical: 11,
+
     flexDirection: "row",
     alignItems: "center",
     flex: 0.5,

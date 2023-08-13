@@ -5,6 +5,7 @@ import {
   Image,
   TouchableWithoutFeedback,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Text, Button, Layout, useTheme } from "@ui-kitten/components";
@@ -31,12 +32,14 @@ const LoginScreen: React.FC = () => {
   const [isError, setIsError] = useState<boolean>(false);
   const [errorText, setErrorText] = useState<string>("");
   const dispatch = useDispatch<AppDispatch>();
+  const [loading, setLoading] = useState<boolean>(false);
 
   const toggleSecureEntry = (): void => {
     setSecureTextEntry(!secureTextEntry);
   };
 
   const onContinuePress = () => {
+    setLoading(true);
     if (isValidPassword(password)) {
       if (isValidEmail(email)) {
         dispatch(emailExists(email))
@@ -69,6 +72,10 @@ const LoginScreen: React.FC = () => {
       }, 4000);
       console.log(`Error on Screen`, "Password is too short");
     }
+
+    setTimeout(() => {
+      setLoading(false);
+    }, 100);
   };
 
   const onBackPress = () => {
@@ -148,18 +155,22 @@ const LoginScreen: React.FC = () => {
               style={{ borderRadius: 15 }}
               onPress={onContinuePress}
             >
-              {(evaProps) => (
-                <Text
-                  {...evaProps}
-                  style={{
-                    color: theme["success-btn-text"],
-                    fontWeight: "600",
-                    fontSize: 17,
-                    letterSpacing: 0.25,
-                  }}
-                >
-                  Continue
-                </Text>
+              {loading ? (
+                <ActivityIndicator />
+              ) : (
+                (evaProps) => (
+                  <Text
+                    {...evaProps}
+                    style={{
+                      color: theme["success-btn-text"],
+                      fontWeight: "600",
+                      fontSize: 17,
+                      letterSpacing: 0.25,
+                    }}
+                  >
+                    Continue
+                  </Text>
+                )
               )}
             </Button>
           </View>

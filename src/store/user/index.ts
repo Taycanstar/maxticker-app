@@ -27,8 +27,7 @@ export const loginUser = createAsyncThunk(
   "user/login",
   async (
     userData: {
-      email?: string;
-      username?: string;
+      email: string;
       password: string;
       registrationToken?: string;
     },

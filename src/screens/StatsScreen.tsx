@@ -3,12 +3,12 @@ import React from "react";
 
 type Props = {};
 
-const HomeScreen: React.FC = () => {
+const StatsScreen: React.FC = () => {
   return (
     <SafeAreaView>
-      <Text>HomeScreen</Text>
+      <Text>StatsScreen</Text>
     </SafeAreaView>
   );
 };
 
-export default HomeScreen;
+export default StatsScreen;

@@ -39,11 +39,10 @@ const CustomInput: React.FC<Props> = ({
   return (
     <View
       style={{
-        paddingHorizontal: 8,
         minHeight: 48,
         borderRadius: 5,
         borderWidth: 2,
-        paddingVertical: 11,
+
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: bgColor,
@@ -54,7 +53,8 @@ const CustomInput: React.FC<Props> = ({
     >
       <TextInput
         style={{
-          marginHorizontal: 8,
+          paddingVertical: 11,
+          paddingHorizontal: 16,
           fontSize: 15,
           color: textColor,
           width: "100%",
