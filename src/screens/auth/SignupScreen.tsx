@@ -6,6 +6,9 @@ import {
   TouchableWithoutFeedback,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Text, Button, Layout, useTheme } from "@ui-kitten/components";
@@ -92,91 +95,107 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <Layout style={[styles.container, { backgroundColor: Colors.lightGreen }]}>
-      <View style={styles.logoContainer}>
-        <Image style={styles.logo} source={blackLogo} />
-      </View>
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme["background-basic-color-1"] },
-        ]}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <Layout
+        style={[styles.container, { backgroundColor: Colors.lightGreen }]}
       >
-        <View style={styles.arrowContainer}>
-          <Feather
-            color={theme["text-basic-color"]}
-            size={22}
-            onPress={onBackPress}
-            name="arrow-left"
-          />
+        <View style={styles.logoContainer}>
+          <Image style={styles.logo} source={blackLogo} />
         </View>
-        <View style={styles.wrapper}>
-          <View style={styles.header}>
-            <Text
-              style={[styles.headerTxt, { color: theme["text-basic-color"] }]}
-            >
-              Create a Humuli account
-            </Text>
-          </View>
-          <CustomInput
-            placeholder="Email"
-            textColor={theme["text-basic-color"]}
-            bgColor={theme["input-background-color-1"]}
-            borderColor={theme["input-border-color-1"]}
-            onChange={(newText) => setEmail(newText)}
-            autoCapitalize="none"
-            value={email}
-            inputMode="email"
-            placeholderColor={theme["input-placeholder-color"]}
-          />
 
-          <CustomPasswordInput
-            secureTextEntry={secureTextEntry}
-            onChange={(nextValue) => setPassword(nextValue)}
-            placeholder="Password"
-            textColor={theme["text-basic-color"]}
-            bgColor={theme["input-background-color-1"]}
-            borderColor={theme["input-border-color-1"]}
-            autoCapitalize="none"
-            value={password}
-            placeholderColor={theme["input-placeholder-color"]}
-            onPress={toggleSecureEntry}
-            isPasswordVisible={!secureTextEntry}
-            maxLength={28}
-          />
-          <View style={{ width: "100%", marginTop: 10 }}>
-            {isError && <ErrorText text={errorText} />}
-          </View>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: theme["background-basic-color-1"],
+              zIndex: 2,
+            },
+          ]}
+        >
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <View style={styles.arrowContainer}>
+              <Feather
+                color={theme["text-basic-color"]}
+                size={22}
+                onPress={onBackPress}
+                name="arrow-left"
+              />
+            </View>
+            <View style={styles.wrapper}>
+              <View style={styles.header}>
+                <Text
+                  style={[
+                    styles.headerTxt,
+                    { color: theme["text-basic-color"] },
+                  ]}
+                >
+                  Create a Humuli account
+                </Text>
+              </View>
+              <CustomInput
+                placeholder="Email"
+                textColor={theme["text-basic-color"]}
+                bgColor={theme["input-background-color-1"]}
+                borderColor={theme["input-border-color-1"]}
+                onChange={(newText) => setEmail(newText)}
+                autoCapitalize="none"
+                value={email}
+                inputMode="email"
+                placeholderColor={theme["input-placeholder-color"]}
+              />
 
-          <View style={styles.btnContainer}>
-            <Button
-              status="success"
-              size="large"
-              style={{ borderRadius: 15 }}
-              onPress={onContinuePress}
-            >
-              {loading ? (
-                <ActivityIndicator />
-              ) : (
-                (evaProps) => (
-                  <Text
-                    {...evaProps}
-                    style={{
-                      color: theme["success-btn-text"],
-                      fontWeight: "600",
-                      fontSize: 17,
-                      letterSpacing: 0.25,
-                    }}
-                  >
-                    Continue
-                  </Text>
-                )
-              )}
-            </Button>
-          </View>
+              <CustomPasswordInput
+                secureTextEntry={secureTextEntry}
+                onChange={(nextValue) => setPassword(nextValue)}
+                placeholder="Password"
+                textColor={theme["text-basic-color"]}
+                bgColor={theme["input-background-color-1"]}
+                borderColor={theme["input-border-color-1"]}
+                autoCapitalize="none"
+                value={password}
+                placeholderColor={theme["input-placeholder-color"]}
+                onPress={toggleSecureEntry}
+                isPasswordVisible={!secureTextEntry}
+                maxLength={28}
+              />
+              <View style={{ width: "100%", marginTop: 10 }}>
+                {isError && <ErrorText text={errorText} />}
+              </View>
+
+              <View style={styles.btnContainer}>
+                <Button
+                  status="success"
+                  size="large"
+                  style={{ borderRadius: 15 }}
+                  onPress={onContinuePress}
+                >
+                  {loading ? (
+                    <ActivityIndicator />
+                  ) : (
+                    (evaProps) => (
+                      <Text
+                        {...evaProps}
+                        style={{
+                          color: theme["success-btn-text"],
+                          fontWeight: "600",
+                          fontSize: 17,
+                          letterSpacing: 0.25,
+                        }}
+                      >
+                        Continue
+                      </Text>
+                    )
+                  )}
+                </Button>
+              </View>
+            </View>
+          </ScrollView>
         </View>
-      </View>
-    </Layout>
+      </Layout>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -185,6 +204,8 @@ export default LoginScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+
+    justifyContent: "space-between",
   },
   inputContainer: {
     width: "100%",
@@ -199,18 +220,22 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   logoContainer: {
-    flex: 0.5,
-    justifyContent: "center",
+    flex: 1, // This will take up all available space, pushing the card down
+    justifyContent: "flex-start", // This will center the logo vertically
     alignItems: "center",
+    paddingTop: 200,
   },
   logo: {
     width: 100,
     height: 100,
   },
   card: {
-    flex: 0.5,
+    flex: 1,
     borderTopLeftRadius: 50,
     borderTopRightRadius: 50,
+    position: "absolute",
+    paddingBottom: 10,
+    bottom: 0,
   },
   wrapper: {
     alignItems: "center",
@@ -230,5 +255,10 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 20,
     paddingTop: 20,
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: "space-between",
+    height: "100%",
   },
 });

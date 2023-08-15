@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -135,168 +138,180 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
   };
 
   return (
-    <Layout style={[styles.container, { backgroundColor: Colors.lightGreen }]}>
-      <View style={styles.logoContainer}>
-        <Image style={styles.logo} source={blackLogo} />
-      </View>
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme["background-basic-color-1"] },
-        ]}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <Layout
+        style={[styles.container, { backgroundColor: Colors.lightGreen }]}
       >
-        <View style={styles.arrowContainer}>
-          <Feather
-            color={theme["text-basic-color"]}
-            size={22}
-            onPress={onBackPress}
-            name="arrow-left"
-          />
+        <View style={styles.logoContainer}>
+          <Image style={styles.logo} source={blackLogo} />
         </View>
-        <View style={styles.wrapper}>
-          <View style={styles.header}>
-            <Text
-              style={[styles.headerTxt, { color: theme["text-basic-color"] }]}
-            >
-              Tell us more about you
-            </Text>
-          </View>
-          <View style={styles.names}>
-            <View
-              style={[
-                styles.inputCnt,
-                {
-                  backgroundColor: theme["input-background-color-1"],
-                  borderColor: theme["input-border-color-1"],
-                },
-              ]}
-            >
-              <TextInput
-                placeholder="First name"
-                placeholderTextColor={theme["input-placeholder-color"]}
-                value={firstName}
-                autoCapitalize="words"
-                onChangeText={(newText) => setFirstName(newText)}
-                style={[
-                  styles.input1,
-                  {
-                    width: "100%",
-                    fontSize: 15,
-                    paddingVertical: 11,
-                    paddingHorizontal: 16,
-                    color: theme["text-basic-color"],
-                  },
-                ]}
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: theme["background-basic-color-1"] },
+          ]}
+        >
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <View style={styles.arrowContainer}>
+              <Feather
+                color={theme["text-basic-color"]}
+                size={22}
+                onPress={onBackPress}
+                name="arrow-left"
               />
             </View>
-            <View
-              style={[
-                styles.inputCnt2,
-                {
-                  backgroundColor: theme["input-background-color-1"],
-                  borderColor: theme["input-border-color-1"],
-                },
-              ]}
-            >
-              <TextInput
-                placeholder="Last name"
-                placeholderTextColor={theme["input-placeholder-color"]}
-                value={lastName}
-                autoCapitalize="words"
-                onChangeText={(newText) => setLastName(newText)}
-                style={[
-                  styles.input2,
-                  {
-                    fontSize: 15,
-                    paddingVertical: 11,
-                    paddingHorizontal: 16,
-                    width: "100%",
-                    color: theme["text-basic-color"],
+            <View style={styles.wrapper}>
+              <View style={styles.header}>
+                <Text
+                  style={[
+                    styles.headerTxt,
+                    { color: theme["text-basic-color"] },
+                  ]}
+                >
+                  Tell us more about you
+                </Text>
+              </View>
+              <View style={styles.names}>
+                <View
+                  style={[
+                    styles.inputCnt,
+                    {
+                      backgroundColor: theme["input-background-color-1"],
+                      borderColor: theme["input-border-color-1"],
+                    },
+                  ]}
+                >
+                  <TextInput
+                    placeholder="First name"
+                    placeholderTextColor={theme["input-placeholder-color"]}
+                    value={firstName}
+                    autoCapitalize="words"
+                    onChangeText={(newText) => setFirstName(newText)}
+                    style={[
+                      styles.input1,
+                      {
+                        width: "100%",
+                        fontSize: 15,
+                        paddingVertical: 11,
+                        paddingHorizontal: 16,
+                        color: theme["text-basic-color"],
+                      },
+                    ]}
+                  />
+                </View>
+                <View
+                  style={[
+                    styles.inputCnt2,
+                    {
+                      backgroundColor: theme["input-background-color-1"],
+                      borderColor: theme["input-border-color-1"],
+                    },
+                  ]}
+                >
+                  <TextInput
+                    placeholder="Last name"
+                    placeholderTextColor={theme["input-placeholder-color"]}
+                    value={lastName}
+                    autoCapitalize="words"
+                    onChangeText={(newText) => setLastName(newText)}
+                    style={[
+                      styles.input2,
+                      {
+                        fontSize: 15,
+                        paddingVertical: 11,
+                        paddingHorizontal: 16,
+                        width: "100%",
+                        color: theme["text-basic-color"],
+                        borderColor: theme["input-border-color-1"],
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+              <CustomInput
+                placeholder={birthdayPlaceholder}
+                textColor={theme["text-basic-color"]}
+                bgColor={theme["input-background-color-1"]}
+                borderColor={theme["input-border-color-1"]}
+                onChange={handleBdChange}
+                autoCapitalize="none"
+                value={birthday}
+                inputMode="numeric"
+                placeholderColor={theme["input-placeholder-color"]}
+                onFocus={() => setBirthdayPlaceholder("MM/DD/YYYY")}
+                onBlur={() => setBirthdayPlaceholder("Birthday")}
+              />
+
+              <View style={styles.phContainer}>
+                <PhoneInput
+                  initialCountry={"us"}
+                  style={{
+                    backgroundColor: theme["input-background-color-1"],
                     borderColor: theme["input-border-color-1"],
-                  },
-                ]}
-              />
+                    height: 48,
+                    paddingVertical: 11,
+                    paddingHorizontal: 11,
+                    borderRadius: 4,
+                    marginBottom: 10,
+                  }}
+                  ref={phoneRef}
+                  textProps={{
+                    placeholder: "Phone number",
+                    placeholderTextColor: theme["input-placeholder-color"],
+                  }}
+                  textStyle={{ color: theme["text-basic-color"] }}
+                  onChangePhoneNumber={(newText) => setPhoneNumber(newText)}
+                />
+              </View>
+              <View style={{ width: "100%", marginTop: 10 }}>
+                {isError && <ErrorText text={errorText} />}
+              </View>
+              <View style={{ marginBottom: 15 }}>
+                <Text
+                  style={{
+                    color: theme["text-secondary-color"],
+                    fontSize: 13,
+                  }}
+                >
+                  Your phone number will only be used to verify your identity
+                  for security purposes
+                </Text>
+              </View>
+
+              <View style={styles.btnContainer}>
+                <Button
+                  status="success"
+                  size="large"
+                  style={{ borderRadius: 15 }}
+                  onPress={onContinuePress}
+                >
+                  {loading ? (
+                    <ActivityIndicator />
+                  ) : (
+                    (evaProps) => (
+                      <Text
+                        {...evaProps}
+                        style={{
+                          color: theme["success-btn-text"],
+                          fontWeight: "600",
+                          fontSize: 17,
+                          letterSpacing: 0.25,
+                        }}
+                      >
+                        Continue
+                      </Text>
+                    )
+                  )}
+                </Button>
+              </View>
             </View>
-          </View>
-          <CustomInput
-            placeholder={birthdayPlaceholder}
-            textColor={theme["text-basic-color"]}
-            bgColor={theme["input-background-color-1"]}
-            borderColor={theme["input-border-color-1"]}
-            onChange={handleBdChange}
-            autoCapitalize="none"
-            value={birthday}
-            inputMode="numeric"
-            placeholderColor={theme["input-placeholder-color"]}
-            onFocus={() => setBirthdayPlaceholder("MM/DD/YYYY")}
-            onBlur={() => setBirthdayPlaceholder("Birthday")}
-          />
-
-          <View style={styles.phContainer}>
-            <PhoneInput
-              initialCountry={"us"}
-              style={{
-                backgroundColor: theme["input-background-color-1"],
-                borderColor: theme["input-border-color-1"],
-                height: 48,
-                paddingVertical: 11,
-                paddingHorizontal: 11,
-                borderRadius: 4,
-                marginBottom: 10,
-              }}
-              ref={phoneRef}
-              textProps={{
-                placeholder: "Phone number",
-                placeholderTextColor: theme["input-placeholder-color"],
-              }}
-              textStyle={{ color: theme["text-basic-color"] }}
-              onChangePhoneNumber={(newText) => setPhoneNumber(newText)}
-            />
-          </View>
-          <View style={{ width: "100%", marginTop: 10 }}>
-            {isError && <ErrorText text={errorText} />}
-          </View>
-          <View style={{ marginBottom: 15 }}>
-            <Text
-              style={{
-                color: theme["text-secondary-color"],
-                fontSize: 13,
-              }}
-            >
-              Your phone number will only be used to verify your identity for
-              security purposes
-            </Text>
-          </View>
-
-          <View style={styles.btnContainer}>
-            <Button
-              status="success"
-              size="large"
-              style={{ borderRadius: 15 }}
-              onPress={onContinuePress}
-            >
-              {loading ? (
-                <ActivityIndicator />
-              ) : (
-                (evaProps) => (
-                  <Text
-                    {...evaProps}
-                    style={{
-                      color: theme["success-btn-text"],
-                      fontWeight: "600",
-                      fontSize: 17,
-                      letterSpacing: 0.25,
-                    }}
-                  >
-                    Continue
-                  </Text>
-                )
-              )}
-            </Button>
-          </View>
+          </ScrollView>
         </View>
-      </View>
-    </Layout>
+      </Layout>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -320,18 +335,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   logoContainer: {
-    flex: 0.5,
-    justifyContent: "center",
+    flex: 1, // This will take up all available space, pushing the card down
+    justifyContent: "flex-start", // This will center the logo vertically
     alignItems: "center",
+    paddingTop: 200,
   },
   logo: {
     width: 100,
     height: 100,
   },
   card: {
-    flex: 0.5,
+    flex: 1,
     borderTopLeftRadius: 50,
     borderTopRightRadius: 50,
+    position: "absolute",
+    paddingBottom: 10,
+    bottom: 0,
   },
   wrapper: {
     alignItems: "center",

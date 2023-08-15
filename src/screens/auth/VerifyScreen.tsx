@@ -5,6 +5,9 @@ import {
   Image,
   TouchableWithoutFeedback,
   TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -117,76 +120,91 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
     navigation.goBack();
   };
   return (
-    <Layout style={[styles.container, { backgroundColor: Colors.lightGreen }]}>
-      <View style={styles.logoContainer}>
-        <Image style={styles.logo} source={blackLogo} />
-      </View>
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme["background-basic-color-1"] },
-        ]}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <Layout
+        style={[styles.container, { backgroundColor: Colors.lightGreen }]}
       >
-        <View style={styles.arrowContainer}>
-          <Feather
-            color={theme["text-basic-color"]}
-            size={22}
-            onPress={onBackPress}
-            name="arrow-left"
-          />
+        <View style={styles.logoContainer}>
+          <Image style={styles.logo} source={blackLogo} />
         </View>
-        <View style={styles.wrapper}>
-          <View style={styles.header}>
-            <Text
-              style={[styles.headerTxt, { color: theme["text-basic-color"] }]}
-            >
-              Verify your phone number
-            </Text>
-          </View>
-          <View style={{ marginBottom: 25, paddingHorizontal: 65 }}>
-            <Text
-              style={{
-                color: theme["text-secondary-color"],
-                fontSize: 13,
-                textAlign: "center",
-              }}
-            >
-              Enter the code that was sent to your phone number.
-            </Text>
-          </View>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: theme["background-basic-color-1"] },
+          ]}
+        >
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <View style={styles.arrowContainer}>
+              <Feather
+                color={theme["text-basic-color"]}
+                size={22}
+                onPress={onBackPress}
+                name="arrow-left"
+              />
+            </View>
+            <View style={styles.wrapper}>
+              <View style={styles.header}>
+                <Text
+                  style={[
+                    styles.headerTxt,
+                    { color: theme["text-basic-color"] },
+                  ]}
+                >
+                  Verify your phone number
+                </Text>
+              </View>
+              <View style={{ marginBottom: 25, paddingHorizontal: 65 }}>
+                <Text
+                  style={{
+                    color: theme["text-secondary-color"],
+                    fontSize: 13,
+                    textAlign: "center",
+                  }}
+                >
+                  Enter the code that was sent to your phone number.
+                </Text>
+              </View>
 
-          <CustomInput
-            placeholder={codePlaceholder}
-            textColor={theme["text-basic-color"]}
-            bgColor={theme["input-background-color-1"]}
-            borderColor={theme["input-border-color-1"]}
-            onChange={(newText) => setCode(newText)}
-            autoCapitalize="none"
-            value={code}
-            inputMode="numeric"
-            placeholderColor={theme["input-placeholder-color"]}
-            onFocus={() => setCodePlaceholder("000000")}
-            onBlur={() => setCodePlaceholder("Enter code")}
-          />
-          <View style={{ width: "100%" }}>
-            {isError && <ErrorText text={errorText} />}
-          </View>
-          <TouchableOpacity
-            onPress={() => {
-              if (resend === "Resend") {
-                onResend();
-              }
-            }}
-          >
-            <Text
-              style={{ color: theme["text-basic-color"], fontWeight: "600" }}
-            >
-              {resend}
-            </Text>
-          </TouchableOpacity>
+              <CustomInput
+                placeholder={codePlaceholder}
+                textColor={theme["text-basic-color"]}
+                bgColor={theme["input-background-color-1"]}
+                borderColor={theme["input-border-color-1"]}
+                onChange={(newText) => setCode(newText)}
+                autoCapitalize="none"
+                value={code}
+                inputMode="numeric"
+                placeholderColor={theme["input-placeholder-color"]}
+                onFocus={() => setCodePlaceholder("000000")}
+                onBlur={() => setCodePlaceholder("Enter code")}
+              />
+              <View style={{ width: "100%" }}>
+                {isError && <ErrorText text={errorText} />}
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  if (resend === "Resend") {
+                    onResend();
+                  }
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme["text-basic-color"],
+                    fontWeight: "600",
+                  }}
+                >
+                  {resend}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
-      </View>
-    </Layout>
+      </Layout>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -211,18 +229,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   logoContainer: {
-    flex: 0.5,
-    justifyContent: "center",
+    flex: 1, // This will take up all available space, pushing the card down
+    justifyContent: "flex-start", // This will center the logo vertically
     alignItems: "center",
+    paddingTop: 200,
   },
   logo: {
     width: 100,
     height: 100,
   },
   card: {
-    flex: 0.5,
+    flex: 1,
     borderTopLeftRadius: 50,
     borderTopRightRadius: 50,
+    position: "absolute",
+    paddingBottom: 10,
+    bottom: 0,
+    minHeight: 400,
   },
   wrapper: {
     alignItems: "center",
