@@ -59,6 +59,7 @@ export const signup = createAsyncThunk(
       phoneNumber?: string;
       firstName?: string;
       lastName?: string;
+      productType?: string;
     },
     { rejectWithValue }
   ) => {
@@ -331,6 +332,22 @@ export const changePassword = createAsyncThunk(
   }
 );
 
+export const setNewPassword = createAsyncThunk(
+  "user/setNewPassword",
+  async (data: { password: string; email: string }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/u/change-password`, data);
+      console.log(response);
+      return response.data;
+    } catch (error: any) {
+      console.log(error);
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -495,6 +512,17 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(emailExists.rejected, (state, action) => {
+        state.status = "error";
+        state.error = action.payload;
+      })
+      .addCase(setNewPassword.fulfilled, (state, action) => {
+        // Handle success
+        console.log(action.payload, "<= Fulfilled payload");
+        state.data = action.payload;
+        state.error = null;
+      })
+      .addCase(setNewPassword.rejected, (state, action) => {
+        console.log(action.payload, "<= Rejected error");
         state.status = "error";
         state.error = action.payload;
       });

@@ -9,6 +9,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Text, Button, Layout, useTheme } from "@ui-kitten/components";
@@ -36,6 +37,28 @@ const LoginScreen: React.FC = () => {
   const [errorText, setErrorText] = useState<string>("");
   const dispatch = useDispatch<AppDispatch>();
   const [loading, setLoading] = useState<boolean>(false);
+  const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const toggleSecureEntry = (): void => {
     setSecureTextEntry(!secureTextEntry);
@@ -165,7 +188,12 @@ const LoginScreen: React.FC = () => {
                 {isError && <ErrorText text={errorText} />}
               </View>
 
-              <View style={styles.btnContainer}>
+              <View
+                style={[
+                  styles.btnContainer,
+                  { marginBottom: isKeyboardVisible ? 10 : 65, marginTop: 10 },
+                ]}
+              >
                 <Button
                   status="success"
                   size="large"
@@ -247,7 +275,6 @@ const styles = StyleSheet.create({
   },
   signupBtnTxt: {},
   btnContainer: {
-    marginVertical: 20,
     width: "100%",
   },
   arrowContainer: {

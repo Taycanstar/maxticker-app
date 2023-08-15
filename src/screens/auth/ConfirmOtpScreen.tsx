@@ -8,9 +8,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Text,
@@ -26,41 +25,64 @@ import { blackLogo } from "../../images/ImageAssets";
 import Colors from "../../constants/Colors";
 import Feather from "@expo/vector-icons/Feather";
 import { useNavigation } from "@react-navigation/native";
-import { type StackNavigation } from "../../navigation/AppNavigator";
-import CustomPasswordInput from "../../components/CustomPasswordInput";
+import {
+  type StackNavigation,
+  ConfirmOtpScreenRouteProp,
+} from "../../navigation/AppNavigator";
 import CustomInput from "../../components/CustomInput";
+import { confirmOtp, resendOtp } from "../../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
-import { loginUser, forgotPassword } from "../../store/user";
 import ErrorText from "../../components/ErrorText";
 
 type Props = {};
 
-const LoginScreen: React.FC = () => {
-  const [secureTextEntry, setSecureTextEntry] = useState<boolean>(true);
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+type ConfirmOtpScreenProps = {
+  route: ConfirmOtpScreenRouteProp;
+};
+
+const ConfirmOtpScreen: React.FC<ConfirmOtpScreenProps> = ({ route }) => {
+  const [code, setCode] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
   const { navigate } = useNavigation<StackNavigation>();
   const navigation = useNavigation<StackNavigation>();
-  const theme = useTheme();
   const dispatch = useDispatch<AppDispatch>();
   const [isError, setIsError] = useState<boolean>(false);
   const [errorText, setErrorText] = useState<string>("");
-  const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
+  const [codePlaceholder, setCodePlaceholder] = useState<string>("Enter code");
+  const theme = useTheme();
+  const [resend, setResend] = useState<string>("Resend");
+  if (!route.params) {
+    return null; // or any other fallback JSX/render
+  }
 
-  const toggleSecureEntry = (): void => {
-    setSecureTextEntry(!secureTextEntry);
+  const { email } = route.params;
+
+  useEffect(() => {
+    if (code && code.length === 6) {
+      onSubmit();
+    }
+  }, [code]);
+
+  const handleActionError = (action: any) => {
+    if ("error" in action) {
+      setIsError(true);
+      const errorMessage = (action.payload as { message: string }).message;
+      setErrorText(errorMessage);
+      setTimeout(() => setIsError(false), 4000);
+      console.log(`Error on Screen`, errorMessage);
+      return true;
+    }
+    return false;
   };
 
-  const onForgotPress = async () => {
-    navigate("ForgotPassword");
-  };
+  const onSubmit = useCallback(async () => {
+    setLoading(true);
 
-  const onContinuePress = async () => {
     let action = await dispatch(
-      loginUser({
+      confirmOtp({
         email,
-        password,
+        confirmationToken: code,
       })
     );
 
@@ -71,32 +93,24 @@ const LoginScreen: React.FC = () => {
       setTimeout(() => setIsError(false), 4000);
       console.log(`Error on Screen`, errorMessage);
       return true;
+    } else {
+      navigate("SetNewPassword", { email });
     }
+
+    setLoading(false);
+
+    // Add any further logic if needed
+  }, [code, email]); // make sure to include all dependencies used within the callback
+
+  const onResend = async () => {
+    setResend("Sent.");
+    const res = await dispatch(resendOtp(email));
+    if (handleActionError(res)) return;
+    setTimeout(() => setResend("Resend"), 15000);
   };
   const onBackPress = () => {
     navigation.goBack();
   };
-
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      () => {
-        setKeyboardVisible(true);
-      }
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setKeyboardVisible(false);
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -131,89 +145,54 @@ const LoginScreen: React.FC = () => {
                     { color: theme["text-basic-color"] },
                   ]}
                 >
-                  Log in with your Humuli account
+                  Reset password
                 </Text>
               </View>
-
-              <CustomInput
-                placeholder="Email"
-                textColor={theme["text-basic-color"]}
-                bgColor={theme["input-background-color-1"]}
-                borderColor={theme["input-border-color-1"]}
-                onChange={(newText) => setEmail(newText)}
-                autoCapitalize="none"
-                value={email}
-                inputMode="email"
-                placeholderColor={theme["input-placeholder-color"]}
-              />
-              <CustomPasswordInput
-                secureTextEntry={secureTextEntry}
-                onChange={(nextValue) => setPassword(nextValue)}
-                placeholder="Password"
-                textColor={theme["text-basic-color"]}
-                bgColor={theme["input-background-color-1"]}
-                borderColor={theme["input-border-color-1"]}
-                autoCapitalize="none"
-                value={password}
-                placeholderColor={theme["input-placeholder-color"]}
-                onPress={toggleSecureEntry}
-                isPasswordVisible={!secureTextEntry}
-                maxLength={28}
-              />
-              <View style={{ width: "100%" }}>
-                {isError && (
-                  <View style={{ width: "100%", marginTop: 10 }}>
-                    <ErrorText text={errorText} />
-                  </View>
-                )}
-              </View>
-              <TouchableOpacity
-                onPress={onForgotPress}
-                style={{
-                  marginBottom: 25,
-                  marginTop: 10,
-                  width: "100%",
-                  alignItems: "flex-end",
-                }}
-              >
+              <View style={{ marginBottom: 25, paddingHorizontal: 65 }}>
                 <Text
                   style={{
                     color: theme["text-secondary-color"],
                     fontSize: 13,
-                    fontWeight: "600",
                     textAlign: "center",
                   }}
                 >
-                  Forgot Password?
+                  Enter your email address and we will send you instructions to
+                  reset your password.
+                </Text>
+              </View>
+
+              <CustomInput
+                placeholder={codePlaceholder}
+                textColor={theme["text-basic-color"]}
+                bgColor={theme["input-background-color-1"]}
+                borderColor={theme["input-border-color-1"]}
+                onChange={(newText) => setCode(newText)}
+                autoCapitalize="none"
+                value={code}
+                inputMode="numeric"
+                placeholderColor={theme["input-placeholder-color"]}
+                onFocus={() => setCodePlaceholder("000000")}
+                onBlur={() => setCodePlaceholder("Enter code")}
+              />
+              <View style={{ width: "100%" }}>
+                {isError && <ErrorText text={errorText} />}
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  if (resend === "Resend") {
+                    onResend();
+                  }
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme["text-basic-color"],
+                    fontWeight: "600",
+                  }}
+                >
+                  {resend}
                 </Text>
               </TouchableOpacity>
-              <View
-                style={[
-                  styles.btnContainer,
-                  { marginBottom: isKeyboardVisible ? 10 : 65, marginTop: 0 },
-                ]}
-              >
-                <Button
-                  status="success"
-                  size="large"
-                  style={{ borderRadius: 15 }}
-                  onPress={onContinuePress}
-                >
-                  {(evaProps) => (
-                    <Text
-                      {...evaProps}
-                      style={{
-                        color: theme["success-btn-text"],
-                        fontWeight: "600",
-                        fontSize: 17,
-                        letterSpacing: 0.25,
-                      }}
-                    >
-                      Continue
-                    </Text>
-                  )}
-                </Button>
-              </View>
             </View>
           </ScrollView>
         </View>
@@ -222,7 +201,7 @@ const LoginScreen: React.FC = () => {
   );
 };
 
-export default LoginScreen;
+export default ConfirmOtpScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -238,7 +217,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   header: {
-    padding: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+    paddingHorizontal: 20,
   },
   logoContainer: {
     flex: 1, // This will take up all available space, pushing the card down
@@ -257,6 +238,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     paddingBottom: 10,
     bottom: 0,
+    minHeight: 400,
   },
   wrapper: {
     alignItems: "center",
@@ -268,6 +250,7 @@ const styles = StyleSheet.create({
   },
   signupBtnTxt: {},
   btnContainer: {
+    marginVertical: 10,
     width: "100%",
   },
   arrowContainer: {

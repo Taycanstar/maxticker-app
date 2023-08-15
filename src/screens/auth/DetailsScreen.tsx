@@ -10,6 +10,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -63,6 +64,28 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
     useState<string>("Birthday");
   const [isError, setIsError] = useState<boolean>(false);
   const [errorText, setErrorText] = useState<string>("");
+  const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const onContinuePressx = () => {
     navigate("Verify", {
@@ -281,7 +304,12 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
                 </Text>
               </View>
 
-              <View style={styles.btnContainer}>
+              <View
+                style={[
+                  styles.btnContainer,
+                  { marginBottom: isKeyboardVisible ? 10 : 65, marginTop: 10 },
+                ]}
+              >
                 <Button
                   status="success"
                   size="large"
@@ -362,7 +390,6 @@ const styles = StyleSheet.create({
   },
   signupBtnTxt: {},
   btnContainer: {
-    marginVertical: 10,
     width: "100%",
   },
   arrowContainer: {

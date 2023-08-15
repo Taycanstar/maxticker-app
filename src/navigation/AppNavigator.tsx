@@ -8,9 +8,12 @@ import AuthScreen from "../screens/auth/AuthScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
 import DetailsScreen from "../screens/auth/DetailsScreen";
 import VerifyScreen from "../screens/auth/VerifyScreen";
+import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
+import ConfirmOtpScreen from "../screens/auth/ConfirmOtpScreen";
 import SignupScreen from "../screens/auth/SignupScreen";
 import AddScreen from "../screens/AddScreen";
 import ExploreScreen from "../screens/ExploreScreen";
+import SetNewPasswordScreen from "../screens/auth/SetNewPasswordScreen";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import { StyleSheet, TouchableOpacity, View, Image } from "react-native";
@@ -52,7 +55,9 @@ export type ScreenNames = [
   "Add",
   "Explore",
   "Stats",
-  "History"
+  "History",
+  "ConfirmOtp",
+  "SetNewPassword"
 ];
 export type RootStackParamList = {
   Login?: undefined;
@@ -71,9 +76,24 @@ export type RootStackParamList = {
   Explore?: undefined;
   Stats?: undefined;
   History?: undefined;
+  ForgotPassword?: undefined;
+  ConfirmOtp?: {
+    email: string;
+  };
+  SetNewPassword?: {
+    email: string;
+  };
 };
 export type DetailsScreenRouteProp = RouteProp<RootStackParamList, "Details">;
 export type VerifyScreenRouteProp = RouteProp<RootStackParamList, "Verify">;
+export type SetNewPasswordScreenRouteProp = RouteProp<
+  RootStackParamList,
+  "SetNewPassword"
+>;
+export type ConfirmOtpScreenRouteProp = RouteProp<
+  RootStackParamList,
+  "ConfirmOtp"
+>;
 
 // export type RootStackParamList = Record<ScreenNames[number], undefined>;
 export type StackNavigation = StackNavigationProp<RootStackParamList>;
@@ -94,6 +114,9 @@ const AuthStack = () => {
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="Auth" component={AuthScreen} />
       <Stack.Screen name="Verify" component={VerifyScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="ConfirmOtp" component={ConfirmOtpScreen} />
+      <Stack.Screen name="SetNewPassword" component={SetNewPasswordScreen} />
     </Stack.Navigator>
   );
 };

@@ -8,7 +8,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import {
@@ -26,20 +25,31 @@ import { blackLogo } from "../../images/ImageAssets";
 import Colors from "../../constants/Colors";
 import Feather from "@expo/vector-icons/Feather";
 import { useNavigation } from "@react-navigation/native";
-import { type StackNavigation } from "../../navigation/AppNavigator";
+import {
+  ConfirmOtpScreenRouteProp,
+  type StackNavigation,
+} from "../../navigation/AppNavigator";
 import CustomPasswordInput from "../../components/CustomPasswordInput";
 import CustomInput from "../../components/CustomInput";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
-import { loginUser, forgotPassword } from "../../store/user";
+import { forgotPassword } from "../../store/user";
 import ErrorText from "../../components/ErrorText";
+import { Keyboard } from "react-native";
 
 type Props = {};
 
-const LoginScreen: React.FC = () => {
+type ConfirmOtpScreenProps = {
+  route: ConfirmOtpScreenRouteProp;
+};
+
+const ConfirmOtpScreen: React.FC<ConfirmOtpScreenProps> = ({ route }) => {
   const [secureTextEntry, setSecureTextEntry] = useState<boolean>(true);
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  if (!route.params) {
+    return null; // or any other fallback JSX/render
+  }
+  const [code, setCode] = useState<string>("");
+  const { email } = route.params;
   const { navigate } = useNavigation<StackNavigation>();
   const navigation = useNavigation<StackNavigation>();
   const theme = useTheme();
@@ -52,17 +62,8 @@ const LoginScreen: React.FC = () => {
     setSecureTextEntry(!secureTextEntry);
   };
 
-  const onForgotPress = async () => {
-    navigate("ForgotPassword");
-  };
-
   const onContinuePress = async () => {
-    let action = await dispatch(
-      loginUser({
-        email,
-        password,
-      })
-    );
+    let action = await dispatch(forgotPassword(email));
 
     if ("error" in action) {
       setIsError(true);
@@ -71,6 +72,8 @@ const LoginScreen: React.FC = () => {
       setTimeout(() => setIsError(false), 4000);
       console.log(`Error on Screen`, errorMessage);
       return true;
+    } else {
+      console.log("success X");
     }
   };
   const onBackPress = () => {
@@ -97,6 +100,7 @@ const LoginScreen: React.FC = () => {
       keyboardDidHideListener.remove();
     };
   }, []);
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -131,35 +135,35 @@ const LoginScreen: React.FC = () => {
                     { color: theme["text-basic-color"] },
                   ]}
                 >
-                  Log in with your Humuli account
+                  Reset your password
+                </Text>
+              </View>
+
+              <View style={{ marginBottom: 25, paddingHorizontal: 65 }}>
+                <Text
+                  style={{
+                    color: theme["text-secondary-color"],
+                    fontSize: 13,
+                    textAlign: "center",
+                  }}
+                >
+                  Enter your email address and we will send you instructions to
+                  reset your password.
                 </Text>
               </View>
 
               <CustomInput
-                placeholder="Email"
+                placeholder="Enter Code"
                 textColor={theme["text-basic-color"]}
                 bgColor={theme["input-background-color-1"]}
                 borderColor={theme["input-border-color-1"]}
-                onChange={(newText) => setEmail(newText)}
+                onChange={(newText) => setCode(newText)}
                 autoCapitalize="none"
-                value={email}
-                inputMode="email"
+                value={code}
+                inputMode="text"
                 placeholderColor={theme["input-placeholder-color"]}
               />
-              <CustomPasswordInput
-                secureTextEntry={secureTextEntry}
-                onChange={(nextValue) => setPassword(nextValue)}
-                placeholder="Password"
-                textColor={theme["text-basic-color"]}
-                bgColor={theme["input-background-color-1"]}
-                borderColor={theme["input-border-color-1"]}
-                autoCapitalize="none"
-                value={password}
-                placeholderColor={theme["input-placeholder-color"]}
-                onPress={toggleSecureEntry}
-                isPasswordVisible={!secureTextEntry}
-                maxLength={28}
-              />
+
               <View style={{ width: "100%" }}>
                 {isError && (
                   <View style={{ width: "100%", marginTop: 10 }}>
@@ -167,30 +171,11 @@ const LoginScreen: React.FC = () => {
                   </View>
                 )}
               </View>
-              <TouchableOpacity
-                onPress={onForgotPress}
-                style={{
-                  marginBottom: 25,
-                  marginTop: 10,
-                  width: "100%",
-                  alignItems: "flex-end",
-                }}
-              >
-                <Text
-                  style={{
-                    color: theme["text-secondary-color"],
-                    fontSize: 13,
-                    fontWeight: "600",
-                    textAlign: "center",
-                  }}
-                >
-                  Forgot Password?
-                </Text>
-              </TouchableOpacity>
+
               <View
                 style={[
                   styles.btnContainer,
-                  { marginBottom: isKeyboardVisible ? 10 : 65, marginTop: 0 },
+                  { marginBottom: isKeyboardVisible ? 10 : 65, marginTop: 10 },
                 ]}
               >
                 <Button
@@ -222,7 +207,7 @@ const LoginScreen: React.FC = () => {
   );
 };
 
-export default LoginScreen;
+export default ConfirmOtpScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -238,7 +223,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   header: {
-    padding: 20,
+    paddingTop: 20,
+    marginBottom: 10,
   },
   logoContainer: {
     flex: 1, // This will take up all available space, pushing the card down
