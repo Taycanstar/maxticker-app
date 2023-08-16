@@ -336,7 +336,7 @@ export const setNewPassword = createAsyncThunk(
   "user/setNewPassword",
   async (data: { password: string; email: string }, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/u/change-password`, data);
+      const response = await api.post(`/u/set-new-password`, data);
       console.log(response);
       return response.data;
     } catch (error: any) {

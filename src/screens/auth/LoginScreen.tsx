@@ -8,6 +8,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
   Keyboard,
 } from "react-native";
 import React, { useState, useEffect } from "react";
@@ -47,6 +48,7 @@ const LoginScreen: React.FC = () => {
   const [isError, setIsError] = useState<boolean>(false);
   const [errorText, setErrorText] = useState<string>("");
   const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const toggleSecureEntry = (): void => {
     setSecureTextEntry(!secureTextEntry);
@@ -57,6 +59,7 @@ const LoginScreen: React.FC = () => {
   };
 
   const onContinuePress = async () => {
+    setLoading(true);
     let action = await dispatch(
       loginUser({
         email,
@@ -72,6 +75,9 @@ const LoginScreen: React.FC = () => {
       console.log(`Error on Screen`, errorMessage);
       return true;
     }
+    setTimeout(() => {
+      setLoading(false);
+    }, 1000);
   };
   const onBackPress = () => {
     navigation.goBack();
@@ -172,8 +178,8 @@ const LoginScreen: React.FC = () => {
                 style={{
                   marginBottom: 25,
                   marginTop: 10,
-                  width: "100%",
-                  alignItems: "flex-end",
+                  // width: "100%",
+                  alignSelf: "flex-end",
                 }}
               >
                 <Text
@@ -199,18 +205,22 @@ const LoginScreen: React.FC = () => {
                   style={{ borderRadius: 15 }}
                   onPress={onContinuePress}
                 >
-                  {(evaProps) => (
-                    <Text
-                      {...evaProps}
-                      style={{
-                        color: theme["success-btn-text"],
-                        fontWeight: "600",
-                        fontSize: 17,
-                        letterSpacing: 0.25,
-                      }}
-                    >
-                      Continue
-                    </Text>
+                  {loading ? (
+                    <ActivityIndicator />
+                  ) : (
+                    (evaProps) => (
+                      <Text
+                        {...evaProps}
+                        style={{
+                          color: theme["success-btn-text"],
+                          fontWeight: "600",
+                          fontSize: 17,
+                          letterSpacing: 0.25,
+                        }}
+                      >
+                        Continue
+                      </Text>
+                    )
                   )}
                 </Button>
               </View>
@@ -271,8 +281,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   arrowContainer: {
-    justifyContent: "flex-start",
-    width: "100%",
+    alignSelf: "flex-start",
     paddingHorizontal: 20,
     paddingTop: 20,
   },

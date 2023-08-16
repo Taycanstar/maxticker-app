@@ -8,6 +8,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import {
@@ -26,16 +28,15 @@ import Colors from "../../constants/Colors";
 import Feather from "@expo/vector-icons/Feather";
 import { useNavigation } from "@react-navigation/native";
 import {
-  SetNewPasswordScreenRouteProp,
   type StackNavigation,
+  SetNewPasswordScreenRouteProp,
 } from "../../navigation/AppNavigator";
 import CustomPasswordInput from "../../components/CustomPasswordInput";
 import CustomInput from "../../components/CustomInput";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
-import { forgotPassword } from "../../store/user";
+import { loginUser, setNewPassword } from "../../store/user";
 import ErrorText from "../../components/ErrorText";
-import { Keyboard } from "react-native";
 
 type Props = {};
 
@@ -47,6 +48,7 @@ const SetNewPasswordScreen: React.FC<SetNewPasswordScreenProps> = ({
   route,
 }) => {
   const [secureTextEntry, setSecureTextEntry] = useState<boolean>(true);
+  const [password, setPassword] = useState<string>("");
   const { navigate } = useNavigation<StackNavigation>();
   const navigation = useNavigation<StackNavigation>();
   const theme = useTheme();
@@ -54,6 +56,8 @@ const SetNewPasswordScreen: React.FC<SetNewPasswordScreenProps> = ({
   const [isError, setIsError] = useState<boolean>(false);
   const [errorText, setErrorText] = useState<string>("");
   const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+
   if (!route.params) {
     return null; // or any other fallback JSX/render
   }
@@ -65,7 +69,7 @@ const SetNewPasswordScreen: React.FC<SetNewPasswordScreenProps> = ({
   };
 
   const onContinuePress = async () => {
-    let action = await dispatch(forgotPassword(email));
+    let action = await dispatch(setNewPassword({ email, password }));
 
     if ("error" in action) {
       setIsError(true);
@@ -75,9 +79,14 @@ const SetNewPasswordScreen: React.FC<SetNewPasswordScreenProps> = ({
       console.log(`Error on Screen`, errorMessage);
       return true;
     } else {
-      navigate("ConfirmOtp", { email });
+      navigate("Login");
     }
+
+    setTimeout(() => {
+      setLoading(false);
+    }, 100);
   };
+
   const onBackPress = () => {
     navigation.goBack();
   };
@@ -102,7 +111,6 @@ const SetNewPasswordScreen: React.FC<SetNewPasswordScreenProps> = ({
       keyboardDidHideListener.remove();
     };
   }, []);
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -137,23 +145,24 @@ const SetNewPasswordScreen: React.FC<SetNewPasswordScreenProps> = ({
                     { color: theme["text-basic-color"] },
                   ]}
                 >
-                  Reset your password
+                  Enter new password
                 </Text>
               </View>
 
-              <View style={{ marginBottom: 25, paddingHorizontal: 65 }}>
-                <Text
-                  style={{
-                    color: theme["text-secondary-color"],
-                    fontSize: 13,
-                    textAlign: "center",
-                  }}
-                >
-                  Enter your email address and we will send you instructions to
-                  reset your password.
-                </Text>
-              </View>
-
+              <CustomPasswordInput
+                secureTextEntry={secureTextEntry}
+                onChange={(nextValue) => setPassword(nextValue)}
+                placeholder="Password"
+                textColor={theme["text-basic-color"]}
+                bgColor={theme["input-background-color-1"]}
+                borderColor={theme["input-border-color-1"]}
+                autoCapitalize="none"
+                value={password}
+                placeholderColor={theme["input-placeholder-color"]}
+                onPress={toggleSecureEntry}
+                isPasswordVisible={!secureTextEntry}
+                maxLength={28}
+              />
               <View style={{ width: "100%" }}>
                 {isError && (
                   <View style={{ width: "100%", marginTop: 10 }}>
@@ -165,27 +174,31 @@ const SetNewPasswordScreen: React.FC<SetNewPasswordScreenProps> = ({
               <View
                 style={[
                   styles.btnContainer,
-                  { marginBottom: isKeyboardVisible ? 10 : 65, marginTop: 10 },
+                  { marginBottom: isKeyboardVisible ? 10 : 65, marginTop: 0 },
                 ]}
               >
                 <Button
                   status="success"
                   size="large"
-                  style={{ borderRadius: 15 }}
+                  style={{ borderRadius: 15, marginTop: 15 }}
                   onPress={onContinuePress}
                 >
-                  {(evaProps) => (
-                    <Text
-                      {...evaProps}
-                      style={{
-                        color: theme["success-btn-text"],
-                        fontWeight: "600",
-                        fontSize: 17,
-                        letterSpacing: 0.25,
-                      }}
-                    >
-                      Continue
-                    </Text>
+                  {loading ? (
+                    <ActivityIndicator />
+                  ) : (
+                    (evaProps) => (
+                      <Text
+                        {...evaProps}
+                        style={{
+                          color: theme["success-btn-text"],
+                          fontWeight: "600",
+                          fontSize: 17,
+                          letterSpacing: 0.25,
+                        }}
+                      >
+                        Continue
+                      </Text>
+                    )
                   )}
                 </Button>
               </View>
@@ -213,7 +226,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   header: {
-    paddingTop: 20,
+    padding: 20,
     marginBottom: 10,
   },
   logoContainer: {
@@ -230,7 +243,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderTopLeftRadius: 50,
     borderTopRightRadius: 50,
-    position: "absolute",
+    // position: "absolute",
     paddingBottom: 10,
     bottom: 0,
   },
@@ -247,8 +260,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   arrowContainer: {
-    justifyContent: "flex-start",
-    width: "100%",
+    alignSelf: "flex-start",
     paddingHorizontal: 20,
     paddingTop: 20,
   },

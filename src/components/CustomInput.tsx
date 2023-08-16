@@ -40,7 +40,7 @@ const CustomInput: React.FC<Props> = ({
     <View
       style={{
         minHeight: 48,
-        borderRadius: 5,
+        borderRadius: 10,
         borderWidth: 2,
 
         flexDirection: "row",

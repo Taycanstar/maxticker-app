@@ -44,7 +44,7 @@ const CustomInput: React.FC<Props> = ({
       style={{
         paddingHorizontal: 8,
         minHeight: 48,
-        borderRadius: 5,
+        borderRadius: 10,
         borderWidth: 2,
         paddingVertical: 11,
         flexDirection: "row",

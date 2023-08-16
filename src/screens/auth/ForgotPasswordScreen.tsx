@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
+  ActivityIndicator,
   Platform,
 } from "react-native";
 import React, { useState, useEffect } from "react";
@@ -46,12 +47,14 @@ const ForgotPasswordScreen: React.FC = () => {
   const [isError, setIsError] = useState<boolean>(false);
   const [errorText, setErrorText] = useState<string>("");
   const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const toggleSecureEntry = (): void => {
     setSecureTextEntry(!secureTextEntry);
   };
 
   const onContinuePress = async () => {
+    setLoading(true);
     let action = await dispatch(forgotPassword(email));
 
     if ("error" in action) {
@@ -64,6 +67,10 @@ const ForgotPasswordScreen: React.FC = () => {
     } else {
       navigate("ConfirmOtp", { email });
     }
+
+    setTimeout(() => {
+      setLoading(false);
+    }, 1000);
   };
   const onBackPress = () => {
     navigation.goBack();
@@ -173,18 +180,22 @@ const ForgotPasswordScreen: React.FC = () => {
                   style={{ borderRadius: 15 }}
                   onPress={onContinuePress}
                 >
-                  {(evaProps) => (
-                    <Text
-                      {...evaProps}
-                      style={{
-                        color: theme["success-btn-text"],
-                        fontWeight: "600",
-                        fontSize: 17,
-                        letterSpacing: 0.25,
-                      }}
-                    >
-                      Continue
-                    </Text>
+                  {loading ? (
+                    <ActivityIndicator />
+                  ) : (
+                    (evaProps) => (
+                      <Text
+                        {...evaProps}
+                        style={{
+                          color: theme["success-btn-text"],
+                          fontWeight: "600",
+                          fontSize: 17,
+                          letterSpacing: 0.25,
+                        }}
+                      >
+                        Continue
+                      </Text>
+                    )
                   )}
                 </Button>
               </View>
@@ -246,8 +257,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   arrowContainer: {
-    justifyContent: "flex-start",
-    width: "100%",
+    alignSelf: "flex-start",
     paddingHorizontal: 20,
     paddingTop: 20,
   },

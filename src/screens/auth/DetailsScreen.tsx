@@ -393,8 +393,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   arrowContainer: {
-    justifyContent: "flex-start",
-    width: "100%",
+    alignSelf: "flex-start",
     paddingHorizontal: 20,
     paddingTop: 20,
   },

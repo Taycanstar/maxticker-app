@@ -145,7 +145,7 @@ const ConfirmOtpScreen: React.FC<ConfirmOtpScreenProps> = ({ route }) => {
                     { color: theme["text-basic-color"] },
                   ]}
                 >
-                  Reset password
+                  Enter OTP
                 </Text>
               </View>
               <View style={{ marginBottom: 25, paddingHorizontal: 65 }}>
@@ -156,8 +156,8 @@ const ConfirmOtpScreen: React.FC<ConfirmOtpScreenProps> = ({ route }) => {
                     textAlign: "center",
                   }}
                 >
-                  Enter your email address and we will send you instructions to
-                  reset your password.
+                  Enter the one-time code we sent to your email to reset your
+                  password
                 </Text>
               </View>
 
@@ -254,8 +254,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   arrowContainer: {
-    justifyContent: "flex-start",
-    width: "100%",
+    alignSelf: "flex-start",
     paddingHorizontal: 20,
     paddingTop: 20,
   },
