@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "moodmotif-app",
-    "slug": "moodmotif-app",
+    "slug": "cronoverse",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -28,7 +28,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "36b345e2-9d8c-4fbb-8eba-732bde4891d0"
+        "projectId": "bb7e8984-8094-41c8-9118-1541416a0a13"
       }
     },
     "owner": "dimixpo"

@@ -53,5 +53,17 @@
   "text-basic-color": "black",
   "text-secondary-color": "rgba(96,96,96,1)",
   "success-btn-text": "white",
-  "input-placeholder-color": "rgba(96,96,96,1)"
+  "input-placeholder-color": "rgba(96,96,96,1)",
+  "ios-green": "rgba(52,199, 89,1)",
+  "ios-greenlight": "rgba(52,199, 89,0.3)",
+  "ios-blue": "rgba(0,122, 255,1)",
+  "ios-bluelight": "rgba(0,122, 255,0.3)",
+  "ios-red": "rgba(255,59,48,1)",
+  "ios-redlight": "rgba(255,59,48,0.3)",
+  "ios-cyan": "rgba(50,173,230, 1)",
+  "ios-cyanlight": "rgba(50,173,230,0.3)",
+  "gradient-1": "rgba(255,255,255,0)",
+  "gradient-2": "rgba(255,255,255,0.5)",
+  "gradient-3": "rgba(255,255,255,0.8)",
+  "gradient-4": "rgba(255,255,255,1)"
 }

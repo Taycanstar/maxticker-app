@@ -45,6 +45,11 @@
   "color-danger-800": "#930F1A",
   "color-danger-900": "#7A091B",
   "background-basic-color-1": "#000",
+  "background-basic-color-0": "red",
+  "gradient-1": "rgba(0,0,0,0)",
+  "gradient-2": "rgba(0,0,0,0.5)",
+  "gradient-3": "rgba(0,0,0,0.8)",
+  "gradient-4": "rgba(0,0,0,1)",
   "background-basic-color-2": "$color-info-500",
   "background-basic-color-3": "$color-warning-500",
   "background-basic-color-4": "$color-warning-500",
@@ -53,5 +58,13 @@
   "input-border-color-1": "rgb(29,29,29)",
   "text-secondary-color": "#eff2f5",
   "success-btn-text": "#000",
-  "input-placeholder-color": "rgba(150,150,150,1)"
+  "input-placeholder-color": "rgba(150,150,150,1)",
+  "ios-green": "rgba(48,209,88,1)",
+  "ios-greenligh": "rgba(48,209,88,1,0.3)",
+  "ios-blue": "rgba(10, 132, 255,1)",
+  "ios-bluelight": "rgba(10,132, 255,0.3)",
+  "ios-red": "rgba(255,69,58,1)",
+  "ios-redlight": "rgba(255,69,58,0.3)",
+  "ios-cyan": "rgba(100,210,255, 1)",
+  "ios-cyanligth": "rgba(100,255,1,0.3)"
 }

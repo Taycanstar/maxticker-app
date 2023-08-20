@@ -1,2 +1,2 @@
-export const blackLogo = require("../../assets/blackmotif.png");
-export const whiteLogo = require("../../assets/motifwhite.png");
+export const blackLogo = require("../../assets/logoblack.png");
+export const whiteLogo = require("../../assets/logowhite.png");

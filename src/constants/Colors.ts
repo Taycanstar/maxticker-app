@@ -1,5 +1,6 @@
 export default {
-  blueCrayola: "#3772ff",
+  // primary: "#192bc2",
+  primary: "rgba(70,81,228,1)",
   purple: "#7230fc",
   darkGrayBtn: "rgba(33,33,35,1)",
   mediumGrayBtn: "#4A4443",
@@ -9,4 +10,6 @@ export default {
   metaDarkGray: "rgba(29,29,29,1)",
   error: "rgba(195,0,20,1)",
   success: "rgba(40,193,49,1)",
+  appleRed: "rgba(230, 53, 43,1)",
+  lightergray: "#9E9FA5",
 };

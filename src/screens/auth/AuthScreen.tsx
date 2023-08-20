@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import React, { useContext } from "react";
 import { Card, Text, Button, Layout } from "@ui-kitten/components";
-import { blackLogo } from "../../images/ImageAssets";
+import { blackLogo, whiteLogo } from "../../images/ImageAssets";
 import Colors from "../../constants/Colors";
 import { useNavigation } from "@react-navigation/native";
 import { type StackNavigation } from "../../navigation/AppNavigator";
@@ -36,9 +36,9 @@ const AuthScreen: React.FC = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: Colors.lightGreen }]}>
+    <View style={[styles.container, { backgroundColor: Colors.primary }]}>
       <View style={styles.logoContainer}>
-        <Image style={styles.logo} source={blackLogo} />
+        <Image style={styles.logo} source={whiteLogo} />
       </View>
       <Layout
         style={[
@@ -113,8 +113,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
   },
   card: {
     // backgroundColor: "black",

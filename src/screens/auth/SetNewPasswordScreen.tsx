@@ -23,7 +23,7 @@ import {
   IconProps,
   useTheme,
 } from "@ui-kitten/components";
-import { blackLogo } from "../../images/ImageAssets";
+import { blackLogo, whiteLogo } from "../../images/ImageAssets";
 import Colors from "../../constants/Colors";
 import Feather from "@expo/vector-icons/Feather";
 import { useNavigation } from "@react-navigation/native";
@@ -116,11 +116,9 @@ const SetNewPasswordScreen: React.FC<SetNewPasswordScreenProps> = ({
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <Layout
-        style={[styles.container, { backgroundColor: Colors.lightGreen }]}
-      >
+      <Layout style={[styles.container, { backgroundColor: Colors.primary }]}>
         <View style={styles.logoContainer}>
-          <Image style={styles.logo} source={blackLogo} />
+          <Image style={styles.logo} source={whiteLogo} />
         </View>
         <View
           style={[
@@ -236,8 +234,8 @@ const styles = StyleSheet.create({
     paddingTop: 200,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
   },
   card: {
     flex: 1,

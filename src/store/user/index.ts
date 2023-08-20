@@ -30,6 +30,7 @@ export const loginUser = createAsyncThunk(
       email: string;
       password: string;
       registrationToken?: string;
+      productType?: string;
     },
     { rejectWithValue }
   ) => {
