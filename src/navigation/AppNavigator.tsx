@@ -25,6 +25,7 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
+import Entypo from "@expo/vector-icons/Entypo";
 import { useTheme } from "@ui-kitten/components";
 import {
   StackNavigationProp,
@@ -55,6 +56,7 @@ import ColorScheme from "../screens/ColorScheme";
 import SendFeedbackScreen from "../screens/SendFeedbackScreen";
 import AboutScreen from "../screens/about/AboutScreen";
 import Stopwatch from "../components/Stopwatch";
+import MultipleScreen from "../screens/MultipleScreen";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -210,7 +212,7 @@ const ActiveScreenStack = () => {
       navigationState={{ index, routes }}
       renderScene={SceneMap({
         first: ActiveScreen,
-        second: Stopwatch,
+        second: MultipleScreen,
       })}
       onIndexChange={setIndex}
       initialLayout={{ width: 400 }} // adjust according to your needs
@@ -261,7 +263,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
         tabBar={(props) => <GradientTabBar {...props} />}
         screenOptions={{
           headerShown: false,
-          tabBarShowLabel: true,
+          tabBarShowLabel: false,
           tabBarActiveTintColor: theme["text-basic-color"],
           tabBarInactiveTintColor: "gray",
           tabBarStyle: {
@@ -304,7 +306,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
             ),
           })}
         />
-        <Tab.Screen
+        {/* <Tab.Screen
           name="All"
           component={AllScreen}
           options={({ route }) => ({
@@ -324,7 +326,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
               </TouchableOpacity>
             ),
           })}
-        />
+        /> */}
         <Tab.Screen
           name="Add"
           component={AddScreen}
@@ -339,7 +341,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
                 }}
               >
                 <Feather
-                  name="plus"
+                  name="plus-square"
                   size={25}
                   color={focused ? theme["text-basic-color"] : "gray"}
                 />
@@ -347,7 +349,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
             ),
           })}
         />
-        <Tab.Screen
+        {/* <Tab.Screen
           name="History"
           component={HistoryScreen}
           options={({ route }) => ({
@@ -367,7 +369,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
               </TouchableOpacity>
             ),
           })}
-        />
+        /> */}
         <Tab.Screen
           name="Analytics"
           component={AnalyticsScreen}

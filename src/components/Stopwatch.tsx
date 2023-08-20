@@ -5,12 +5,16 @@ import { Circle, Svg } from "react-native-svg";
 import { Layout, useTheme } from "@ui-kitten/components";
 import Feather from "@expo/vector-icons/Feather";
 
-type props = {};
+type props = {
+  name: string;
+  goalTime?: any;
+  strokeColor?: string;
+};
 
-const Stopwatch: React.FC = () => {
+const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor }) => {
+  const [isPremiumUser, setIsPremiumUser] = useState<boolean>(true);
   const theme = useTheme();
   const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const goalTime = 10000;
   const [timerState, setTimerState] = useState<
     "stopped" | "running" | "paused"
   >("stopped");
@@ -79,7 +83,7 @@ const Stopwatch: React.FC = () => {
             cx="50"
             cy="50"
             r="48"
-            stroke={theme["ios-blue"]}
+            stroke={isPremiumUser ? strokeColor : theme["ios-blue"]}
             strokeWidth="4"
             fill="none"
             strokeDasharray="314"
@@ -174,7 +178,9 @@ const Stopwatch: React.FC = () => {
           )}
         </View>
         <View style={styles.name}>
-          <Text style={{ color: "white", fontSize: 14 }}>Reading</Text>
+          <Text style={{ color: theme["text-basic-color"], fontSize: 14 }}>
+            {name}
+          </Text>
         </View>
 
         <View style={styles.icons}>
@@ -223,7 +229,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    top: 70,
+    top: 80,
     right: 0,
     bottom: 0,
     left: 0,
@@ -249,12 +255,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     top: 0,
     right: 0,
-    bottom: 70,
+    bottom: 90,
     left: 0,
   },
   container: {
-    flex: 1,
-    backgroundColor: "black",
+    // flex: 1,
+    width: "100%",
   },
   digit: {
     fontSize: 20,
