@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Layout, useTheme } from "@ui-kitten/components";
+import React from "react";
 
 type LapProps = {
   laps: Array<{ time: number; name: string }>;

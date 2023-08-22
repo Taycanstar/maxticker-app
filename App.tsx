@@ -10,7 +10,7 @@ import { default as customLightTheme } from "./lightTheme.json";
 import React, { useState, useContext } from "react";
 
 export default function App() {
-  const [theme, setTheme] = useState<string>("light");
+  const [theme, setTheme] = useState<string>("dark");
   const toggleTheme = () => {
     const nextTheme = theme === "light" ? "dark" : "dark";
     setTheme(nextTheme);
@@ -28,6 +28,8 @@ export default function App() {
         }}
       >
         <Provider store={store}>
+          <StatusBar style={theme === "dark" ? "light" : "dark"} />
+
           <AppNavigator />
         </Provider>
       </ApplicationProvider>

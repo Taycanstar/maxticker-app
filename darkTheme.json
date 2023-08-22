@@ -60,11 +60,21 @@
   "success-btn-text": "#000",
   "input-placeholder-color": "rgba(150,150,150,1)",
   "ios-green": "rgba(48,209,88,1)",
+  "ios-yellow": "rgba(255,214,10,1)",
+  "ios-pink": "rgba(255, 55,95,1)",
   "ios-greenligh": "rgba(48,209,88,1,0.3)",
   "ios-blue": "rgba(10, 132, 255,1)",
   "ios-bluelight": "rgba(10,132, 255,0.3)",
   "ios-red": "rgba(255,69,58,1)",
   "ios-redlight": "rgba(255,69,58,0.3)",
   "ios-cyan": "rgba(100,210,255, 1)",
-  "ios-cyanligth": "rgba(100,255,1,0.3)"
+  "ios-cyanligth": "rgba(100,255,1,0.3)",
+  "ios-indigo": "rgba(94,92,230,1)",
+  "ios-orange": "rgba(255,159,10,1)",
+  "ios-mint": "rgba(64,200,224,1)",
+  "ios-purple": "rgba(191,90,242, 1)",
+  "box-bg": "rgba(29,29,29,1)",
+  "box-bg-back": "rgba(40,40,40,1)",
+  "popup-bg": "rgba(0,0,0,1)",
+  "pale-gray": "rgb(58,58,60)"
 }

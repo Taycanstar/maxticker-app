@@ -12,7 +12,7 @@ import VerifyScreen from "../screens/auth/VerifyScreen";
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import ConfirmOtpScreen from "../screens/auth/ConfirmOtpScreen";
 import SignupScreen from "../screens/auth/SignupScreen";
-import AddScreen from "../screens/ActiveScreen";
+import AddScreen from "../screens/AddScreen";
 import AllScreen from "../screens/AllScreen";
 import SetNewPasswordScreen from "../screens/auth/SetNewPasswordScreen";
 import { useNavigation } from "@react-navigation/native";
@@ -57,6 +57,8 @@ import SendFeedbackScreen from "../screens/SendFeedbackScreen";
 import AboutScreen from "../screens/about/AboutScreen";
 import Stopwatch from "../components/Stopwatch";
 import MultipleScreen from "../screens/MultipleScreen";
+import { StackCardInterpolationProps } from "@react-navigation/stack";
+import Add from "../components/Add";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -91,7 +93,9 @@ export type ScreenNames = [
   "Analytics",
   "History",
   "ConfirmOtp",
-  "SetNewPassword"
+  "SetNewPassword",
+  "Main",
+  "Modal"
 ];
 export type RootStackParamList = {
   Login?: undefined;
@@ -118,6 +122,8 @@ export type RootStackParamList = {
     email: string;
   };
   Add?: undefined;
+  Modal?: undefined;
+  Main?: undefined;
 };
 export type DetailsScreenRouteProp = RouteProp<RootStackParamList, "Details">;
 export type VerifyScreenRouteProp = RouteProp<RootStackParamList, "Verify">;
@@ -134,6 +140,59 @@ export type ConfirmOtpScreenRouteProp = RouteProp<
 export type StackNavigation = StackNavigationProp<RootStackParamList>;
 
 const Stack = createStackNavigator<RootStackParamList>();
+
+const customCardStyleInterpolator = ({
+  current,
+  layouts,
+}: StackCardInterpolationProps) => {
+  return {
+    cardStyle: {
+      transform: [
+        {
+          translateY: current.progress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [layouts.screen.height, 0],
+          }),
+        },
+      ],
+    },
+    overlayStyle: {
+      opacity: current.progress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 0], // Change the second value to 0
+      }),
+    },
+  };
+};
+
+function RootNavigator() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        // cardStyle: { backgroundColor: "transparent" },
+      }}
+    >
+      <Stack.Screen
+        name="Main"
+        component={MainTab}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Add"
+        component={Add}
+        options={{
+          headerShown: false,
+          presentation: "modal",
+          // cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS,
+          cardStyleInterpolator: customCardStyleInterpolator,
+        }}
+      />
+    </Stack.Navigator>
+  );
+}
 
 const AuthStack = () => {
   return (
@@ -198,6 +257,9 @@ const GradientTabBar = (props: any) => {
   );
 };
 
+const Clear = () => {
+  return <View style={{ backgroundColor: "transparent" }} />;
+};
 const ActiveScreenStack = () => {
   const [index, setIndex] = React.useState(0);
   const [routes] = React.useState([
@@ -244,18 +306,10 @@ const ActiveScreenStack = () => {
     />
   );
 };
+
 const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
   const theme = useTheme();
-
-  const backgroundColor =
-    theme["background-basic-color-1"] === "#000"
-      ? "rgba(0, 0, 0, 0.1)"
-      : "rgba(255, 255, 255, 0.1)";
-
-  const midBackgroundColor =
-    theme["background-basic-color-1"] === "#000"
-      ? "rgba(0, 0, 0, 0.05)"
-      : "rgba(255, 255, 255, 0.05)";
+  const isDarkTheme = theme["background-basic-color-1"] === "#000";
 
   return (
     <>
@@ -288,8 +342,33 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
         <Tab.Screen
           name="Active"
           component={ActiveScreenStack}
-          options={({ route }) => ({
-            // tabBarVisible: getTabBarVisibility(route),
+          options={({ route, navigation }) => ({
+            headerShown: true,
+            headerTitle: (props) => (
+              <Image
+                source={isDarkTheme ? whiteLogo : blackLogo}
+                style={{ width: 80, height: 80 }}
+                resizeMode="contain"
+              />
+            ),
+            headerLeft: () => (
+              <TouchableOpacity
+                style={{ marginLeft: 15 }}
+                onPress={() => navigation.openDrawer()}
+              >
+                <Feather
+                  name="menu"
+                  size={25}
+                  color={theme["text-basic-color"]}
+                />
+              </TouchableOpacity>
+            ),
+            headerStyle: {
+              backgroundColor: theme["background-basic-color-1"],
+              elevation: 0, // This removes the shadow for Android
+              borderBottomWidth: 0,
+              shadowOpacity: 0,
+            },
             tabBarIcon: ({ color, size, focused }) => (
               <TouchableOpacity
                 onPress={() => {
@@ -306,70 +385,29 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
             ),
           })}
         />
-        {/* <Tab.Screen
-          name="All"
-          component={AllScreen}
-          options={({ route }) => ({
-            // tabBarVisible: getTabBarVisibility(route),
-            tabBarIcon: ({ color, size, focused }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.navigate("All");
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-              >
-                <Feather
-                  name="list"
-                  size={25}
-                  color={focused ? theme["text-basic-color"] : "gray"}
-                />
-              </TouchableOpacity>
-            ),
-          })}
-        /> */}
+
         <Tab.Screen
-          name="Add"
-          component={AddScreen}
-          options={({ route }) => ({
-            // tabBarVisible: getTabBarVisibility(route),
+          name="AddPopup"
+          component={Clear} // Placeholder as the action is overridden
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              e.preventDefault(); // Prevent default action
+              navigation.navigate("Add");
+            },
+          })}
+          options={{
+            headerShown: false,
 
             tabBarIcon: ({ color, size, focused }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.navigate("Add");
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-              >
-                <Feather
-                  name="plus-square"
-                  size={25}
-                  color={focused ? theme["text-basic-color"] : "gray"}
-                />
-              </TouchableOpacity>
+              <Feather
+                name="plus-square"
+                size={25}
+                color={focused ? theme["text-basic-color"] : "gray"}
+              />
             ),
-          })}
+          }}
         />
-        {/* <Tab.Screen
-          name="History"
-          component={HistoryScreen}
-          options={({ route }) => ({
-            // tabBarVisible: getTabBarVisibility(route),
-            tabBarIcon: ({ color, size, focused }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.navigate("History");
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-              >
-                <Feather
-                  name="clipboard"
-                  size={25}
-                  color={focused ? theme["text-basic-color"] : "gray"}
-                />
-              </TouchableOpacity>
-            ),
-          })}
-        /> */}
+
         <Tab.Screen
           name="Analytics"
           component={AnalyticsScreen}
@@ -462,7 +500,7 @@ const MainStack = () => {
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
-        // headerShown: false,
+        headerShown: false,
         drawerStyle: {
           backgroundColor: theme["background-basic-color-1"],
           width: drawerWidth,
@@ -472,8 +510,9 @@ const MainStack = () => {
     >
       <Drawer.Screen
         name="TabBar"
-        component={MainTab}
+        component={RootNavigator}
         options={{
+          headerShown: false,
           headerTitle: (props) => (
             <Image
               source={isDarkTheme ? whiteLogo : blackLogo}

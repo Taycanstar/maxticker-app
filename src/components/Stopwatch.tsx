@@ -4,6 +4,7 @@ import { View, Text, Button, StyleSheet, TouchableOpacity } from "react-native";
 import { Circle, Svg } from "react-native-svg";
 import { Layout, useTheme } from "@ui-kitten/components";
 import Feather from "@expo/vector-icons/Feather";
+import Colors from "../constants/Colors";
 
 type props = {
   name: string;
@@ -178,7 +179,12 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor }) => {
           )}
         </View>
         <View style={styles.name}>
-          <Text style={{ color: theme["text-basic-color"], fontSize: 14 }}>
+          <Text
+            style={{
+              color: theme["text-basic-color"],
+              fontSize: 14,
+            }}
+          >
             {name}
           </Text>
         </View>
@@ -192,7 +198,6 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor }) => {
               onPress={handleLapOrReset}
             />
           </View>
-
           <View style={styles.iconGroup}>
             <Feather
               color={theme["text-basic-color"]}
@@ -203,6 +208,14 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor }) => {
                   prev === "running" ? "paused" : "running"
                 )
               }
+            />
+          </View>
+          <View style={styles.iconGroup}>
+            <Feather
+              color={theme["text-basic-color"]}
+              size={18}
+              name="edit"
+              onPress={handleLapOrReset}
             />
           </View>
         </View>
@@ -233,7 +246,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
   },
   iconGroup: {},
   timeContainer: {

@@ -17,7 +17,6 @@ import Laps from "../components/Laps";
 type props = {};
 
 const screenHeight = Dimensions.get("window").height;
-const marginValue = 0.01 * screenHeight;
 
 const MultipleScreen: React.FC<props> = () => {
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false);
