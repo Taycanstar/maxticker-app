@@ -4,11 +4,13 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
   Platform,
   Modal,
   Button,
   Dimensions,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView,
 } from "react-native";
 import React, { useState, useCallback } from "react";
 import Colors from "../constants/Colors";
@@ -42,6 +44,7 @@ const Add: React.FC = ({ navigation }: any) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [color, setColor] = useState<string>("Stroke color");
   const { navigate } = useNavigation<StackNavigation>();
+  const [isStrokeVisible, setIsStrokeVisible] = useState<boolean>(false);
 
   const showPicker = () => {
     setIsPickerShow(true);
@@ -63,16 +66,22 @@ const Add: React.FC = ({ navigation }: any) => {
     {
       label: "Blue",
       value: "blue",
+      color: theme["ios-blue"],
+      iconName: "circle",
       icon: () => <Feather color={theme["ios-blue"]} size={20} name="circle" />,
     },
     {
       label: "Red",
       value: "red",
+      color: theme["ios-red"],
+      iconName: "circle",
       icon: () => <Feather color={theme["ios-red"]} size={20} name="circle" />,
     },
     {
       label: "Yellow",
       value: "yellow",
+      color: theme["ios-yellow"],
+      iconName: "circle",
       icon: () => (
         <Feather color={theme["ios-yellow"]} size={20} name="circle" />
       ),
@@ -80,6 +89,8 @@ const Add: React.FC = ({ navigation }: any) => {
     {
       label: "Green",
       value: "green",
+      color: theme["ios-green"],
+      iconName: "circle",
       icon: () => (
         <Feather color={theme["ios-green"]} size={20} name="circle" />
       ),
@@ -87,6 +98,8 @@ const Add: React.FC = ({ navigation }: any) => {
     {
       label: "Orange",
       value: "orange",
+      color: theme["ios-orange"],
+      iconName: "circle",
       icon: () => (
         <Feather color={theme["ios-orange"]} size={20} name="circle" />
       ),
@@ -94,6 +107,8 @@ const Add: React.FC = ({ navigation }: any) => {
     {
       label: "Purple",
       value: "purple",
+      color: theme["ios-purple"],
+      iconName: "circle",
       icon: () => (
         <Feather color={theme["ios-purple"]} size={20} name="circle" />
       ),
@@ -116,192 +131,317 @@ const Add: React.FC = ({ navigation }: any) => {
     navigation.goBack();
   };
 
+  const onColorPress = (color: any) => {
+    setIsStrokeVisible(!isStrokeVisible);
+    setColor(color.label);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: theme["box-bg"], paddingTop: 54 }}>
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: theme["box-bg"],
-          },
-        ]}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <TouchableOpacity
-          style={{ position: "relative", zIndex: 10 }}
-          onPress={onCancelPress}
-        >
-          <Text
-            style={{
-              fontSize: 16,
-              color: theme["text-basic-color"],
-            }}
-          >
-            Cancel
-          </Text>
-        </TouchableOpacity>
-
-        <Text
-          style={[styles.centeredTitle, { color: theme["text-basic-color"] }]}
-        >
-          NewTask
-        </Text>
-      </View>
-      <View
-        style={[
-          styles.content,
-          { backgroundColor: theme["background-basic-color-1"] },
-        ]}
-      >
-        <CustomInput
-          placeholder="Name"
-          borderColor={theme["pale-gray"]}
-          onChange={(text) => setName(text)}
-          textColor={theme["text-basic-color"]}
-          placeholderColor={theme["input-placeholder-color"]}
-        />
-
-        <TouchableOpacity
-          onPress={() => setIsModalVisible(!isModalVisible)}
+        <ScrollView
           style={{
-            flexDirection: "row",
-            width: "100%",
-            minHeight: 48,
-            borderRadius: 10,
-            borderWidth: 1,
-            alignItems: "center",
-            justifyContent: "space-between",
+            flex: 1,
             backgroundColor: theme["background-basic-color-1"],
-            borderColor: theme["pale-gray"],
-            paddingVertical: 11,
-            paddingLeft: 16,
-            marginBottom: 10,
-            paddingRight: 10,
           }}
+          keyboardShouldPersistTaps="always" // This is the key
         >
-          <Text
-            style={{
-              color:
-                goal === "Goal"
-                  ? theme["input-placeholder-color"]
-                  : theme["text-basic-color"],
-
-              fontSize: 15,
-            }}
+          <View
+            style={[
+              styles.header,
+              {
+                backgroundColor: theme["box-bg"],
+              },
+            ]}
           >
-            {goal}
-          </Text>
-          {isModalVisible ? (
-            <Feather color={Colors.metagray2} size={20} name="chevron-up" />
-          ) : (
-            <Feather color={Colors.metagray2} size={20} name="chevron-down" />
-          )}
-        </TouchableOpacity>
-
-        <DropDownPicker
-          placeholder={color === "Stroke color" ? "Stroke color" : undefined}
-          value={color === "Stroke color" ? null : color}
-          open={colorOpen}
-          items={items}
-          setOpen={setColorOpen}
-          setValue={setColor}
-          setItems={setItems}
-          style={{
-            backgroundColor: theme["background-basic-color-1"],
-            borderColor: theme["pale-gray"],
-            marginBottom: 10,
-          }}
-          textStyle={{
-            fontSize: 15,
-            paddingVertical: 11,
-            paddingHorizontal: 6,
-            color:
-              color === "Stroke color"
-                ? theme["input-placeholder-color"]
-                : theme["text-basic-color"],
-          }}
-          listItemLabelStyle={{
-            color: theme["text-basic-color"],
-          }}
-          listItemContainerStyle={{
-            borderColor: theme["pale-gray"],
-          }}
-          dropDownContainerStyle={{
-            backgroundColor: theme["background-basic-color-1"],
-            borderColor: theme["pale-gray"],
-          }}
-          ArrowDownIconComponent={({ style }) => (
-            <Feather color={Colors.metagray2} size={20} name="chevron-down" />
-          )}
-          ArrowUpIconComponent={({ style }) => (
-            <Feather color={Colors.metagray2} size={20} name="chevron-up" />
-          )}
-          TickIconComponent={({ style }) => (
-            <Feather color={Colors.metagray2} size={20} name="check" />
-          )}
-        />
-      </View>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isModalVisible}
-        onRequestClose={() => {
-          setIsModalVisible(!isModalVisible);
-        }}
-      >
-        <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
-          <View style={styles.centeredView}>
-            <TouchableWithoutFeedback>
-              <View
+            <TouchableOpacity
+              style={{ position: "relative", zIndex: 10 }}
+              onPress={onCancelPress}
+            >
+              <Text
                 style={{
-                  justifyContent: "space-between",
-                  backgroundColor: theme["box-bg"],
-                  borderTopLeftRadius: 20,
-                  borderTopRightRadius: 20,
+                  fontSize: 16,
+                  color: theme["text-basic-color"],
                 }}
               >
-                <View
-                  style={[
-                    styles.modalView,
-                    { backgroundColor: theme["box-bg"] },
-                  ]}
-                >
-                  <Text
+                Cancel
+              </Text>
+            </TouchableOpacity>
+
+            <Text
+              style={[
+                styles.centeredTitle,
+                { color: theme["text-basic-color"] },
+              ]}
+            >
+              NewTask
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.content,
+              { backgroundColor: theme["background-basic-color-1"] },
+            ]}
+          >
+            <CustomInput
+              placeholder="Name"
+              borderColor={theme["pale-gray"]}
+              onChange={(text) => setName(text)}
+              textColor={theme["text-basic-color"]}
+              placeholderColor={theme["input-placeholder-color"]}
+              autoFocus={true}
+            />
+
+            <TouchableOpacity
+              onPress={() => setIsModalVisible(!isModalVisible)}
+              style={{
+                flexDirection: "row",
+                width: "100%",
+                minHeight: 48,
+                borderRadius: 10,
+                borderWidth: 1,
+                alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: theme["background-basic-color-1"],
+                borderColor: theme["pale-gray"],
+                paddingVertical: 11,
+                paddingLeft: 16,
+                marginBottom: 10,
+                paddingRight: 10,
+              }}
+            >
+              <Text
+                style={{
+                  color:
+                    goal === "Goal"
+                      ? theme["input-placeholder-color"]
+                      : theme["text-basic-color"],
+
+                  fontSize: 15,
+                }}
+              >
+                {goal}
+              </Text>
+              {isModalVisible ? (
+                <Feather color={Colors.metagray2} size={20} name="chevron-up" />
+              ) : (
+                <Feather
+                  color={Colors.metagray2}
+                  size={20}
+                  name="chevron-down"
+                />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setIsStrokeVisible(!isStrokeVisible)}
+              style={{
+                flexDirection: "row",
+                width: "100%",
+                minHeight: 48,
+                borderRadius: 10,
+                borderWidth: 1,
+                alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: theme["background-basic-color-1"],
+                borderColor: theme["pale-gray"],
+                paddingVertical: 11,
+                paddingLeft: 16,
+                marginBottom: 10,
+                paddingRight: 10,
+              }}
+            >
+              <Text
+                style={{
+                  color:
+                    color === "Stroke color"
+                      ? theme["input-placeholder-color"]
+                      : theme["text-basic-color"],
+
+                  fontSize: 15,
+                }}
+              >
+                {color}
+              </Text>
+              {isStrokeVisible ? (
+                <Feather color={Colors.metagray2} size={20} name="chevron-up" />
+              ) : (
+                <Feather
+                  color={Colors.metagray2}
+                  size={20}
+                  name="chevron-down"
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isModalVisible}
+            onRequestClose={() => {
+              setIsModalVisible(!isModalVisible);
+            }}
+          >
+            <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
+              <View style={styles.centeredView}>
+                <TouchableWithoutFeedback>
+                  <View
                     style={{
-                      color: theme["text-basic-color"],
-                      fontSize: 22,
-                      fontWeight: "600",
-                      // textAlign: "center",
+                      justifyContent: "space-between",
+                      backgroundColor: theme["box-bg"],
+                      borderTopLeftRadius: 20,
+                      borderTopRightRadius: 20,
                     }}
                   >
-                    Goal
-                  </Text>
-                  <DateTimePicker
-                    textColor={theme["text-basic-color"]}
-                    value={selectedTime}
-                    mode={"time"}
-                    is24Hour={false}
-                    locale="en_GB"
-                    display={Platform.OS === "android" ? "default" : "spinner"}
-                    onChange={onChange}
-                  />
-                </View>
-                <View style={{ paddingBottom: 30, marginHorizontal: 15 }}>
-                  <CustomButton
-                    text="Continue"
-                    textColor="white"
-                    bgColor={theme["ios-blue"]}
-                    borderColor={theme["pale-gray"]}
-                    onPress={onContinuePress}
-                    fontWeight={"600"}
-                    fontSize={18}
-                  />
-                </View>
+                    <View
+                      style={[
+                        styles.modalView,
+                        { backgroundColor: theme["box-bg"] },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: theme["text-basic-color"],
+                          fontSize: 22,
+                          fontWeight: "600",
+                          // textAlign: "center",
+                        }}
+                      >
+                        Goal
+                      </Text>
+                      <DateTimePicker
+                        textColor={theme["text-basic-color"]}
+                        value={selectedTime}
+                        mode={"time"}
+                        is24Hour={false}
+                        locale="en_GB"
+                        display={
+                          Platform.OS === "android" ? "default" : "spinner"
+                        }
+                        onChange={onChange}
+                      />
+                    </View>
+                    <View style={{ paddingBottom: 30, marginHorizontal: 15 }}>
+                      <CustomButton
+                        text="Continue"
+                        textColor="white"
+                        bgColor={theme["ios-blue"]}
+                        borderColor={theme["pale-gray"]}
+                        onPress={onContinuePress}
+                        fontWeight={"600"}
+                        fontSize={18}
+                      />
+                    </View>
+                  </View>
+                </TouchableWithoutFeedback>
               </View>
             </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+          </Modal>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isStrokeVisible}
+            onRequestClose={() => {
+              setIsModalVisible(!isStrokeVisible);
+            }}
+          >
+            <TouchableWithoutFeedback onPress={() => setIsStrokeVisible(false)}>
+              <View style={styles.centeredView}>
+                <TouchableWithoutFeedback>
+                  <View
+                    style={{
+                      justifyContent: "space-between",
+                      backgroundColor: theme["box-bg"],
+                      borderTopLeftRadius: 20,
+                      borderTopRightRadius: 20,
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.modalView2,
+                        { backgroundColor: theme["box-bg"] },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: theme["text-basic-color"],
+                          fontSize: 22,
+                          fontWeight: "600",
+                          // textAlign: "center",
+                        }}
+                      >
+                        Stroke color
+                      </Text>
+                      {items.map((color, index) => {
+                        return (
+                          <TouchableOpacity
+                            onPress={() => onColorPress(color)}
+                            key={index}
+                            style={{
+                              flexDirection: "row",
+                              marginTop: 30,
+                              alignItems: "center",
+                            }}
+                          >
+                            <Feather
+                              color={color.color}
+                              size={20}
+                              name="circle"
+                            />
+                            <Text
+                              style={{
+                                color: theme["text-basic-color"],
+                                fontSize: 18,
+                                fontWeight: "400",
+                                marginLeft: 20,
+                              }}
+                            >
+                              {color.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        </ScrollView>
+        {/* <View style={{ flex: 1, justifyContent: "flex-end", marginBottom: 10 }}> */}
+        <View
+          style={{
+            width: "100%",
+            justifyContent: "flex-end",
+            alignItems: "flex-end",
+
+            paddingHorizontal: 10,
+            paddingVertical: 20,
+            backgroundColor: theme["background-basic-color-1"],
+          }}
+        >
+          <TouchableOpacity
+            disabled={name === "" ? true : false}
+            style={{ alignSelf: "flex-end" }}
+          >
+            <Text
+              style={{
+                color: name === "" ? theme["ios-bluelight"] : theme["ios-blue"],
+                fontWeight: "700",
+                fontSize: 16,
+              }}
+            >
+              Add
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {/* </View> */}
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -350,6 +490,24 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
+
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalView2: {
+    width: "100%", // Full width
+    height: Dimensions.get("window").height * 0.6, // 65% height
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 25,
+    paddingVertical: 35,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,

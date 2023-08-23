@@ -64,7 +64,7 @@
   "ios-pink": "rgba(255, 55,95,1)",
   "ios-greenligh": "rgba(48,209,88,1,0.3)",
   "ios-blue": "rgba(10, 132, 255,1)",
-  "ios-bluelight": "rgba(10,132, 255,0.3)",
+  "ios-bluelight": "rgba(10,132, 255,0.6)",
   "ios-red": "rgba(255,69,58,1)",
   "ios-redlight": "rgba(255,69,58,0.3)",
   "ios-cyan": "rgba(100,210,255, 1)",

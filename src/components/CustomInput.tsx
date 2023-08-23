@@ -20,6 +20,7 @@ type Props = {
   inputMode?: any;
   onBlur?: () => void;
   onFocus?: () => void;
+  autoFocus?: boolean;
 };
 
 const CustomInput: React.FC<Props> = ({
@@ -35,6 +36,7 @@ const CustomInput: React.FC<Props> = ({
   placeholderColor,
   onBlur,
   onFocus,
+  autoFocus,
 }) => {
   return (
     <View
@@ -68,6 +70,7 @@ const CustomInput: React.FC<Props> = ({
         inputMode={inputMode}
         onBlur={onBlur}
         onFocus={onFocus}
+        autoFocus={autoFocus}
       />
     </View>
   );

@@ -14,4 +14,5 @@ export default {
   appleRed: "rgba(230, 53, 43,1)",
   lightergray: "#9E9FA5",
   palegray: "rgb(209,209,214)",
+  metablue: "rgb(14,125,240)",
 };
