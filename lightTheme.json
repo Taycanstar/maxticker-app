@@ -78,5 +78,6 @@
   "box-bg": "rgba(255,255,255,1)",
   "box-bg-back": "rgba(255,255,255,1)",
   "popup-bg": "rgba(0,0,0,1)",
-  "pale-gray": "rgb(209,209,214)"
+  "pale-gray": "rgb(209,209,214)",
+  "border-gray": "rgba(225,225,225,1)"
 }

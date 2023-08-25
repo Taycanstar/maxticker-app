@@ -14,6 +14,9 @@ interface UserState {
   status: "idle" | "loading" | "loggedIn" | "error";
   error?: string | null | any;
   token: string | null;
+  tokenExpiry: number | null;
+  refreshToken: string | null;
+  accessToken: string | null;
 }
 
 const initialState: UserState = {
@@ -21,8 +24,51 @@ const initialState: UserState = {
   status: "idle",
   error: null,
   token: null,
+  tokenExpiry: null,
+  refreshToken: null,
+  accessToken: null,
 };
 
+export const checkTokenExpirationMiddleware =
+  (store: any) => (next: any) => (action: any) => {
+    // If the action being dispatched is not our refreshTokenAction (to avoid infinite loop)
+    if (action.type !== refreshTokenAction.fulfilled.type) {
+      const tokenExpiry = store.getState().user.tokenExpiry;
+      const currentTime = Date.now().valueOf() / 1000; // Convert to seconds
+
+      if (tokenExpiry && currentTime > tokenExpiry) {
+        // If the token has expired, dispatch the refreshTokenAction
+        store.dispatch(refreshTokenAction());
+      }
+    }
+
+    return next(action); // Always call next(action) at the end
+  };
+
+// export const loginUser = createAsyncThunk(
+//   "user/login",
+//   async (
+//     userData: {
+//       email: string;
+//       password: string;
+//       registrationToken?: string;
+//       productType?: string;
+//     },
+//     { rejectWithValue }
+//   ) => {
+//     try {
+//       const response = await api.post(`/u/login`, userData);
+
+//       await AsyncStorage.setItem("token", response.data.token); // Save the token to AsyncStorage
+//       return response.data;
+//     } catch (error: any) {
+//       console.log(error);
+//       return rejectWithValue(
+//         error.response ? error.response.data : error.message
+//       );
+//     }
+//   }
+// );
 export const loginUser = createAsyncThunk(
   "user/login",
   async (
@@ -37,7 +83,13 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await api.post(`/u/login`, userData);
 
-      await AsyncStorage.setItem("token", response.data.token); // Save the token to AsyncStorage
+      // Save the tokens to AsyncStorage
+      await AsyncStorage.setItem("token", response.data.token);
+      await AsyncStorage.setItem("refreshToken", response.data.refreshToken);
+
+      // Optionally, if the backend returns the token expiry time or if you can calculate it:
+      // await AsyncStorage.setItem("tokenExpiry", response.data.tokenExpiry.toString());
+
       return response.data;
     } catch (error: any) {
       console.log(error);
@@ -72,6 +124,25 @@ export const signup = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       console.log(error);
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
+export const refreshTokenAction = createAsyncThunk(
+  "user/refreshToken",
+  async (_, { getState, rejectWithValue }) => {
+    const refreshToken = (getState() as RootState).user.refreshToken;
+    if (!refreshToken) {
+      return rejectWithValue("No refresh token found");
+    }
+
+    try {
+      const response = await api.post(`/refresh-token`, { refreshToken });
+      return response.data;
+    } catch (error: any) {
       return rejectWithValue(
         error.response ? error.response.data : error.message
       );
@@ -358,12 +429,12 @@ const userSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.status = "loading";
       })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.status = "loggedIn";
-        state.data = action.payload;
-        state.error = null;
-        state.token = action.payload.token;
-      })
+      // .addCase(loginUser.fulfilled, (state, action) => {
+      //   state.status = "loggedIn";
+      //   state.data = action.payload;
+      //   state.error = null;
+      //   state.token = action.payload.token;
+      // })
       .addCase(signup.rejected, (state, action) => {
         state.status = "error";
         state.error = action.payload;
@@ -371,22 +442,46 @@ const userSlice = createSlice({
       .addCase(signup.pending, (state) => {
         state.status = "loading";
       })
+      // .addCase(signup.fulfilled, (state, action) => {
+      //   state.status = "loggedIn";
+      //   state.data = action.payload;
+      //   state.error = null;
+      //   state.token = action.payload.token;
+      // })
       .addCase(signup.fulfilled, (state, action) => {
         state.status = "loggedIn";
         state.data = action.payload;
         state.error = null;
         state.token = action.payload.token;
+        state.refreshToken = action.payload.refreshToken; // Add this line
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = "error";
         state.error = action.payload;
       })
 
+      // .addCase(logoutUser.fulfilled, (state) => {
+      //   state.status = "idle";
+      //   state.data = null;
+      //   state.error = null;
+      // })
       .addCase(logoutUser.fulfilled, (state) => {
         state.status = "idle";
         state.data = null;
         state.error = null;
+        state.token = null; // Clear the access token
+        state.refreshToken = null; // Clear the refresh token
       })
+
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.status = "loggedIn";
+        state.data = action.payload;
+        state.error = null;
+        state.token = action.payload.token;
+        state.refreshToken = action.payload.refreshToken; // Add this line
+        state.tokenExpiry = action.payload.tokenExpiry; // Add this line if you have tokenExpiry
+      })
+
       .addCase(fetchUserData.pending, (state) => {
         state.status = "loading";
       })
@@ -526,6 +621,9 @@ const userSlice = createSlice({
         console.log(action.payload, "<= Rejected error");
         state.status = "error";
         state.error = action.payload;
+      })
+      .addCase(refreshTokenAction.fulfilled, (state, action) => {
+        state.accessToken = action.payload.accessToken;
       });
   },
 });

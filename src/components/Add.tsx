@@ -12,7 +12,7 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
 } from "react-native";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useContext, useEffect } from "react";
 import Colors from "../constants/Colors";
 import { useTheme } from "@ui-kitten/components";
 import { blackLogo, whiteLogo } from "../images/ImageAssets";
@@ -25,6 +25,8 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import CustomButton from "./CustomButton";
 import { useNavigation } from "@react-navigation/native";
 import { type StackNavigation } from "../navigation/AppNavigator";
+import { TaskContext } from "../contexts/TaskContext";
+import uuid from "react-native-uuid";
 
 type Props = {};
 
@@ -34,17 +36,28 @@ interface Color {
 }
 
 const Add: React.FC = ({ navigation }: any) => {
+  const initialTime = new Date();
+  initialTime.setHours(0);
+  initialTime.setMinutes(0);
   const [name, setName] = useState<string>("");
   const [goal, setGoal] = useState<string>("Goal");
+  const [goalTime, setGoalTime] = useState<number>(0);
   const [colorOpen, setColorOpen] = useState<boolean>(false);
   const [goalOpen, setGoalOpen] = useState<boolean>(false);
   const [isPlusUser, setIsPlusUser] = useState<boolean>(true);
   const [isPickerShow, setIsPickerShow] = useState<boolean>(false);
-  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState(initialTime);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [color, setColor] = useState<string>("Stroke color");
   const { navigate } = useNavigation<StackNavigation>();
   const [isStrokeVisible, setIsStrokeVisible] = useState<boolean>(false);
+  const context = useContext(TaskContext);
+
+  if (!context) {
+    throw new Error("AddScreen must be used within a TaskProvider");
+  }
+
+  const { addTask } = context;
 
   const showPicker = () => {
     setIsPickerShow(true);
@@ -54,7 +67,12 @@ const Add: React.FC = ({ navigation }: any) => {
     if (value) {
       setSelectedTime(value);
     }
-    // Note: You no longer set the goal here since you want to set it once the continue button is pressed
+    const hours = value.getHours();
+    const minutes = value.getMinutes();
+
+    // Convert hours and minutes to seconds
+    const totalSeconds = convertToMilliseconds(hours, minutes);
+    setGoalTime(totalSeconds);
   };
 
   const onColorOpen = useCallback(() => {
@@ -134,6 +152,32 @@ const Add: React.FC = ({ navigation }: any) => {
   const onColorPress = (color: any) => {
     setIsStrokeVisible(!isStrokeVisible);
     setColor(color.label);
+  };
+
+  const handleAddTask = async () => {
+    const newTask = {
+      _id: uuid.v4(), // You'll need to define this function or use another method to generate a unique ID for each task
+      name: name, // Assuming 'name' is a state variable in your component
+      goal: goalTime,
+      color: color,
+      start_time: new Date(),
+      total_duration: 0, // Adjust based on your logic
+      laps: [],
+      history: [],
+    };
+    try {
+      await addTask(newTask);
+      console.log("success");
+      setTimeout(() => {
+        navigate("Active");
+      }, 700);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const convertToMilliseconds = (hours: number, minutes: number): number => {
+    return (hours * 60 * 60 + minutes * 60) * 1000;
   };
 
   return (
@@ -347,7 +391,7 @@ const Add: React.FC = ({ navigation }: any) => {
             transparent={true}
             visible={isStrokeVisible}
             onRequestClose={() => {
-              setIsModalVisible(!isStrokeVisible);
+              setIsStrokeVisible(!isStrokeVisible);
             }}
           >
             <TouchableWithoutFeedback onPress={() => setIsStrokeVisible(false)}>
@@ -428,6 +472,7 @@ const Add: React.FC = ({ navigation }: any) => {
           <TouchableOpacity
             disabled={name === "" ? true : false}
             style={{ alignSelf: "flex-end" }}
+            onPress={handleAddTask}
           >
             <Text
               style={{

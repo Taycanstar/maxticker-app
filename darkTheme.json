@@ -76,5 +76,6 @@
   "box-bg": "rgba(29,29,29,1)",
   "box-bg-back": "rgba(40,40,40,1)",
   "popup-bg": "rgba(0,0,0,1)",
-  "pale-gray": "rgb(58,58,60)"
+  "pale-gray": "rgb(58,58,60)",
+  "border-gray": "#4A4443"
 }
