@@ -140,12 +140,12 @@ const AddScreen: React.FC = () => {
                       color: theme["text-basic-color"],
                     }}
                   >
-                    {currentTask?.name}
+                    {currentTask?.name}{" "}
                   </Text>
                   <Feather
                     color={theme["text-basic-color"]}
                     size={25}
-                    name="chevron-down"
+                    name={isModalVisible ? "chevron-up" : "chevron-down"}
                   />
                 </TouchableOpacity>
               </View>
@@ -426,38 +426,70 @@ const AddScreen: React.FC = () => {
                     Array.isArray(tasks) &&
                     tasks.map((task, index) => {
                       return (
-                        <TouchableOpacity
-                          onPress={() => {
-                            setCurrentTask(task); // Set the clicked task as the current task
-                            setIsModalVisible(false); // Close the modal
-                          }}
+                        <View
                           key={index}
                           style={{
                             flexDirection: "row",
-                            // marginTop: 30,
                             alignItems: "center",
-                            // borderBottomWidth: 1,
-                            paddingVertical: 18,
-                            marginHorizontal: 20,
+                            justifyContent: "space-between",
+                            width: "100%",
+                            paddingLeft: 20,
                             marginBottom: 10,
-                            borderRadius: 10,
-                            backgroundColor: Colors.metagray,
-                            // borderBottomColor: theme["border-gray"],
+                            // borderRadius: 10,
                           }}
                         >
-                          {/* <Feather color={color.color} size={20} name="circle" /> */}
-                          <Text
+                          <TouchableOpacity
+                            onPress={() => {
+                              setCurrentTask(task); // Set the clicked task as the current task
+                              setIsModalVisible(false); // Close the modal
+                            }}
                             style={{
-                              color: theme["text-basic-color"],
-                              fontSize: 18,
-                              fontWeight: "400",
-                              paddingHorizontal: 15,
-                              // marginLeft: 20,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              width: "85%",
+                              paddingVertical: 10,
+                              // backgroundColor: "red",
                             }}
                           >
-                            {task.name}
-                          </Text>
-                        </TouchableOpacity>
+                            <Feather
+                              color={
+                                task.color ? task.color : theme["ios-blue"]
+                              }
+                              size={20}
+                              name="circle"
+                            />
+                            <Text
+                              style={{
+                                color: theme["text-basic-color"],
+                                fontSize: 18,
+                                fontWeight: "400",
+                                // paddingHorizontal: 15,
+                                marginLeft: 15,
+                              }}
+                            >
+                              {task.name}
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={{
+                              alignItems: "center",
+                              borderRadius: 100,
+                              // paddingHorizontal: 5,
+                              marginRight: 15,
+                              width: "10%",
+                              height: 35,
+                              // backgroundColor: "green",
+
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Feather
+                              color={Colors.metagray}
+                              size={20}
+                              name="more-horizontal"
+                            />
+                          </TouchableOpacity>
+                        </View>
                       );
                     })}
                 </View>

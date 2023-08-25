@@ -12,7 +12,7 @@ import { TaskProvider } from "./src/contexts/TaskContext";
 import { refreshTokenAction } from "./src/store/user";
 
 export default function App() {
-  const [theme, setTheme] = useState<string>("light");
+  const [theme, setTheme] = useState<string>("dark");
   const toggleTheme = () => {
     const nextTheme = theme === "light" ? "dark" : "dark";
     setTheme(nextTheme);
