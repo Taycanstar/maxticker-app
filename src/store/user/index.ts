@@ -16,7 +16,7 @@ interface UserState {
   token: string | null;
   tokenExpiry: number | null;
   refreshToken: string | null;
-  accessToken: string | null;
+  // token: string | null;
 }
 
 const initialState: UserState = {
@@ -26,7 +26,7 @@ const initialState: UserState = {
   token: null,
   tokenExpiry: null,
   refreshToken: null,
-  accessToken: null,
+  // token: null,
 };
 
 export const checkTokenExpirationMiddleware =
@@ -45,30 +45,6 @@ export const checkTokenExpirationMiddleware =
     return next(action); // Always call next(action) at the end
   };
 
-// export const loginUser = createAsyncThunk(
-//   "user/login",
-//   async (
-//     userData: {
-//       email: string;
-//       password: string;
-//       registrationToken?: string;
-//       productType?: string;
-//     },
-//     { rejectWithValue }
-//   ) => {
-//     try {
-//       const response = await api.post(`/u/login`, userData);
-
-//       await AsyncStorage.setItem("token", response.data.token); // Save the token to AsyncStorage
-//       return response.data;
-//     } catch (error: any) {
-//       console.log(error);
-//       return rejectWithValue(
-//         error.response ? error.response.data : error.message
-//       );
-//     }
-//   }
-// );
 export const loginUser = createAsyncThunk(
   "user/login",
   async (
@@ -121,6 +97,7 @@ export const signup = createAsyncThunk(
 
       // Save the token to AsyncStorage
       await AsyncStorage.setItem("token", response.data.token);
+      await AsyncStorage.setItem("refreshToken", response.data.refreshToken);
       return response.data;
     } catch (error: any) {
       console.log(error);
@@ -141,6 +118,7 @@ export const refreshTokenAction = createAsyncThunk(
 
     try {
       const response = await api.post(`/refresh-token`, { refreshToken });
+      await AsyncStorage.setItem("token", response.data.token);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -167,11 +145,10 @@ export const emailExists = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk("user/logout", async () => {
   try {
-    await AsyncStorage.removeItem("token"); // Remove the token from AsyncStorage
-    // We return a resolved promise because there's no actual API request here
+    await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("refreshToken");
     return Promise.resolve();
   } catch (error) {
-    // There's no API request, so we don't have a response to rejectWithValue
     throw error;
   }
 });
@@ -469,8 +446,8 @@ const userSlice = createSlice({
         state.status = "idle";
         state.data = null;
         state.error = null;
-        state.token = null; // Clear the access token
-        state.refreshToken = null; // Clear the refresh token
+        state.token = null;
+        state.refreshToken = null;
       })
 
       .addCase(loginUser.fulfilled, (state, action) => {
@@ -623,7 +600,14 @@ const userSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(refreshTokenAction.fulfilled, (state, action) => {
-        state.accessToken = action.payload.accessToken;
+        state.token = action.payload.token;
+      })
+      .addCase(refreshTokenAction.rejected, (state) => {
+        state.status = "idle";
+        state.data = null;
+        state.error = null;
+        state.token = null;
+        state.refreshToken = null;
       });
   },
 });
