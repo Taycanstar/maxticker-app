@@ -1,25 +1,44 @@
-import axios from "axios";
+// import axios from "axios";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// const LOCAL = "http://localhost:8000";
+
+// const api = axios.create({
+//   baseURL: `${LOCAL}`,
+// });
+
+// api.interceptors.request.use(async (config) => {
+//   const token = await AsyncStorage.getItem("token");
+//   if (token) {
+//     config.headers.Authorization = `Bearer ${token}`;
+//   }
+//   return config;
+// });
+
+// export default api;
+// api.ts
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { store } from "../store"; // Import your Redux store
-import { refreshTokenAction } from "../store/user"; // Import your refreshTokenAction
 
 const LOCAL = "http://localhost:8000";
+const api = axios.create({ baseURL: `${LOCAL}` });
 
-const api = axios.create({
-  baseURL: `${LOCAL}`,
-});
+type TokenExpiredCallback = () => void;
+let onTokenExpiredCallback: TokenExpiredCallback | undefined;
 
-api.interceptors.request.use(async (config) => {
+api.interceptors.request.use(async (config: AxiosRequestConfig) => {
   const token = await AsyncStorage.getItem("token");
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers = {
+      ...config.headers,
+      Authorization: `Bearer ${token}`,
+    };
   }
-  return config;
+  return config as any;
 });
 
-// Response interceptor for handling token expiration
 api.interceptors.response.use(
-  (response) => response,
+  (response: AxiosResponse) => response,
   async (error) => {
     const originalRequest = error.config;
     if (
@@ -27,14 +46,18 @@ api.interceptors.response.use(
       error.response.data.message === "jwt expired" &&
       !originalRequest._retry
     ) {
-      originalRequest._retry = true; // Mark this request as retried
-      await store.dispatch(refreshTokenAction());
-      const newToken = await AsyncStorage.getItem("token");
-      originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-      return api(originalRequest);
+      originalRequest._retry = true;
+      if (onTokenExpiredCallback) {
+        onTokenExpiredCallback();
+      }
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   }
 );
+
+export const setOnTokenExpiredCallback = (callback: TokenExpiredCallback) => {
+  onTokenExpiredCallback = callback;
+};
 
 export default api;
