@@ -24,31 +24,38 @@ import EvilIcons from "@expo/vector-icons/EvilIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import CustomButton from "./CustomButton";
 import { useNavigation } from "@react-navigation/native";
-import { type StackNavigation } from "../navigation/AppNavigator";
-import { TaskContext } from "../contexts/TaskContext";
+import {
+  type StackNavigation,
+  EditRouteProp,
+} from "../navigation/AppNavigator";
+import { Task, TaskContext } from "../contexts/TaskContext";
 import uuid from "react-native-uuid";
 
-type Props = {};
+type EditProps = {
+  route: EditRouteProp;
+};
 
 interface Color {
   name: string;
   color: string;
 }
 
-const Add: React.FC = ({ navigation }: any) => {
+const Edit: React.FC<EditProps> = ({ navigation, route }: any) => {
   const initialTime = new Date();
   initialTime.setHours(0);
   initialTime.setMinutes(0);
-  const [name, setName] = useState<string>("");
-  const [goal, setGoal] = useState<string>("Goal");
-  const [goalTime, setGoalTime] = useState<number>(0);
+  const { taskId } = route.params;
+  const [name, setName] = useState<string>(route.params.name);
+  const [goalTime, setGoalTime] = useState<number>(route.params.goal);
   const [colorOpen, setColorOpen] = useState<boolean>(false);
   const [goalOpen, setGoalOpen] = useState<boolean>(false);
   const [isPlusUser, setIsPlusUser] = useState<boolean>(true);
   const [isPickerShow, setIsPickerShow] = useState<boolean>(false);
   const [selectedTime, setSelectedTime] = useState(initialTime);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [color, setColor] = useState<string>("Stroke color");
+  const [color, setColor] = useState<string>(
+    route.params.color ? route.params.color : "Stroke color"
+  );
   const { navigate } = useNavigation<StackNavigation>();
   const [isStrokeVisible, setIsStrokeVisible] = useState<boolean>(false);
   const context = useContext(TaskContext);
@@ -57,7 +64,7 @@ const Add: React.FC = ({ navigation }: any) => {
     throw new Error("AddScreen must be used within a TaskProvider");
   }
 
-  const { addTask } = context;
+  const { addTask, updateTask } = context;
 
   const showPicker = () => {
     setIsPickerShow(true);
@@ -132,12 +139,29 @@ const Add: React.FC = ({ navigation }: any) => {
       ),
     },
   ]);
+  const formatSelectedMs = (milliseconds: number): string => {
+    let totalSeconds = milliseconds / 1000;
+    let hours = Math.floor(totalSeconds / 3600);
+    let minutes = Math.floor((totalSeconds - hours * 3600) / 60);
+
+    if (hours === 0) {
+      return `${minutes}min`;
+    } else {
+      return `${hours}h ${minutes}min`;
+    }
+  };
+
+  const [goal, setGoal] = useState<string>(formatSelectedMs(route.params.goal));
 
   const formatSelectedTime = (date: Date): string => {
     let hours = date.getHours();
     let minutes = date.getMinutes();
 
-    return `${hours}h ${minutes}min`;
+    if (hours === 0) {
+      return `${minutes}min`;
+    } else {
+      return `${hours}h ${minutes}min`;
+    }
   };
 
   const onContinuePress = () => {
@@ -155,15 +179,14 @@ const Add: React.FC = ({ navigation }: any) => {
   };
 
   const handleAddTask = async () => {
-    const newTask = {
-      _id: uuid.v4(), // You'll need to define this function or use another method to generate a unique ID for each task
-      name: name, // Assuming 'name' is a state variable in your component
+    const newTask: Task = {
+      name: name,
       goal: goalTime,
       color: color,
-      sessions: [],
+      _id: taskId,
     };
     try {
-      await addTask(newTask);
+      await updateTask(newTask);
       console.log("success");
       setTimeout(() => {
         navigate("Active");
@@ -218,7 +241,7 @@ const Add: React.FC = ({ navigation }: any) => {
                 { color: theme["text-basic-color"] },
               ]}
             >
-              NewTask
+              Edit
             </Text>
           </View>
 
@@ -229,7 +252,8 @@ const Add: React.FC = ({ navigation }: any) => {
             ]}
           >
             <CustomInput
-              placeholder="Name"
+              // placeholder="Name"
+              value={name}
               borderColor={theme["pale-gray"]}
               onChange={(text) => setName(text)}
               textColor={theme["text-basic-color"]}
@@ -454,7 +478,7 @@ const Add: React.FC = ({ navigation }: any) => {
             </TouchableWithoutFeedback>
           </Modal>
         </ScrollView>
-
+        {/* <View style={{ flex: 1, justifyContent: "flex-end", marginBottom: 10 }}> */}
         <View
           style={{
             width: "100%",
@@ -478,16 +502,17 @@ const Add: React.FC = ({ navigation }: any) => {
                 fontSize: 16,
               }}
             >
-              Add
+              Save
             </Text>
           </TouchableOpacity>
         </View>
+        {/* </View> */}
       </KeyboardAvoidingView>
     </View>
   );
 };
 
-export default Add;
+export default Edit;
 
 const styles = StyleSheet.create({
   container: {

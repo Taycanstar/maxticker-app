@@ -80,5 +80,9 @@
   "popup-bg": "rgba(0,0,0,1)",
   "pale-gray": "rgb(209,209,214)",
   "border-gray": "rgba(225,225,225,1)",
-  "button-pop-bg": "rgba(235,235,235,1)"
+  "button-pop-bg": "rgba(235,235,235,1)",
+  "meta-red": "rgb(255,0,39)",
+  "input-bg": "rgb(242,242,242)",
+  "card-bg": "#fff",
+  "btn-bg": "rgb(242,242,242)"
 }

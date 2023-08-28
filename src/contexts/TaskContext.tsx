@@ -6,13 +6,24 @@ export interface Task {
   _id: any;
   name: string;
   goal: number;
-  start_time: Date;
   color: string;
-  total_duration: number;
-  status?: string;
-  laps: any[];
-  history: any[];
+  sessions?: any[];
 }
+
+interface SessionData {
+  startTime: Date;
+  totalDuration: number;
+  status: string;
+  laps: { time: number; name: string }[];
+  history: any[];
+  breaks: number;
+  timeSpentOnBreaks: number;
+}
+
+type EndSessionFunction = (
+  taskId: string,
+  sessionData: SessionData
+) => Promise<void>;
 
 export interface TaskContextType {
   tasks: Task[];
@@ -21,6 +32,9 @@ export interface TaskContextType {
   addTask: (task: Task) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   updateTask: (task: Task) => Promise<void>;
+  endSession: (taskId: string, sessionData: SessionData) => Promise<void>;
+
+  // ... Add other session-related methods as needed
 }
 
 interface TaskProviderProps {
@@ -122,13 +136,79 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
     }
   };
 
+  const useTasks = () => {
+    const context = useContext(TaskContext);
+    if (!context) {
+      throw new Error("useTasks must be used within a TaskProvider");
+    }
+    return context;
+  };
+
+  const getTokenFromStorage = async () => {
+    try {
+      return await AsyncStorage.getItem("token");
+    } catch (error) {
+      console.error("Failed to get token from AsyncStorage:", error);
+      return null;
+    }
+  };
+
+  // ... [Your existing fetchTasks, addTask, deleteTask, and updateTask methods]
+
+  const endSession: EndSessionFunction = async (id, sessionData) => {
+    try {
+      const token = await getTokenFromStorage();
+
+      const response = await fetch(
+        `http://localhost:8000/task/${id}/end-session`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(sessionData), // Send the sessionData in the request body
+        }
+      );
+
+      if (response.ok) {
+        const updatedTask = await response.json();
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task._id === updatedTask._id ? updatedTask : task
+          )
+        );
+      } else {
+        const errorData = await response.json();
+        console.error("Error from server:", errorData.message);
+        // Optionally, you can set some state or show a notification to the user here
+        // For example:
+        // setError(errorData.message);
+        // or
+        // showToastNotification(errorData.message);
+      }
+    } catch (error) {
+      console.error("Error ending session:", error);
+      // Again, optionally set some state or show a notification to the user
+    }
+  };
+
   useEffect(() => {
     fetchTasks();
   }, []);
 
   return (
     <TaskContext.Provider
-      value={{ tasks, setTasks, fetchTasks, addTask, deleteTask, updateTask }}
+      value={{
+        tasks,
+        setTasks,
+        fetchTasks,
+        addTask,
+        deleteTask,
+        updateTask,
+        endSession,
+        // ... Add other session-related methods to the value prop as needed
+      }}
     >
       {children}
     </TaskContext.Provider>

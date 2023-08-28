@@ -12,7 +12,6 @@ import VerifyScreen from "../screens/auth/VerifyScreen";
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import ConfirmOtpScreen from "../screens/auth/ConfirmOtpScreen";
 import SignupScreen from "../screens/auth/SignupScreen";
-import AddScreen from "../screens/AddScreen";
 import AllScreen from "../screens/AllScreen";
 import SetNewPasswordScreen from "../screens/auth/SetNewPasswordScreen";
 import { useNavigation } from "@react-navigation/native";
@@ -59,6 +58,8 @@ import Stopwatch from "../components/Stopwatch";
 import MultipleScreen from "../screens/MultipleScreen";
 import { StackCardInterpolationProps } from "@react-navigation/stack";
 import Add from "../components/Add";
+import Edit from "../components/Edit";
+import HomeScreen from "../screens/HomeScreen";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -95,7 +96,8 @@ export type ScreenNames = [
   "ConfirmOtp",
   "SetNewPassword",
   "Main",
-  "Modal"
+  "Modal",
+  "Edit"
 ];
 export type RootStackParamList = {
   Login?: undefined;
@@ -124,6 +126,7 @@ export type RootStackParamList = {
   Add?: undefined;
   Modal?: undefined;
   Main?: undefined;
+  Edit?: { name: string; goal?: number; color?: string };
 };
 export type DetailsScreenRouteProp = RouteProp<RootStackParamList, "Details">;
 export type VerifyScreenRouteProp = RouteProp<RootStackParamList, "Verify">;
@@ -135,6 +138,8 @@ export type ConfirmOtpScreenRouteProp = RouteProp<
   RootStackParamList,
   "ConfirmOtp"
 >;
+
+export type EditRouteProp = RouteProp<RootStackParamList, "Edit">;
 
 // export type RootStackParamList = Record<ScreenNames[number], undefined>;
 export type StackNavigation = StackNavigationProp<RootStackParamList>;
@@ -187,6 +192,15 @@ function RootNavigator() {
           headerShown: false,
           presentation: "modal",
           // cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS,
+          cardStyleInterpolator: customCardStyleInterpolator,
+        }}
+      />
+      <Stack.Screen
+        name="Edit"
+        component={Edit}
+        options={{
+          headerShown: false,
+          presentation: "modal",
           cardStyleInterpolator: customCardStyleInterpolator,
         }}
       />
@@ -340,8 +354,54 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
         }}
       >
         <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={({ route, navigation }) => ({
+            headerShown: true,
+            // headerTitle: (props) => (
+            //   <Image
+            //     source={isDarkTheme ? whiteLogo : blackLogo}
+            //     style={{ width: 80, height: 80 }}
+            //     resizeMode="contain"
+            //   />
+            // ),
+            headerLeft: () => (
+              <TouchableOpacity
+                style={{ marginLeft: 15 }}
+                onPress={() => navigation.openDrawer()}
+              >
+                <Feather
+                  name="menu"
+                  size={25}
+                  color={theme["text-basic-color"]}
+                />
+              </TouchableOpacity>
+            ),
+            headerStyle: {
+              backgroundColor: theme["background-basic-color-1"],
+              elevation: 0, // This removes the shadow for Android
+              borderBottomWidth: 0,
+              shadowOpacity: 0,
+            },
+            tabBarIcon: ({ color, size, focused }) => (
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.navigate("Home");
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+              >
+                <Feather
+                  name="home"
+                  size={25}
+                  color={focused ? theme["text-basic-color"] : "gray"}
+                />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Tab.Screen
           name="Active"
-          component={ActiveScreenStack}
+          component={ActiveScreen}
           options={({ route, navigation }) => ({
             headerShown: true,
             headerTitle: (props) => (
