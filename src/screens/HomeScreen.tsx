@@ -30,6 +30,7 @@ import { useNavigation } from "@react-navigation/native";
 import { type StackNavigation } from "../navigation/AppNavigator";
 import { useTasks, Task } from "../contexts/TaskContext";
 import { useFocusEffect } from "@react-navigation/native";
+import { blackLogo } from "../images/ImageAssets";
 
 type Props = {};
 
@@ -60,6 +61,7 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [isMoreVisible, setIsMoreVisible] = useState<boolean>(false);
   const [contextMenuVisible, setContextMenuVisible] = useState<boolean>(false);
+  const [isDeleteVisible, setIsDeleteVisible] = useState<boolean>(false);
 
   const toggleContextMenu = () => {
     setContextMenuVisible(!contextMenuVisible);
@@ -760,10 +762,11 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    //   onPress={() => {
-                    //     setCurrentTask(task); // Set the clicked task as the current task
-                    //     setIsModalVisible(false); // Close the modal
-                    //   }}
+                    onPress={() => {
+                      console.log("del pressed");
+                      setIsMoreVisible(false);
+                      setIsDeleteVisible(true);
+                    }}
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
@@ -794,6 +797,7 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
       <Modal
         animationType="fade"
         transparent={true}
@@ -813,6 +817,90 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
                 <Text style={styles.contextMenuItem}>Delete</Text>
               </TouchableOpacity>
               {/* Add more options as needed */}
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isDeleteVisible}
+        onRequestClose={() => {
+          setIsDeleteVisible(!isDeleteVisible);
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsDeleteVisible(false)}>
+          <View style={styles.deleteOverlay}>
+            <View style={styles.centeredViewDel}>
+              <View
+                style={[
+                  styles.modalViewDel,
+                  { backgroundColor: theme["btn-bg"] },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.textStyle,
+                    {
+                      color: theme["text-basic-color"],
+                      textAlign: "center",
+                      marginVertical: 15,
+                    },
+                  ]}
+                >
+                  Delete task
+                </Text>
+                <Text
+                  style={[
+                    styles.textStyle,
+                    {
+                      color: theme["text-basic-color"],
+                      fontWeight: "400",
+                      paddingHorizontal: 30,
+                      fontSize: 14,
+                      marginBottom: 15,
+                    },
+                  ]}
+                >
+                  Are you sure you want to delete this task permanently?
+                </Text>
+
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: theme["btn-bg"],
+                      borderColor: theme["border-gray"],
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.textStyle, { color: theme["meta-red"] }]}
+                  >
+                    Delete
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: theme["btn-bg"],
+                      borderColor: theme["border-gray"],
+                      paddingBottom: 0,
+                    },
+                  ]}
+                  onPress={() => setIsDeleteVisible(false)}
+                >
+                  <Text
+                    style={[
+                      styles.textStyle,
+                      { color: theme["text-basic-color"], fontWeight: "400" },
+                    ]}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -996,7 +1084,7 @@ const styles = StyleSheet.create({
   },
   modalView3: {
     width: "100%", // Full width
-    height: Dimensions.get("window").height * 0.4, // 65% height
+    height: Dimensions.get("window").height * 0.35, // 65% height
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     // paddingHorizontal: 25,
@@ -1028,5 +1116,53 @@ const styles = StyleSheet.create({
   contextMenuItem: {
     padding: 10,
     fontSize: 16,
+  },
+
+  centeredViewDel: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 0,
+  },
+  modalViewDel: {
+    width: "80%",
+
+    backgroundColor: "transparent",
+    borderRadius: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    paddingVertical: 15,
+  },
+  button: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 15,
+    flexDirection: "row",
+    paddingVertical: 15,
+    borderTopWidth: 0.5,
+  },
+  textStyle: {
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  textStyle2: {
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  deleteOverlay: {
+    flex: 1,
+    // justifyContent: "center",
+    // alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.2)", // semi-transparent background
   },
 });
