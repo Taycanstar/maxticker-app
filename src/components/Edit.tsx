@@ -189,7 +189,8 @@ const Edit: React.FC<EditProps> = ({ navigation, route }: any) => {
       await updateTask(newTask);
       console.log("success");
       setTimeout(() => {
-        navigate("Active");
+        // navigate("Home", { updatedTask: newTask });
+        navigate("Home");
       }, 700);
     } catch (error) {
       console.log(error);

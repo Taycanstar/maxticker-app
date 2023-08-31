@@ -1,49 +1,66 @@
 // TimerComponent.tsx
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  Button,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-} from "react-native";
-import { Circle, Svg } from "react-native-svg";
+import { View, StyleSheet, Dimensions } from "react-native";
 import { Layout, useTheme } from "@ui-kitten/components";
-import Feather from "@expo/vector-icons/Feather";
 import Stopwatch from "../components/Stopwatch";
-import Laps from "../components/Laps";
+import AddTimer from "../components/AddTimer";
+import { useTasks } from "../contexts/TaskContext";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { useNavigation } from "@react-navigation/native";
+import { RootStackParamList } from "../navigation/AppNavigator";
 
-type props = {};
+const screenWidth = Dimensions.get("window").width;
 
-const screenHeight = Dimensions.get("window").height;
-
-const MultipleScreen: React.FC<props> = () => {
+const MultipleScreen: React.FC = () => {
+  const { tasks, fetchTasks } = useTasks();
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false);
   const theme = useTheme();
+  const navigation =
+    useNavigation<StackNavigationProp<RootStackParamList, "Multiple">>();
 
-  const list = [
-    {
-      name: "Reading",
-      strokeColor: theme["ios-blue"],
-      goalTime: 20000,
-    },
-    {
-      name: "Working",
-      strokeColor: theme["ios-red"],
-      goalTime: 30000,
-    },
-    {
-      name: "Running",
-      strokeColor: theme["ios-yellow"],
-      goalTime: 10000,
-    },
-    {
-      name: "Lor",
-      strokeColor: theme["ios-green"],
-      goalTime: 10000,
-    },
-  ];
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  // return (
+  //   <Layout
+  //     style={[
+  //       styles.container,
+  //       { backgroundColor: theme["background-basic-color-1"] },
+  //     ]}
+  //   >
+  //     <View style={styles.content}>
+  //       <View style={styles.watches}>
+  //         {tasks.map((task, index) => (
+  //           <View
+  //             style={[
+  //               styles.watch1,
+  //               {
+  //                 marginRight: index % 2 === 0 ? 0 : 0,
+  //                 marginLeft: index % 2 !== 0 ? 0 : 0,
+  //               },
+  //             ]}
+  //             key={index}
+  //           >
+  //             <Stopwatch
+  //               name={task.name}
+  //               goalTime={task.goal}
+  //               strokeColor={task.color}
+  //               timerState="stopped"
+  //               onTimerStateChange={(newState) => {
+  //                 // Handle timer state change if needed
+  //               }}
+  //               onLap={(lapTime) => {
+  //                 // Handle lap time if needed
+  //               }}
+  //             />
+  //           </View>
+  //         ))}
+  //         <AddTimer onPress={() => navigation.navigate("Add")} />
+  //       </View>
+  //     </View>
+  //   </Layout>
+  // );
 
   return (
     <Layout
@@ -54,34 +71,25 @@ const MultipleScreen: React.FC<props> = () => {
     >
       <View style={styles.content}>
         <View style={styles.watches}>
-          {list.map((watch, index) => {
-            return (
-              <View
-                style={[
-                  styles.watch1,
-                  {
-                    marginRight: index % 2 === 0 ? 0 : 0,
-                    marginLeft: index % 2 !== 0 ? 0 : 0,
-                  },
-                ]}
-                key={index}
-              >
-                <Stopwatch
-                  name={watch.name}
-                  goalTime={watch.goalTime}
-                  strokeColor={watch.strokeColor}
-                />
-              </View>
-            );
-          })}
-        </View>
-        <View>
-          <Laps
-            timerName={""}
-            onTitlePress={() => {}}
-            laps={[]}
-            setLaps={() => {}}
-          />
+          {tasks.map((task, index) => (
+            <View style={styles.watch1} key={index}>
+              <Stopwatch
+                name={task.name}
+                goalTime={task.goal}
+                strokeColor={task.color}
+                timerState="stopped"
+                onTimerStateChange={(newState) => {
+                  // Handle timer state change if needed
+                }}
+                onLap={(lapTime) => {
+                  // Handle lap time if needed
+                }}
+              />
+            </View>
+          ))}
+          <View style={styles.watch1}>
+            <AddTimer onPress={() => navigation.navigate("Add")} />
+          </View>
         </View>
       </View>
     </Layout>
@@ -101,10 +109,12 @@ const styles = StyleSheet.create({
   watches: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     marginTop: 20,
     width: "100%",
+    paddingHorizontal: 10,
   },
+
   watch1: {
     marginVertical: 20,
   },

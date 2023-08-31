@@ -53,19 +53,11 @@ export const useTasks = () => {
   return context;
 };
 
-const getTokenFromStorage = async () => {
-  try {
-    return await AsyncStorage.getItem("token");
-  } catch (error) {
-    console.error("Failed to get token from AsyncStorage:", error);
-    return null;
-  }
-};
-
 export const TaskProvider: React.FC<TaskProviderProps> = ({
   children,
 }: any) => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const fetchTasks = async () => {
     try {
       const token = await getTokenFromStorage();
@@ -109,7 +101,10 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
           Authorization: `Bearer ${token}`,
         },
       });
-      setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
+      setTasks((prevTasks) =>
+        prevTasks.filter((task) => String(task._id) !== String(taskId))
+      );
+      console.log("task deleted");
     } catch (error) {
       console.error("Error deleting task:", error);
     }
@@ -134,14 +129,6 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
     } catch (error) {
       console.error("Error updating task:", error);
     }
-  };
-
-  const useTasks = () => {
-    const context = useContext(TaskContext);
-    if (!context) {
-      throw new Error("useTasks must be used within a TaskProvider");
-    }
-    return context;
   };
 
   const getTokenFromStorage = async () => {

@@ -46,7 +46,7 @@ import {
 import { blackLogo, whiteLogo } from "../images/ImageAssets";
 import * as Haptics from "expo-haptics";
 import { BottomTabBar } from "@react-navigation/bottom-tabs";
-import ActiveScreen from "../screens/ActiveScreen";
+import MultipleScreen from "../screens/MultipleScreen";
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import { Text, Dimensions } from "react-native";
 import Plus from "../screens/suscription/Plus";
@@ -55,7 +55,6 @@ import ColorScheme from "../screens/ColorScheme";
 import SendFeedbackScreen from "../screens/SendFeedbackScreen";
 import AboutScreen from "../screens/about/AboutScreen";
 import Stopwatch from "../components/Stopwatch";
-import MultipleScreen from "../screens/MultipleScreen";
 import { StackCardInterpolationProps } from "@react-navigation/stack";
 import Add from "../components/Add";
 import Edit from "../components/Edit";
@@ -89,15 +88,15 @@ export type ScreenNames = [
   "Signup",
   "Details",
   "Verify",
-  "Active",
-  "All",
   "Analytics",
   "History",
   "ConfirmOtp",
   "SetNewPassword",
   "Main",
   "Modal",
-  "Edit"
+  "Edit",
+  "Home",
+  "Multiple"
 ];
 export type RootStackParamList = {
   Login?: undefined;
@@ -112,8 +111,6 @@ export type RootStackParamList = {
     lastName: string;
     birthday: string;
   };
-  Active?: undefined;
-  All?: undefined;
   Analytics?: undefined;
   History?: undefined;
   ForgotPassword?: undefined;
@@ -125,11 +122,16 @@ export type RootStackParamList = {
   };
   Add?: undefined;
   Modal?: undefined;
-  Main?: undefined;
+  Main: {
+    screen?: "Home" | "Multiple" | "Analytics";
+  };
   Edit?: { name: string; goal?: number; color?: string };
+  Home?: { updatedTask?: any };
+  Multiple?: undefined;
 };
 export type DetailsScreenRouteProp = RouteProp<RootStackParamList, "Details">;
 export type VerifyScreenRouteProp = RouteProp<RootStackParamList, "Verify">;
+export type HomeScreenRouteProp = RouteProp<RootStackParamList, "Home">;
 export type SetNewPasswordScreenRouteProp = RouteProp<
   RootStackParamList,
   "SetNewPassword"
@@ -274,52 +276,6 @@ const GradientTabBar = (props: any) => {
 const Clear = () => {
   return <View style={{ backgroundColor: "transparent" }} />;
 };
-const ActiveScreenStack = () => {
-  const [index, setIndex] = React.useState(0);
-  const [routes] = React.useState([
-    { key: "first", title: "Singular" },
-    { key: "second", title: "Multiple" },
-  ]);
-
-  const theme = useTheme();
-
-  return (
-    <TabView
-      navigationState={{ index, routes }}
-      renderScene={SceneMap({
-        first: ActiveScreen,
-        second: MultipleScreen,
-      })}
-      onIndexChange={setIndex}
-      initialLayout={{ width: 400 }} // adjust according to your needs
-      renderTabBar={(props) => (
-        <TabBar
-          {...props}
-          indicatorStyle={{ backgroundColor: theme["text-basic-color"] }}
-          style={{
-            backgroundColor: theme["background-basic-color-1"],
-          }} // Adjust to your theme
-          labelStyle={{
-            color: theme["text-basic-color"], // Add this line to change the text color
-          }}
-          renderLabel={({ route, focused, color }) => (
-            <Text
-              style={{
-                color,
-                opacity: focused ? 1 : 0.5,
-                fontSize: 16,
-                fontWeight: "600",
-                letterSpacing: 0.2,
-              }}
-            >
-              {route.title}
-            </Text>
-          )}
-        />
-      )}
-    />
-  );
-};
 
 const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
   const theme = useTheme();
@@ -331,7 +287,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
         tabBar={(props) => <GradientTabBar {...props} />}
         screenOptions={{
           headerShown: false,
-          tabBarShowLabel: false,
+          // tabBarShowLabel: false,
           tabBarActiveTintColor: theme["text-basic-color"],
           tabBarInactiveTintColor: "gray",
           tabBarStyle: {
@@ -400,8 +356,8 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
           })}
         />
         <Tab.Screen
-          name="Active"
-          component={ActiveScreen}
+          name="Multiple"
+          component={MultipleScreen}
           options={({ route, navigation }) => ({
             headerShown: true,
             headerTitle: (props) => (
@@ -432,7 +388,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
             tabBarIcon: ({ color, size, focused }) => (
               <TouchableOpacity
                 onPress={() => {
-                  navigation.navigate("Active");
+                  navigation.navigate("Multiple");
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >
@@ -447,7 +403,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
         />
 
         <Tab.Screen
-          name="AddPopup"
+          name="Add "
           component={Clear} // Placeholder as the action is overridden
           listeners={({ navigation }) => ({
             tabPress: (e) => {

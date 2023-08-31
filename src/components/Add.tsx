@@ -36,6 +36,7 @@ interface Color {
 }
 
 const Add: React.FC = ({ navigation }: any) => {
+  const theme = useTheme();
   const initialTime = new Date();
   initialTime.setHours(0);
   initialTime.setMinutes(0);
@@ -49,6 +50,7 @@ const Add: React.FC = ({ navigation }: any) => {
   const [selectedTime, setSelectedTime] = useState(initialTime);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [color, setColor] = useState<string>("Stroke color");
+  const [colorValue, setColorValue] = useState<string>(theme["ios-blue"]);
   const { navigate } = useNavigation<StackNavigation>();
   const [isStrokeVisible, setIsStrokeVisible] = useState<boolean>(false);
   const context = useContext(TaskContext);
@@ -78,7 +80,6 @@ const Add: React.FC = ({ navigation }: any) => {
   const onColorOpen = useCallback(() => {
     setColorOpen(false);
   }, []);
-  const theme = useTheme();
 
   const [items, setItems] = useState([
     {
@@ -152,6 +153,7 @@ const Add: React.FC = ({ navigation }: any) => {
   const onColorPress = (color: any) => {
     setIsStrokeVisible(!isStrokeVisible);
     setColor(color.label);
+    setColorValue(color.color);
   };
 
   const handleAddTask = async () => {
@@ -159,14 +161,14 @@ const Add: React.FC = ({ navigation }: any) => {
       _id: uuid.v4(), // You'll need to define this function or use another method to generate a unique ID for each task
       name: name, // Assuming 'name' is a state variable in your component
       goal: goalTime,
-      color: color,
+      color: colorValue,
       sessions: [],
     };
     try {
       await addTask(newTask);
       console.log("success");
       setTimeout(() => {
-        navigate("Active");
+        navigate("Main", { screen: "Home" });
       }, 700);
     } catch (error) {
       console.log(error);

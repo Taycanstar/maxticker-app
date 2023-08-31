@@ -27,7 +27,10 @@ import { Circle, Svg, Line } from "react-native-svg";
 import { ScrollView } from "react-native-gesture-handler";
 import { ActivityIndicator } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { type StackNavigation } from "../navigation/AppNavigator";
+import {
+  HomeScreenRouteProp,
+  type StackNavigation,
+} from "../navigation/AppNavigator";
 import { useTasks, Task } from "../contexts/TaskContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { blackLogo } from "../images/ImageAssets";
@@ -44,24 +47,32 @@ interface SessionData {
   timeSpentOnBreaks: number;
 }
 
-const HomeScreen: React.FC = ({ navigation }: any) => {
+type HomeProps = {
+  route: HomeScreenRouteProp;
+};
+
+const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   const theme = useTheme();
   const [fontLoaded, setFontLoaded] = useState(false);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [timerState, setTimerState] = useState<
     "stopped" | "running" | "paused"
   >("stopped");
-  const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  // const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [breakStartTime, setBreakStartTime] = useState<Date | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [laps, setLaps] = useState<{ time: number; name: string }[]>([]);
   const { navigate } = useNavigation<StackNavigation>();
-  const { tasks, fetchTasks, endSession } = useTasks();
-  const [goalTime, setGoalTime] = useState<number>(currentTask?.goal ?? 0);
+  const { tasks, fetchTasks, endSession, deleteTask } = useTasks();
+
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [isMoreVisible, setIsMoreVisible] = useState<boolean>(false);
   const [contextMenuVisible, setContextMenuVisible] = useState<boolean>(false);
   const [isDeleteVisible, setIsDeleteVisible] = useState<boolean>(false);
+  const [activeTaskIndex, setActiveTaskIndex] = useState<number>(0);
+  const [goalTime, setGoalTime] = useState<number>(
+    tasks && tasks[activeTaskIndex] ? tasks[activeTaskIndex].goal : 0
+  );
 
   const toggleContextMenu = () => {
     setContextMenuVisible(!contextMenuVisible);
@@ -98,6 +109,11 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
       totalDuration: prevData.totalDuration + duration,
     }));
   };
+  const changeActiveTask = (index: number) => {
+    if (index >= 0 && index < tasks.length) {
+      setActiveTaskIndex(index);
+    }
+  };
 
   const handleEndSession = async () => {
     let finalSessionData = { ...sessionData };
@@ -117,8 +133,8 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
     }
 
     try {
-      if (currentTask && currentTask._id) {
-        await endSession(currentTask._id, finalSessionData); // Send the taskId and final data to the backend
+      if (tasks[activeTaskIndex] && tasks[activeTaskIndex]._id) {
+        await endSession(tasks[activeTaskIndex]._id, finalSessionData); // Send the taskId and final data to the backend
       } else {
         console.error("No current task found");
       }
@@ -144,20 +160,24 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
   // setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
 
   useEffect(() => {
-    setGoalTime(currentTask?.goal ?? 0);
-  }, [currentTask?.goal]);
+    if (tasks[activeTaskIndex]) {
+      setGoalTime(tasks[activeTaskIndex].goal ?? 0);
+    }
+  }, [tasks, activeTaskIndex]);
 
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
         await fetchTasks();
-        if (!currentTask && tasks.length > 0) {
-          setCurrentTask(tasks[0]);
+        // Use a local variable to check the tasks immediately after fetching
+        const fetchedTasks = tasks;
+        if (fetchedTasks && fetchedTasks.length > 0) {
+          setActiveTaskIndex(0); // Set the first task as the active task after fetching
         }
       };
 
       fetchData();
-    }, [fetchTasks, currentTask])
+    }, [fetchTasks])
   );
 
   useEffect(() => {
@@ -190,30 +210,6 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
   const percentage = Math.min((elapsedTime / goalTime) * 100, 100);
 
   const strokeDashoffset = 314 * (1 - percentage / 100);
-
-  const handleLapOrReset = () => {
-    if (timerState === "running") {
-      // Create a new lap object
-      const newLap = {
-        time: elapsedTime,
-        name: `Lap ${sessionData.laps.length + 1}`,
-      };
-
-      // Update the sessionData state with the new lap
-      setSessionData((prevData) => ({
-        ...prevData,
-        laps: [...prevData.laps, newLap],
-      }));
-    } else {
-      // Reset the sessionData state
-      setSessionData((prevData) => ({
-        ...prevData,
-        laps: [],
-      }));
-      setElapsedTime(0);
-      setTimerState("stopped");
-    }
-  };
 
   const handleLap = () => {
     const newLap = {
@@ -254,11 +250,10 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
       setBreakStartTime(null); // reset the break start time
     }
   };
-
   useLayoutEffect(() => {
-    if (currentTask && currentTask.name) {
+    if (tasks[activeTaskIndex]) {
       navigation.setOptions({
-        headerTitle: currentTask.name,
+        headerTitle: tasks[activeTaskIndex].name,
         headerTitleStyle: {
           color: theme["text-basic-color"],
           fontSize: 20,
@@ -268,7 +263,6 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
             style={{
               marginLeft: 15,
               marginHorizontal: 5,
-
               borderRadius: 10,
               height: 35,
               width: 35,
@@ -285,8 +279,13 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
           </TouchableOpacity>
         ),
       });
+    } else {
+      navigation.setOptions({
+        headerTitle: "",
+        headerRight: null,
+      });
     }
-  }, [currentTask, navigation]);
+  }, [tasks, navigation, activeTaskIndex]);
 
   const handleChangeTask = () => {
     setContextMenuVisible(false);
@@ -296,12 +295,59 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
   const handleEditPress = () => {
     setIsMoreVisible(false);
     navigation.navigate("Edit", {
-      name: currentTask?.name,
-      goal: currentTask?.goal,
-      color: currentTask?.color,
-      taskId: currentTask?._id,
+      name: tasks[activeTaskIndex]?.name,
+      goal: tasks[activeTaskIndex]?.goal,
+      color: tasks[activeTaskIndex]?.color,
+      taskId: tasks[activeTaskIndex]?._id,
     });
   };
+
+  // const handleDeletePress = async () => {
+  //   if (tasks[activeTaskIndex]) {
+  //     await deleteTask(tasks[activeTaskIndex]._id);
+  //     if (activeTaskIndex === tasks.length - 1 && tasks.length > 1) {
+  //       setActiveTaskIndex(tasks.length - 2); // Switch to the previous task if the last one was deleted
+  //     } else if (tasks.length <= 1) {
+  //       setActiveTaskIndex(0); // Reset to the first task or keep it at 0 if no tasks left
+  //     }
+  //     setTimeout(() => {
+  //       setIsDeleteVisible(false);
+  //     }, 100);
+  //     setLaps([]);
+  //   }
+  // };
+
+  const handleDeletePress = async () => {
+    if (tasks[activeTaskIndex]) {
+      await deleteTask(tasks[activeTaskIndex]._id);
+
+      // Resetting the state
+      setElapsedTime(0);
+      setTimerState("stopped");
+      setLaps([]);
+
+      if (activeTaskIndex === tasks.length - 1 && tasks.length > 1) {
+        setActiveTaskIndex(tasks.length - 2);
+      } else if (tasks.length <= 1) {
+        setActiveTaskIndex(0);
+      }
+
+      setTimeout(() => {
+        setIsDeleteVisible(false);
+      }, 100);
+    }
+  };
+
+  useEffect(() => {
+    if (route.params?.updatedTask) {
+      const updatedTaskIndex = tasks.findIndex(
+        (task) => task._id === route.params.updatedTask._id
+      );
+      if (updatedTaskIndex !== -1) {
+        setActiveTaskIndex(updatedTaskIndex);
+      }
+    }
+  }, [route.params?.updatedTask, tasks]);
 
   return (
     <Layout style={styles.container}>
@@ -309,7 +355,6 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
         <ActivityIndicator size="small" color={theme["ios-blue"]} />
       ) : (
         <>
-          <View style={styles.titleContainer}></View>
           <View style={styles.contentContainer}>
             <View style={styles.middleContainer}>
               <View style={styles.circleContainer}>
@@ -329,12 +374,12 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
                     strokeWidth="4"
                     fill="none"
                   />
-                  {currentTask && (
+                  {tasks[activeTaskIndex] && (
                     <Circle
                       cx="50"
                       cy="50"
                       r="48"
-                      stroke={theme["ios-blue"]}
+                      stroke={tasks[activeTaskIndex].color}
                       strokeWidth="4"
                       fill="none"
                       strokeDasharray="314"
@@ -344,7 +389,7 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
                   )}
                 </Svg>
                 <View style={styles.timeContainer}>
-                  {currentTask ? (
+                  {tasks[activeTaskIndex] ? (
                     <>
                       <Text
                         style={[
@@ -431,7 +476,7 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
                         }}
                       >
                         <Feather
-                          color={theme["text-basic-color-1"]}
+                          color={theme["text-basic-color"]}
                           size={35}
                           name="plus-square"
                         />
@@ -462,7 +507,7 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
             </View>
 
             <View style={styles.buttonContainer}>
-              {currentTask && (
+              {tasks[activeTaskIndex] && (
                 <>
                   <View style={styles.buttonContainer}>
                     <View style={styles.buttonWrapper}>
@@ -501,21 +546,6 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
                             setTimerState("running");
                           }
                         }}
-
-                        // onPress={() => {
-                        //   if (timerState === "running") {
-                        //     handlePause();
-                        //     handleStartBreak();
-                        //   } else {
-                        //     handleEndBreak();
-                        //     setTimerState("running");
-                        //   }
-                        // }}
-                        // onPress={() =>
-                        //   setTimerState((prev) =>
-                        //     prev === "running" ? "paused" : "running"
-                        //   )
-                        // }
                       />
                     </View>
                   </View>
@@ -630,7 +660,7 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
                         <TouchableOpacity
                           key={index}
                           onPress={() => {
-                            setCurrentTask(task); // Set the clicked task as the current task
+                            setActiveTaskIndex(index); // Set the index of the clicked task as the activeTaskIndex
                             setIsModalVisible(false); // Close the modal
                           }}
                           style={{
@@ -866,6 +896,7 @@ const HomeScreen: React.FC = ({ navigation }: any) => {
                 </Text>
 
                 <TouchableOpacity
+                  onPress={handleDeletePress}
                   style={[
                     styles.button,
                     {
@@ -977,9 +1008,9 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    justifyContent: "space-between",
+    // justifyContent: "space-between",
     // alignItems: "center",
-    // paddingTop: 30,
+    paddingTop: 50,
     paddingBottom: 30,
   },
 
@@ -988,10 +1019,11 @@ const styles = StyleSheet.create({
   },
 
   middleContainer: {
-    // flex: 2.5,
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
+    position: "relative",
   },
 
   circleContainer: {
@@ -999,7 +1031,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     justifyContent: "center",
     alignItems: "center",
-    position: "relative",
+    // position: "relative",
   },
 
   timeContainer: {
@@ -1039,9 +1071,9 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
   },
   contentContainer: {
-    flex: 8,
+    flex: 1,
     width: "100%",
-    justifyContent: "space-between",
+    justifyContent: "center",
   },
   centeredView: {
     flex: 1,
