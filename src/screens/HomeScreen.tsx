@@ -34,11 +34,12 @@ import {
 import { useTasks, Task } from "../contexts/TaskContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { blackLogo } from "../images/ImageAssets";
+import { taskEventEmitter } from "../utils/eventEmitter";
 
 type Props = {};
 
 interface SessionData {
-  startTime: Date;
+  startTime: number;
   totalDuration: number;
   status: string;
   laps: { time: number; name: string }[];
@@ -59,7 +60,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     "stopped" | "running" | "paused"
   >("stopped");
   // const [currentTask, setCurrentTask] = useState<Task | null>(null);
-  const [breakStartTime, setBreakStartTime] = useState<Date | null>(null);
+  const [breakStartTime, setBreakStartTime] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [laps, setLaps] = useState<{ time: number; name: string }[]>([]);
   const { navigate } = useNavigation<StackNavigation>();
@@ -80,7 +81,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
 
   // Define the local state
   const [sessionData, setSessionData] = useState<SessionData>({
-    startTime: new Date(),
+    startTime: performance.now(),
     totalDuration: 0,
     status: "stopped",
     laps: [],
@@ -95,13 +96,13 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     setSessionData((prevData) => ({
       ...prevData,
       status: "running",
-      startTime: new Date(),
+      startTime: performance.now(),
     }));
   };
 
   const handlePause = () => {
-    const now = new Date();
-    const duration = now.getTime() - sessionData.startTime.getTime();
+    const now = performance.now();
+    const duration = now - sessionData.startTime;
 
     setSessionData((prevData) => ({
       ...prevData,
@@ -118,17 +119,17 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   const handleEndSession = async () => {
     let finalSessionData = { ...sessionData };
 
-    const now = new Date();
+    const now = performance.now();
 
     // If the session is currently running, add the current duration to totalDuration
     if (timerState === "running") {
-      const currentDuration = now.getTime() - sessionData.startTime.getTime();
+      const currentDuration = now - sessionData.startTime;
       finalSessionData.totalDuration += currentDuration;
     }
 
     // If a break is currently ongoing, add its duration to timeSpentOnBreaks
     if (breakStartTime) {
-      const currentBreakDuration = now.getTime() - breakStartTime.getTime();
+      const currentBreakDuration = now - breakStartTime;
       finalSessionData.timeSpentOnBreaks += currentBreakDuration;
     }
 
@@ -141,7 +142,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
 
       // Reset the local state
       setSessionData({
-        startTime: new Date(),
+        startTime: performance.now(),
         totalDuration: 0,
         status: "stopped",
         laps: [],
@@ -185,9 +186,9 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     let startTime: number;
 
     if (timerState === "running") {
-      startTime = Date.now() - elapsedTime;
+      startTime = performance.now() - elapsedTime;
       interval = setInterval(() => {
-        setElapsedTime(Date.now() - startTime);
+        setElapsedTime(performance.now() - startTime);
       }, 10);
     } else if (timerState === "stopped") {
       setElapsedTime(0);
@@ -232,14 +233,14 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
       handlePause(); // Pause the timer if it's running
     }
 
-    setBreakStartTime(new Date());
+    setBreakStartTime(performance.now());
   };
 
   const handleEndBreak = () => {
     if (breakStartTime) {
       // Check if breakStartTime is not null
-      const now = new Date();
-      const breakDuration = now.getTime() - breakStartTime.getTime();
+      const now = performance.now();
+      const breakDuration = now - breakStartTime;
 
       setSessionData((prevData) => ({
         ...prevData,
@@ -302,21 +303,6 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     });
   };
 
-  // const handleDeletePress = async () => {
-  //   if (tasks[activeTaskIndex]) {
-  //     await deleteTask(tasks[activeTaskIndex]._id);
-  //     if (activeTaskIndex === tasks.length - 1 && tasks.length > 1) {
-  //       setActiveTaskIndex(tasks.length - 2); // Switch to the previous task if the last one was deleted
-  //     } else if (tasks.length <= 1) {
-  //       setActiveTaskIndex(0); // Reset to the first task or keep it at 0 if no tasks left
-  //     }
-  //     setTimeout(() => {
-  //       setIsDeleteVisible(false);
-  //     }, 100);
-  //     setLaps([]);
-  //   }
-  // };
-
   const handleDeletePress = async () => {
     if (tasks[activeTaskIndex]) {
       await deleteTask(tasks[activeTaskIndex]._id);
@@ -349,6 +335,27 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     }
   }, [route.params?.updatedTask, tasks]);
 
+  useEffect(() => {
+    const handleTaskStateChange = (data: { taskId: string; state: string }) => {
+      if (data.taskId === tasks[activeTaskIndex]._id) {
+        if (data.state === "running") {
+          setTimerState("running");
+        } else if (data.state === "paused") {
+          setTimerState("paused");
+        } else if (data.state === "stopped") {
+          setTimerState("stopped");
+        }
+      }
+    };
+
+    taskEventEmitter.on("multipleTaskStateChanged", handleTaskStateChange);
+
+    // Cleanup the listener when the component unmounts
+    return () => {
+      taskEventEmitter.off("multipleTaskStateChanged", handleTaskStateChange);
+    };
+  }, []);
+
   return (
     <Layout style={styles.container}>
       {loading ? (
@@ -360,8 +367,6 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
               <View style={styles.circleContainer}>
                 <Svg
                   style={{ flexShrink: 0, flexGrow: 0 }}
-                  // width="80%"
-                  // height="40%"
                   width="100%"
                   height="100%"
                   viewBox="0 0 100 100"
@@ -518,6 +523,10 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                           if (timerState === "running") {
                             handleLap();
                           } else {
+                            taskEventEmitter.emit("taskStateChanged", {
+                              taskId: tasks[activeTaskIndex]._id,
+                              state: "stopped",
+                            });
                             setElapsedTime(0); // Reset the timer
                             setTimerState("stopped");
                             handleEndSession();
@@ -533,15 +542,40 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                             : theme["ios-blue"]
                         }
                         title={timerState === "running" ? "Stop" : "Start"}
+                        // onPress={() => {
+                        //   if (timerState === "stopped") {
+                        //     handleStart();
+                        //     setTimerState("running");
+                        //   } else if (timerState === "running") {
+                        //     handlePause();
+                        //     handleStartBreak();
+                        //     setTimerState("paused");
+                        //   } else if (timerState === "paused") {
+                        //     handleEndBreak();
+                        //     setTimerState("running");
+                        //   }
+                        // }}
                         onPress={() => {
                           if (timerState === "stopped") {
+                            taskEventEmitter.emit("taskStateChanged", {
+                              taskId: tasks[activeTaskIndex]._id,
+                              state: "running",
+                            });
                             handleStart();
                             setTimerState("running");
                           } else if (timerState === "running") {
+                            taskEventEmitter.emit("taskStateChanged", {
+                              taskId: tasks[activeTaskIndex]._id,
+                              state: "paused",
+                            });
                             handlePause();
                             handleStartBreak();
                             setTimerState("paused");
                           } else if (timerState === "paused") {
+                            taskEventEmitter.emit("taskStateChanged", {
+                              taskId: tasks[activeTaskIndex]._id,
+                              state: "running",
+                            });
                             handleEndBreak();
                             setTimerState("running");
                           }

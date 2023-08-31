@@ -5,103 +5,37 @@ import { Circle, Svg } from "react-native-svg";
 import { Layout, useTheme } from "@ui-kitten/components";
 import Feather from "@expo/vector-icons/Feather";
 import Colors from "../constants/Colors";
-import { taskEventEmitter } from "../utils/eventEmitter";
-import { useTasks } from "../contexts/TaskContext";
 
 type props = {
   name: string;
   goalTime?: any;
-  taskId?: string;
   strokeColor?: string;
+  isMultiple?: boolean;
 };
 
-interface SessionData {
-  startTime: number;
-  totalDuration: number;
-  status: string;
-  laps: { time: number; name: string }[];
-  history: any[];
-  breaks: number;
-  timeSpentOnBreaks: number;
-}
-
-const Stopwatch: React.FC<props> = ({
+const Timer: React.FC<props> = ({
   name,
   goalTime,
   strokeColor,
-  taskId,
+  isMultiple,
 }) => {
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(true);
   const theme = useTheme();
   const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const { endSession } = useTasks();
   const [timerState, setTimerState] = useState<
     "stopped" | "running" | "paused"
   >("stopped");
   const [isTimerActive, setIsTimerActive] = useState<boolean>(true);
   const [laps, setLaps] = useState<{ time: number; name: string }[]>([]);
-  const [breakStartTime, setBreakStartTime] = useState<number | null>(null);
-
-  const [sessionData, setSessionData] = useState<SessionData>({
-    startTime: performance.now(),
-    totalDuration: 0,
-    status: "stopped",
-    laps: [],
-    history: [],
-    breaks: 0,
-    timeSpentOnBreaks: 0,
-    // ... any other fields you need
-  });
-
-  // Update the local state based on user actions
-  const handleStart = () => {
-    setSessionData((prevData) => ({
-      ...prevData,
-      status: "running",
-      startTime: performance.now(),
-    }));
-  };
-
-  const handlePause = () => {
-    const now = performance.now();
-    const duration = now - sessionData.startTime;
-
-    setSessionData((prevData) => ({
-      ...prevData,
-      status: "paused",
-      totalDuration: prevData.totalDuration + duration,
-    }));
-  };
-
-  useEffect(() => {
-    const handleTaskStateChange = (data: { taskId: string; state: string }) => {
-      if (data.taskId === taskId) {
-        if (data.state === "running") {
-          setTimerState("running");
-        } else if (data.state === "paused") {
-          setTimerState("paused");
-        } else if (data.state === "stopped") {
-          setTimerState("stopped");
-        }
-      }
-    };
-
-    taskEventEmitter.on("taskStateChanged", handleTaskStateChange);
-
-    // Cleanup the listener when the component unmounts
-    return () => {
-      taskEventEmitter.off("taskStateChanged", handleTaskStateChange);
-    };
-  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     let startTime: number;
 
     if (timerState === "running") {
-      startTime = performance.now() - elapsedTime;
+      startTime = Date.now() - elapsedTime;
       interval = setInterval(() => {
-        setElapsedTime(performance.now() - startTime);
+        setElapsedTime(Date.now() - startTime);
       }, 10);
     } else if (timerState === "stopped") {
       setElapsedTime(0);
@@ -133,105 +67,11 @@ const Stopwatch: React.FC<props> = ({
     }
   };
 
-  const handleEndSession = async () => {
-    let finalSessionData = { ...sessionData };
-
-    const now = performance.now();
-
-    // If the session is currently running, add the current duration to totalDuration
-    if (timerState === "running") {
-      const currentDuration = now - sessionData.startTime;
-      finalSessionData.totalDuration += currentDuration;
-    }
-
-    // If a break is currently ongoing, add its duration to timeSpentOnBreaks
-    if (breakStartTime) {
-      const currentBreakDuration = now - breakStartTime;
-      finalSessionData.timeSpentOnBreaks += currentBreakDuration;
-    }
-
-    try {
-      if (taskId) {
-        await endSession(taskId, finalSessionData); // Send the taskId and final data to the backend
-      } else {
-        console.error("No current task found");
-      }
-
-      // Reset the local state
-      setSessionData({
-        startTime: performance.now(),
-        totalDuration: 0,
-        status: "stopped",
-        laps: [],
-        history: [],
-        breaks: 0,
-        timeSpentOnBreaks: 0,
-      });
-
-      // Reset the local laps state
-      setLaps([]);
-    } catch (error) {
-      console.error("Error ending session:", error);
-    }
-  };
-
-  const handleLap = () => {
-    const newLap = {
-      time: elapsedTime,
-      name: `Lap ${sessionData.laps.length + 1}`,
-    };
-
-    // Update the local laps state
-    setLaps((prevLaps) => [...prevLaps, newLap]);
-
-    // Update the sessionData.laps
-    setSessionData((prevData) => ({
-      ...prevData,
-      laps: [...prevData.laps, newLap],
-    }));
-  };
-
-  const handleStartBreak = () => {
-    if (sessionData.status === "running") {
-      handlePause(); // Pause the timer if it's running
-    }
-
-    setBreakStartTime(performance.now());
-  };
-
-  const handleEndBreak = () => {
-    if (breakStartTime) {
-      // Check if breakStartTime is not null
-      const now = performance.now();
-      const breakDuration = now - breakStartTime;
-
-      setSessionData((prevData) => ({
-        ...prevData,
-        breaks: prevData.breaks + 1,
-        timeSpentOnBreaks: prevData.timeSpentOnBreaks + breakDuration,
-      }));
-
-      setBreakStartTime(null); // reset the break start time
-    }
-  };
-
-  //  const handleEditPress = () => {
-  //    setIsMoreVisible(false);
-  //    navigation.navigate("Edit", {
-  //      name: tasks[activeTaskIndex]?.name,
-  //      goal: tasks[activeTaskIndex]?.goal,
-  //      color: tasks[activeTaskIndex]?.color,
-  //      taskId: tasks[activeTaskIndex]?._id,
-  //    });
-  //  };
-
   return (
     <View style={styles.container}>
       <View style={styles.circleContainer}>
         <Svg
           style={{ flexShrink: 0, flexGrow: 0 }}
-          // width="80%"
-          // height="40%"
           width="100%"
           height="100%"
           viewBox="0 0 100 100"
@@ -359,20 +199,7 @@ const Stopwatch: React.FC<props> = ({
               color={theme["text-basic-color"]}
               size={18}
               name={timerState === "running" ? "log-in" : "rotate-cw"}
-              // onPress={handleLapOrReset}
-              onPress={() => {
-                if (timerState === "running") {
-                  handleLap();
-                } else {
-                  setElapsedTime(0); // Reset the timer
-                  setTimerState("stopped");
-                  handleEndSession();
-                  taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: taskId,
-                    state: "stopped",
-                  });
-                }
-              }}
+              onPress={handleLapOrReset}
             />
           </View>
           <View style={styles.iconGroup}>
@@ -380,36 +207,11 @@ const Stopwatch: React.FC<props> = ({
               color={theme["text-basic-color"]}
               size={18}
               name={timerState === "running" ? "pause" : "play"}
-              // onPress={() =>
-              //   setTimerState((prev) =>
-              //     prev === "running" ? "paused" : "running"
-              //   )
-              // }
-              onPress={() => {
-                if (timerState === "stopped") {
-                  taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: taskId,
-                    state: "running",
-                  });
-                  handleStart();
-                  setTimerState("running");
-                } else if (timerState === "running") {
-                  setTimerState("paused");
-                  taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: taskId,
-                    state: "paused",
-                  });
-                  handlePause();
-                  handleStartBreak();
-                } else if (timerState === "paused") {
-                  taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: taskId,
-                    state: "running",
-                  });
-                  handleEndBreak();
-                  setTimerState("running");
-                }
-              }}
+              onPress={() =>
+                setTimerState((prev) =>
+                  prev === "running" ? "paused" : "running"
+                )
+              }
             />
           </View>
           <View style={styles.iconGroup}>
@@ -426,7 +228,7 @@ const Stopwatch: React.FC<props> = ({
   );
 };
 
-export default Stopwatch;
+export default Timer;
 
 const styles = StyleSheet.create({
   circleContainer: {

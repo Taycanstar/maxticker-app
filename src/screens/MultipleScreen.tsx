@@ -14,6 +14,7 @@ const screenWidth = Dimensions.get("window").width;
 const MultipleScreen: React.FC = () => {
   const { tasks, fetchTasks } = useTasks();
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false);
+
   const theme = useTheme();
   const navigation =
     useNavigation<StackNavigationProp<RootStackParamList, "Multiple">>();
@@ -21,46 +22,6 @@ const MultipleScreen: React.FC = () => {
   useEffect(() => {
     fetchTasks();
   }, []);
-
-  // return (
-  //   <Layout
-  //     style={[
-  //       styles.container,
-  //       { backgroundColor: theme["background-basic-color-1"] },
-  //     ]}
-  //   >
-  //     <View style={styles.content}>
-  //       <View style={styles.watches}>
-  //         {tasks.map((task, index) => (
-  //           <View
-  //             style={[
-  //               styles.watch1,
-  //               {
-  //                 marginRight: index % 2 === 0 ? 0 : 0,
-  //                 marginLeft: index % 2 !== 0 ? 0 : 0,
-  //               },
-  //             ]}
-  //             key={index}
-  //           >
-  //             <Stopwatch
-  //               name={task.name}
-  //               goalTime={task.goal}
-  //               strokeColor={task.color}
-  //               timerState="stopped"
-  //               onTimerStateChange={(newState) => {
-  //                 // Handle timer state change if needed
-  //               }}
-  //               onLap={(lapTime) => {
-  //                 // Handle lap time if needed
-  //               }}
-  //             />
-  //           </View>
-  //         ))}
-  //         <AddTimer onPress={() => navigation.navigate("Add")} />
-  //       </View>
-  //     </View>
-  //   </Layout>
-  // );
 
   return (
     <Layout
@@ -77,13 +38,7 @@ const MultipleScreen: React.FC = () => {
                 name={task.name}
                 goalTime={task.goal}
                 strokeColor={task.color}
-                timerState="stopped"
-                onTimerStateChange={(newState) => {
-                  // Handle timer state change if needed
-                }}
-                onLap={(lapTime) => {
-                  // Handle lap time if needed
-                }}
+                taskId={task._id}
               />
             </View>
           ))}
@@ -116,6 +71,7 @@ const styles = StyleSheet.create({
   },
 
   watch1: {
+    // Set the width to half of the screen's width
     marginVertical: 20,
   },
 });

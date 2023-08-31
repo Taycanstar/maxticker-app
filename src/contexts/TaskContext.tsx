@@ -11,7 +11,7 @@ export interface Task {
 }
 
 interface SessionData {
-  startTime: Date;
+  startTime: number;
   totalDuration: number;
   status: string;
   laps: { time: number; name: string }[];
@@ -168,11 +168,6 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
       } else {
         const errorData = await response.json();
         console.error("Error from server:", errorData.message);
-        // Optionally, you can set some state or show a notification to the user here
-        // For example:
-        // setError(errorData.message);
-        // or
-        // showToastNotification(errorData.message);
       }
     } catch (error) {
       console.error("Error ending session:", error);
