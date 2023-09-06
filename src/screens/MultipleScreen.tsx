@@ -8,6 +8,7 @@ import { useTasks } from "../contexts/TaskContext";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/AppNavigator";
+import PlusTimer from "../components/PlusTimer";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -16,6 +17,7 @@ const MultipleScreen: React.FC = () => {
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false);
 
   const theme = useTheme();
+
   const navigation =
     useNavigation<StackNavigationProp<RootStackParamList, "Multiple">>();
 
@@ -38,13 +40,19 @@ const MultipleScreen: React.FC = () => {
                 name={task.name}
                 goalTime={task.goal}
                 strokeColor={task.color}
-                taskId={task._id}
+                id={task._id}
               />
             </View>
           ))}
-          <View style={styles.watch1}>
-            <AddTimer onPress={() => navigation.navigate("Add")} />
-          </View>
+          {tasks.length < 4 ? (
+            <View style={styles.watch1}>
+              <AddTimer onPress={() => navigation.navigate("Add")} />
+            </View>
+          ) : (
+            <View style={styles.watch1}>
+              <PlusTimer onPress={() => navigation.navigate("Subscription")} />
+            </View>
+          )}
         </View>
       </View>
     </Layout>

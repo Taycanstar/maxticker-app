@@ -128,6 +128,7 @@ export type RootStackParamList = {
   Edit?: { name: string; goal?: number; color?: string };
   Home?: { updatedTask?: any };
   Multiple?: undefined;
+  Subscription?: undefined;
 };
 export type DetailsScreenRouteProp = RouteProp<RootStackParamList, "Details">;
 export type VerifyScreenRouteProp = RouteProp<RootStackParamList, "Verify">;
@@ -314,13 +315,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
           component={HomeScreen}
           options={({ route, navigation }) => ({
             headerShown: true,
-            // headerTitle: (props) => (
-            //   <Image
-            //     source={isDarkTheme ? whiteLogo : blackLogo}
-            //     style={{ width: 80, height: 80 }}
-            //     resizeMode="contain"
-            //   />
-            // ),
+
             headerLeft: () => (
               <TouchableOpacity
                 style={{ marginLeft: 15 }}
@@ -363,7 +358,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
             headerTitle: (props) => (
               <Image
                 source={isDarkTheme ? whiteLogo : blackLogo}
-                style={{ width: 80, height: 80 }}
+                style={{ width: 60, height: 60 }}
                 resizeMode="contain"
               />
             ),
@@ -427,8 +422,16 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
         <Tab.Screen
           name="Analytics"
           component={AnalyticsScreen}
-          options={({ route }) => ({
+          options={({ route, navigation }) => ({
             // tabBarVisible: getTabBarVisibility(route),
+            headerShown: true,
+            headerStyle: {
+              backgroundColor: theme["background-basic-color-1"],
+              elevation: 0, // This removes the shadow for Android
+              borderBottomWidth: 0,
+              shadowOpacity: 0,
+            },
+
             tabBarIcon: ({ color, size, focused }) => (
               <TouchableOpacity
                 onPress={() => {
@@ -492,9 +495,6 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
         const focused = index === props.state.index;
         const { iconName } = route.params as { iconName: string };
 
-        const color = focused
-          ? theme["text-basic-color"]
-          : theme["text-basic-color"];
         return (
           <CustomDrawerItem
             key={route.key}
@@ -510,6 +510,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
 };
 
 const MainStack = () => {
+  const navigation = useNavigation();
   const theme = useTheme();
   const isDarkTheme = theme["background-basic-color-1"] === "#000";
   return (
@@ -536,6 +537,17 @@ const MainStack = () => {
               resizeMode="contain"
             />
           ),
+        }}
+      />
+      <Drawer.Screen
+        name="Account"
+        component={AccountScreen}
+        initialParams={{ iconName: "user" }}
+        options={{
+          headerShown: true,
+          headerTitle: "Account",
+          headerTintColor: theme["text-basic-color"],
+          headerRight: () => null,
           headerStyle: {
             backgroundColor: theme["background-basic-color-1"],
             elevation: 0, // This removes the shadow for Android
@@ -544,20 +556,45 @@ const MainStack = () => {
           },
         }}
       />
+
       <Drawer.Screen
-        name="Account"
-        component={AccountScreen}
-        initialParams={{ iconName: "user" }}
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Drawer.Screen
-        name="Suscription"
+        name="Subscription"
         component={Plus}
         initialParams={{ iconName: "check" }}
         options={{
-          headerShown: false,
+          headerShown: true,
+          headerTitle: () => (
+            <Text
+              style={{
+                color: theme["text-basic-color"],
+                fontSize: 24,
+                letterSpacing: 0.8,
+                fontWeight: "bold",
+              }}
+            >
+              Maxticker Plus
+            </Text>
+          ),
+          headerTintColor: theme["text-basic-color"],
+          headerRight: () => null,
+          headerLeft: (props) => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ paddingHorizontal: 10 }}
+            >
+              <Feather
+                name="arrow-left"
+                size={25}
+                color={theme["text-basic-color"]}
+              />
+            </TouchableOpacity>
+          ),
+          headerStyle: {
+            backgroundColor: theme["background-basic-color-1"],
+            elevation: 0, // This removes the shadow for Android
+            borderBottomWidth: 0,
+            shadowOpacity: 0,
+          },
         }}
       />
       <Drawer.Screen

@@ -117,7 +117,7 @@ export const refreshTokenAction = createAsyncThunk(
     }
 
     try {
-      const response = await api.post(`/refresh-token`, { refreshToken });
+      const response = await api.post(`/u/refresh-token`, { refreshToken });
       await AsyncStorage.setItem("token", response.data.token);
       return response.data;
     } catch (error: any) {
@@ -393,6 +393,21 @@ export const setNewPassword = createAsyncThunk(
       return rejectWithValue(
         error.response ? error.response.data : error.message
       );
+    }
+  }
+);
+
+export const createCheckoutSession = createAsyncThunk(
+  "user/create-checkout-session",
+  async () => {
+    try {
+      const response = await api.post("/pay/create-checkout-session");
+      return response.data;
+    } catch (error: any) {
+      // return rejectWithValue(
+      //   error.response ? error.response.data : error.message
+      // );
+      console.log(error.response ? error.response.data : error.message);
     }
   }
 );

@@ -9,6 +9,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Dimensions,
+  Image,
 } from "react-native";
 import React, {
   useState,
@@ -255,6 +256,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     if (tasks[activeTaskIndex]) {
       navigation.setOptions({
         headerTitle: tasks[activeTaskIndex].name,
+
         headerTitleStyle: {
           color: theme["text-basic-color"],
           fontSize: 20,
@@ -282,7 +284,15 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
       });
     } else {
       navigation.setOptions({
-        headerTitle: "",
+        headerTitle: () => (
+          <>
+            <Image
+              source={blackLogo}
+              style={{ width: 60, height: 60 }}
+              resizeMode="contain"
+            />
+          </>
+        ),
         headerRight: null,
       });
     }
@@ -325,36 +335,27 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   };
 
   useEffect(() => {
-    if (route.params?.updatedTask) {
-      const updatedTaskIndex = tasks.findIndex(
-        (task) => task._id === route.params.updatedTask._id
-      );
-      if (updatedTaskIndex !== -1) {
-        setActiveTaskIndex(updatedTaskIndex);
-      }
-    }
-  }, [route.params?.updatedTask, tasks]);
-
-  useEffect(() => {
     const handleTaskStateChange = (data: { taskId: string; state: string }) => {
-      if (data.taskId === tasks[activeTaskIndex]._id) {
+      if (data.taskId === tasks[activeTaskIndex]?._id) {
         if (data.state === "running") {
           setTimerState("running");
+          console.log("Received timerStarted event in homescreen");
         } else if (data.state === "paused") {
+          console.log("Received timerStarted event in homescreen");
           setTimerState("paused");
         } else if (data.state === "stopped") {
           setTimerState("stopped");
+          console.log("Received timerStarted event in homescreen");
         }
       }
     };
 
     taskEventEmitter.on("multipleTaskStateChanged", handleTaskStateChange);
 
-    // Cleanup the listener when the component unmounts
     return () => {
       taskEventEmitter.off("multipleTaskStateChanged", handleTaskStateChange);
     };
-  }, []);
+  }, [tasks]);
 
   return (
     <Layout style={styles.container}>
@@ -542,19 +543,6 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                             : theme["ios-blue"]
                         }
                         title={timerState === "running" ? "Stop" : "Start"}
-                        // onPress={() => {
-                        //   if (timerState === "stopped") {
-                        //     handleStart();
-                        //     setTimerState("running");
-                        //   } else if (timerState === "running") {
-                        //     handlePause();
-                        //     handleStartBreak();
-                        //     setTimerState("paused");
-                        //   } else if (timerState === "paused") {
-                        //     handleEndBreak();
-                        //     setTimerState("running");
-                        //   }
-                        // }}
                         onPress={() => {
                           if (timerState === "stopped") {
                             taskEventEmitter.emit("taskStateChanged", {
@@ -573,7 +561,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                             setTimerState("paused");
                           } else if (timerState === "paused") {
                             taskEventEmitter.emit("taskStateChanged", {
-                              taskId: tasks[activeTaskIndex]._id,
+                              taskId: tasks[activeTaskIndex]?._id,
                               state: "running",
                             });
                             handleEndBreak();

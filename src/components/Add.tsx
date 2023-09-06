@@ -27,6 +27,7 @@ import { useNavigation } from "@react-navigation/native";
 import { type StackNavigation } from "../navigation/AppNavigator";
 import { TaskContext } from "../contexts/TaskContext";
 import uuid from "react-native-uuid";
+import { useSubscription } from "../contexts/SubscriptionContext";
 
 type Props = {};
 
@@ -36,6 +37,7 @@ interface Color {
 }
 
 const Add: React.FC = ({ navigation }: any) => {
+  const { subscription, setSubscription } = useSubscription();
   const theme = useTheme();
   const initialTime = new Date();
   initialTime.setHours(0);
@@ -179,6 +181,14 @@ const Add: React.FC = ({ navigation }: any) => {
     return (hours * 60 * 60 + minutes * 60) * 1000;
   };
 
+  const handleColor = () => {
+    if (subscription == "basic") {
+      navigation.navigate("Subscription");
+    } else if (subscription == "plus") {
+      setIsStrokeVisible(!isStrokeVisible);
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: theme["box-bg"], paddingTop: 54 }}>
       <KeyboardAvoidingView
@@ -269,19 +279,16 @@ const Add: React.FC = ({ navigation }: any) => {
               >
                 {goal}
               </Text>
-              {isModalVisible ? (
-                <Feather color={Colors.metagray2} size={20} name="chevron-up" />
-              ) : (
-                <Feather
-                  color={Colors.metagray2}
-                  size={20}
-                  name="chevron-down"
-                />
-              )}
+
+              <Feather
+                color={Colors.metagray2}
+                size={20}
+                name={isModalVisible ? "chevron-up" : "chevron-down"}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setIsStrokeVisible(!isStrokeVisible)}
+              onPress={handleColor}
               style={{
                 flexDirection: "row",
                 width: "100%",
@@ -310,13 +317,37 @@ const Add: React.FC = ({ navigation }: any) => {
               >
                 {color}
               </Text>
-              {isStrokeVisible ? (
-                <Feather color={Colors.metagray2} size={20} name="chevron-up" />
+              {subscription === "basic" ? (
+                <View style={{ flexDirection: "row" }}>
+                  <View
+                    style={{
+                      backgroundColor: theme["ios-blue"],
+                      paddingHorizontal: 10,
+                      paddingVertical: 2,
+                      borderRadius: 5,
+                      marginHorizontal: 5,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: theme["text-basic-color"],
+                        fontWeight: "bold",
+                      }}
+                    >
+                      PLUS
+                    </Text>
+                  </View>
+                  <Feather
+                    color={Colors.metagray2}
+                    size={20}
+                    name="chevron-right"
+                  />
+                </View>
               ) : (
                 <Feather
                   color={Colors.metagray2}
                   size={20}
-                  name="chevron-down"
+                  name={isStrokeVisible ? "chevron-up" : "chevron-down"}
                 />
               )}
             </TouchableOpacity>

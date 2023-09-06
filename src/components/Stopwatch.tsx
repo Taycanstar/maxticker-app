@@ -11,7 +11,7 @@ import { useTasks } from "../contexts/TaskContext";
 type props = {
   name: string;
   goalTime?: any;
-  taskId?: string;
+  id?: string;
   strokeColor?: string;
 };
 
@@ -25,16 +25,11 @@ interface SessionData {
   timeSpentOnBreaks: number;
 }
 
-const Stopwatch: React.FC<props> = ({
-  name,
-  goalTime,
-  strokeColor,
-  taskId,
-}) => {
+const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(true);
   const theme = useTheme();
   const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const { endSession } = useTasks();
+  const { endSession, tasks } = useTasks();
   const [timerState, setTimerState] = useState<
     "stopped" | "running" | "paused"
   >("stopped");
@@ -75,13 +70,16 @@ const Stopwatch: React.FC<props> = ({
 
   useEffect(() => {
     const handleTaskStateChange = (data: { taskId: string; state: string }) => {
-      if (data.taskId === taskId) {
+      if (data.taskId === id) {
         if (data.state === "running") {
           setTimerState("running");
+          console.log("Received timerStarted event in Stopwatch");
         } else if (data.state === "paused") {
           setTimerState("paused");
+          console.log("Received timerStarted event in Stopwatch");
         } else if (data.state === "stopped") {
           setTimerState("stopped");
+          console.log("Received timerStarted event in Stopwatch");
         }
       }
     };
@@ -92,7 +90,7 @@ const Stopwatch: React.FC<props> = ({
     return () => {
       taskEventEmitter.off("taskStateChanged", handleTaskStateChange);
     };
-  }, []);
+  }, [tasks]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -151,8 +149,8 @@ const Stopwatch: React.FC<props> = ({
     }
 
     try {
-      if (taskId) {
-        await endSession(taskId, finalSessionData); // Send the taskId and final data to the backend
+      if (id) {
+        await endSession(id, finalSessionData); // Send the taskId and final data to the backend
       } else {
         console.error("No current task found");
       }
@@ -368,7 +366,7 @@ const Stopwatch: React.FC<props> = ({
                   setTimerState("stopped");
                   handleEndSession();
                   taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: taskId,
+                    taskId: id,
                     state: "stopped",
                   });
                 }
@@ -388,7 +386,7 @@ const Stopwatch: React.FC<props> = ({
               onPress={() => {
                 if (timerState === "stopped") {
                   taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: taskId,
+                    taskId: id,
                     state: "running",
                   });
                   handleStart();
@@ -396,14 +394,14 @@ const Stopwatch: React.FC<props> = ({
                 } else if (timerState === "running") {
                   setTimerState("paused");
                   taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: taskId,
+                    taskId: id,
                     state: "paused",
                   });
                   handlePause();
                   handleStartBreak();
                 } else if (timerState === "paused") {
                   taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: taskId,
+                    taskId: id,
                     state: "running",
                   });
                   handleEndBreak();

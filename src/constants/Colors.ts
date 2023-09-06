@@ -1,6 +1,6 @@
 export default {
-  // primary: "#192bc2",
-  primary: "rgba(70,81,228,1)",
+  primary: "rgb(209,209,214)",
+  // primary: "rgba(70,81,228,1)",
   purple: "#7230fc",
   darkGrayBtn: "rgba(33,33,35,1)",
   mediumGrayBtn: "#4A4443",
