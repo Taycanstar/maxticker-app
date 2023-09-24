@@ -330,7 +330,7 @@ const Add: React.FC = ({ navigation }: any) => {
                   >
                     <Text
                       style={{
-                        color: theme["text-basic-color"],
+                        color: "#fff",
                         fontWeight: "bold",
                       }}
                     >

@@ -17,6 +17,7 @@ import React, {
   useContext,
   useCallback,
   useLayoutEffect,
+  useRef,
 } from "react";
 import Colors from "../constants/Colors";
 import { Layout, useTheme } from "@ui-kitten/components";
@@ -75,6 +76,12 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   const [goalTime, setGoalTime] = useState<number>(
     tasks && tasks[activeTaskIndex] ? tasks[activeTaskIndex].goal : 0
   );
+  const lastEmitRef = useRef<{
+    [taskId: string]: {
+      state: "stopped" | "running" | "paused";
+      elapsedTime: number;
+    };
+  }>({});
 
   const toggleContextMenu = () => {
     setContextMenuVisible(!contextMenuVisible);
@@ -110,11 +117,6 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
       status: "paused",
       totalDuration: prevData.totalDuration + duration,
     }));
-  };
-  const changeActiveTask = (index: number) => {
-    if (index >= 0 && index < tasks.length) {
-      setActiveTaskIndex(index);
-    }
   };
 
   const handleEndSession = async () => {
@@ -173,9 +175,9 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
         await fetchTasks();
         // Use a local variable to check the tasks immediately after fetching
         const fetchedTasks = tasks;
-        if (fetchedTasks && fetchedTasks.length > 0) {
-          setActiveTaskIndex(0); // Set the first task as the active task after fetching
-        }
+        // if (fetchedTasks && fetchedTasks.length > 0) {
+        //   setActiveTaskIndex(activeTaskIndex); // Set the first task as the active task after fetching
+        // }
       };
 
       fetchData();
@@ -335,17 +337,37 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   };
 
   useEffect(() => {
-    const handleTaskStateChange = (data: { taskId: string; state: string }) => {
+    const handleTaskStateChange = (data: {
+      taskId: string;
+      state: "stopped" | "running" | "paused";
+      elapsedTime?: number;
+    }) => {
       if (data.taskId === tasks[activeTaskIndex]?._id) {
+        if (data.elapsedTime !== undefined) {
+          lastEmitRef.current[data.taskId] = {
+            state: data.state,
+            elapsedTime: data.elapsedTime,
+          };
+        }
+
         if (data.state === "running") {
           setTimerState("running");
+          if (data.elapsedTime !== undefined) {
+            setElapsedTime(data.elapsedTime);
+          }
           console.log("Received timerStarted event in homescreen");
         } else if (data.state === "paused") {
           console.log("Received timerStarted event in homescreen");
           setTimerState("paused");
+          if (data.elapsedTime !== undefined) {
+            setElapsedTime(data.elapsedTime);
+          }
         } else if (data.state === "stopped") {
           setTimerState("stopped");
           console.log("Received timerStarted event in homescreen");
+          if (data.elapsedTime !== undefined) {
+            setElapsedTime(data.elapsedTime);
+          }
         }
       }
     };
@@ -356,6 +378,22 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
       taskEventEmitter.off("multipleTaskStateChanged", handleTaskStateChange);
     };
   }, [tasks]);
+
+  const changeTaskAction = (index: any) => {
+    if (index !== undefined) {
+      setActiveTaskIndex(index);
+      const taskId = tasks[activeTaskIndex]._id;
+      setIsModalVisible(false);
+      if (lastEmitRef.current[taskId]) {
+        setTimerState(lastEmitRef.current[taskId].state);
+        // If you're maintaining elapsedTime on this screen:
+        // Check if elapsedTime is defined before setting it
+        if (lastEmitRef.current[taskId].elapsedTime !== undefined) {
+          setElapsedTime(lastEmitRef.current[taskId].elapsedTime);
+        }
+      }
+    }
+  };
 
   return (
     <Layout style={styles.container}>
@@ -681,10 +719,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                       return (
                         <TouchableOpacity
                           key={index}
-                          onPress={() => {
-                            setActiveTaskIndex(index); // Set the index of the clicked task as the activeTaskIndex
-                            setIsModalVisible(false); // Close the modal
-                          }}
+                          onPress={() => changeTaskAction(index)}
                           style={{
                             flexDirection: "row",
                             alignItems: "center",

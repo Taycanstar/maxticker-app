@@ -1,4 +1,3 @@
-// TimerComponent.tsx
 import React, { useState, useEffect } from "react";
 import { View, Text, Button, StyleSheet, TouchableOpacity } from "react-native";
 import { Circle, Svg } from "react-native-svg";
@@ -26,6 +25,8 @@ interface SessionData {
 }
 
 const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
+  const [isReady, setIsReady] = useState<boolean>(false);
+
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(true);
   const theme = useTheme();
   const [elapsedTime, setElapsedTime] = useState<number>(0);
@@ -213,15 +214,10 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
     }
   };
 
-  //  const handleEditPress = () => {
-  //    setIsMoreVisible(false);
-  //    navigation.navigate("Edit", {
-  //      name: tasks[activeTaskIndex]?.name,
-  //      goal: tasks[activeTaskIndex]?.goal,
-  //      color: tasks[activeTaskIndex]?.color,
-  //      taskId: tasks[activeTaskIndex]?._id,
-  //    });
-  //  };
+  useEffect(() => {
+    setIsReady(true);
+    return () => setIsReady(false); // clean up on unmount
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -368,6 +364,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
                   taskEventEmitter.emit("multipleTaskStateChanged", {
                     taskId: id,
                     state: "stopped",
+                    elapsedTime: elapsedTime,
                   });
                 }
               }}
@@ -378,16 +375,12 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
               color={theme["text-basic-color"]}
               size={18}
               name={timerState === "running" ? "pause" : "play"}
-              // onPress={() =>
-              //   setTimerState((prev) =>
-              //     prev === "running" ? "paused" : "running"
-              //   )
-              // }
               onPress={() => {
                 if (timerState === "stopped") {
                   taskEventEmitter.emit("multipleTaskStateChanged", {
                     taskId: id,
                     state: "running",
+                    elapsedTime: elapsedTime,
                   });
                   handleStart();
                   setTimerState("running");
@@ -396,6 +389,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
                   taskEventEmitter.emit("multipleTaskStateChanged", {
                     taskId: id,
                     state: "paused",
+                    elapsedTime: elapsedTime,
                   });
                   handlePause();
                   handleStartBreak();
@@ -403,6 +397,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
                   taskEventEmitter.emit("multipleTaskStateChanged", {
                     taskId: id,
                     state: "running",
+                    elapsedTime: elapsedTime,
                   });
                   handleEndBreak();
                   setTimerState("running");

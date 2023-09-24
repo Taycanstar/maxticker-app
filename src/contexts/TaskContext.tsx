@@ -8,6 +8,7 @@ export interface Task {
   goal: number;
   color: string;
   sessions?: any[];
+  timerState?: "stopped" | "running" | "paused";
 }
 
 interface SessionData {
@@ -27,14 +28,15 @@ type EndSessionFunction = (
 
 export interface TaskContextType {
   tasks: Task[];
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   fetchTasks: () => Promise<void>;
   addTask: (task: Task) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   updateTask: (task: Task) => Promise<void>;
   endSession: (taskId: string, sessionData: SessionData) => Promise<void>;
-
-  // ... Add other session-related methods as needed
+  // setGlobalTimerState: (
+  //   state: "stopped" | "running" | "paused" | string
+  // ) => void;
+  handleTimer: (taskId: any, action: "start" | "pause" | "reset") => void;
 }
 
 interface TaskProviderProps {
@@ -53,11 +55,36 @@ export const useTasks = () => {
   return context;
 };
 
+const taskReducer = (state: Task[], action: any) => {
+  switch (action.type) {
+    case "SET_TASKS":
+      return action.payload;
+    case "UPDATE_TASK":
+      return state.map((task) =>
+        task._id === action.payload._id ? action.payload : task
+      );
+    case "ADD_TASK":
+      return [...state, action.payload];
+    case "DELETE_TASK":
+      return state.filter((task) => task._id !== action.payload);
+    case "UPDATE_TASK_PROPERTY":
+      return state.map((task) =>
+        task._id === action.payload.taskId
+          ? { ...task, [action.payload.property]: action.payload.value }
+          : task
+      );
+    default:
+      return state;
+  }
+};
+
 export const TaskProvider: React.FC<TaskProviderProps> = ({
   children,
 }: any) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [globalTimerState, setGlobalTimerState] = useState("stopped");
+
   const fetchTasks = async () => {
     try {
       const token = await getTokenFromStorage();
@@ -68,9 +95,41 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
         },
       });
       const fetchedTasks = await response.json();
-      setTasks(fetchedTasks);
+      // setTasks(fetchedTasks);
+      setTasks(
+        fetchedTasks.map((task: Task) => ({ ...task, timerState: "stopped" }))
+      );
     } catch (error) {
       console.error("Error fetching tasks:", error);
+    }
+  };
+  const startTimer = (taskId: string) => {
+    updateTaskProperty(taskId, "timerState", "running");
+  };
+
+  const pauseTimer = (taskId: string) => {
+    updateTaskProperty(taskId, "timerState", "paused");
+  };
+
+  const resetTimer = (taskId: string) => {
+    updateTaskProperty(taskId, "elapsedTime", 0);
+    updateTaskProperty(taskId, "timerState", "stopped");
+  };
+
+  const updateElapsedTime = (taskId: string, elapsedTime: number) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task._id === taskId ? { ...task, elapsedTime } : task
+      )
+    );
+  };
+  const handleTimer = (taskId: string, action: "start" | "pause" | "reset") => {
+    if (action === "start") {
+      startTimer(taskId);
+    } else if (action === "pause") {
+      pauseTimer(taskId);
+    } else if (action === "reset") {
+      resetTimer(taskId);
     }
   };
 
@@ -175,6 +234,14 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
     }
   };
 
+  const updateTaskProperty = (taskId: string, property: string, value: any) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task._id === taskId ? { ...task, [property]: value } : task
+      )
+    );
+  };
+
   useEffect(() => {
     fetchTasks();
   }, []);
@@ -183,12 +250,13 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
     <TaskContext.Provider
       value={{
         tasks,
-        setTasks,
+        // setTasks,
         fetchTasks,
         addTask,
         deleteTask,
         updateTask,
         endSession,
+        handleTimer,
         // ... Add other session-related methods to the value prop as needed
       }}
     >

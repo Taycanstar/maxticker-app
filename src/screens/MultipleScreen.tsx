@@ -14,7 +14,12 @@ const screenWidth = Dimensions.get("window").width;
 
 const MultipleScreen: React.FC = () => {
   const { tasks, fetchTasks } = useTasks();
+  // Assuming useTasks is your context hook
+
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false);
+  const [activeStopwatchId, setActiveStopwatchId] = useState<string | null>(
+    null
+  );
 
   const theme = useTheme();
 

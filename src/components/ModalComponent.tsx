@@ -24,7 +24,7 @@ type Props = {
   items: Item[];
   title?: string;
   icon?: any;
-  handlePress?: () => void;
+  handlePress: (selectedItem: any) => void;
 };
 
 const ModalComponent: React.FC<Props> = ({
@@ -70,7 +70,7 @@ const ModalComponent: React.FC<Props> = ({
                   return (
                     <TouchableOpacity
                       key={index}
-                      onPress={handlePress}
+                      onPress={() => handlePress(item.name)}
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
@@ -117,7 +117,7 @@ const ModalComponent: React.FC<Props> = ({
                         >
                           <Text
                             style={{
-                              color: theme["text-basic-color"],
+                              color: "#fff",
                               fontWeight: "bold",
                             }}
                           >

@@ -10,13 +10,13 @@ interface UserState {
     id?: string;
     registrationStep?: string;
   } | null;
-
+  userSignupDate: null;
   status: "idle" | "loading" | "loggedIn" | "error";
   error?: string | null | any;
   token: string | null;
   tokenExpiry: number | null;
   refreshToken: string | null;
-  // token: string | null;
+  // timerState: "stopped" | "running" | "paused";
 }
 
 const initialState: UserState = {
@@ -26,6 +26,8 @@ const initialState: UserState = {
   token: null,
   tokenExpiry: null,
   refreshToken: null,
+  userSignupDate: null,
+  // timerState: "stopped",
   // token: null,
 };
 
@@ -61,7 +63,7 @@ export const loginUser = createAsyncThunk(
 
       // Save the tokens to AsyncStorage
       await AsyncStorage.setItem("token", response.data.token);
-      await AsyncStorage.setItem("refreshToken", response.data.refreshToken);
+      // await AsyncStorage.setItem("refreshToken", response.data.refreshToken);
 
       // Optionally, if the backend returns the token expiry time or if you can calculate it:
       // await AsyncStorage.setItem("tokenExpiry", response.data.tokenExpiry.toString());
@@ -97,7 +99,7 @@ export const signup = createAsyncThunk(
 
       // Save the token to AsyncStorage
       await AsyncStorage.setItem("token", response.data.token);
-      await AsyncStorage.setItem("refreshToken", response.data.refreshToken);
+      // await AsyncStorage.setItem("refreshToken", response.data.refreshToken);
       return response.data;
     } catch (error: any) {
       console.log(error);
@@ -421,12 +423,7 @@ const userSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.status = "loading";
       })
-      // .addCase(loginUser.fulfilled, (state, action) => {
-      //   state.status = "loggedIn";
-      //   state.data = action.payload;
-      //   state.error = null;
-      //   state.token = action.payload.token;
-      // })
+
       .addCase(signup.rejected, (state, action) => {
         state.status = "error";
         state.error = action.payload;
@@ -434,12 +431,6 @@ const userSlice = createSlice({
       .addCase(signup.pending, (state) => {
         state.status = "loading";
       })
-      // .addCase(signup.fulfilled, (state, action) => {
-      //   state.status = "loggedIn";
-      //   state.data = action.payload;
-      //   state.error = null;
-      //   state.token = action.payload.token;
-      // })
       .addCase(signup.fulfilled, (state, action) => {
         state.status = "loggedIn";
         state.data = action.payload;
@@ -451,12 +442,6 @@ const userSlice = createSlice({
         state.status = "error";
         state.error = action.payload;
       })
-
-      // .addCase(logoutUser.fulfilled, (state) => {
-      //   state.status = "idle";
-      //   state.data = null;
-      //   state.error = null;
-      // })
       .addCase(logoutUser.fulfilled, (state) => {
         state.status = "idle";
         state.data = null;
@@ -470,6 +455,7 @@ const userSlice = createSlice({
         state.data = action.payload;
         state.error = null;
         state.token = action.payload.token;
+        state.userSignupDate = action.payload.createdAt;
         state.refreshToken = action.payload.refreshToken; // Add this line
         state.tokenExpiry = action.payload.tokenExpiry; // Add this line if you have tokenExpiry
       })
@@ -481,6 +467,7 @@ const userSlice = createSlice({
         state.data = action.payload;
         // state.status = 'loggedIn';
         state.error = null;
+        state.userSignupDate = action.payload.createdAt;
         (state.data as { registrationStep?: string }).registrationStep =
           action.payload?.registrationStep ?? "";
       })
@@ -492,6 +479,7 @@ const userSlice = createSlice({
         // Handle success
         console.log(action.payload, "<= Fulfilled payload");
         state.data = action.payload;
+        state.userSignupDate = action.payload.createdAt;
         state.error = null;
       })
       .addCase(fetchUserByValue.rejected, (state, action) => {
