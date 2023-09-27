@@ -475,15 +475,42 @@ const GeneralCard: React.FC<Props> = ({
                     nextDayAfterEnd.setHours(0, 0, 0, 0);
                     nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
 
-                    const weekSessions = task.sessions
-                      ? task.sessions.filter((session: any) => {
-                          const sessionDate = new Date(session.createdAt);
-                          return (
-                            sessionDate >= startDay &&
-                            sessionDate < nextDayAfterEnd
+                    const filterSessionsForWeek = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+                    let totalDurationForSelectedWeek = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForMonth = filterSessionsForWeek(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedWeek +=
+                          taskSessionsForMonth.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
                           );
-                        })
+                      });
+                    }
+
+                    const weekSessions = task.sessions
+                      ? filterSessionsForWeek(task.sessions)
                       : [];
+                    //hi
+                    // const weekSessions = task.sessions
+                    //   ? task.sessions.filter((session: any) => {
+                    //       const sessionDate = new Date(session.createdAt);
+                    //       return (
+                    //         sessionDate >= startDay &&
+                    //         sessionDate < nextDayAfterEnd
+                    //       );
+                    //     })
+                    //   : [];
 
                     const taskTotalDuration =
                       weekSessions.reduce(
@@ -492,7 +519,7 @@ const GeneralCard: React.FC<Props> = ({
                       ) ?? 0;
 
                     const flexValue = taskTotalDuration
-                      ? taskTotalDuration / totalThisWeek // Assuming you have totalThisWeek calculated
+                      ? taskTotalDuration / totalDurationForSelectedWeek // Assuming you have totalThisWeek calculated
                       : 0;
 
                     return taskTotalDuration !== 0 ? (
@@ -549,15 +576,33 @@ const GeneralCard: React.FC<Props> = ({
                     nextDayAfterEnd.setHours(0, 0, 0, 0);
                     nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
 
-                    const weekSessions = task.sessions
-                      ? task.sessions.filter((session: any) => {
-                          const sessionDate = new Date(session.createdAt);
-                          return (
-                            sessionDate >= startDay &&
-                            sessionDate < nextDayAfterEnd
+                    const filterSessionsForWeek = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+                    let totalDurationForSelectedWeek = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForMonth = filterSessionsForWeek(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedWeek +=
+                          taskSessionsForMonth.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
                           );
-                        })
+                      });
+                    }
+
+                    const weekSessions = task.sessions
+                      ? filterSessionsForWeek(task.sessions)
                       : [];
+                    //hi
 
                     const taskTotalDuration =
                       weekSessions.reduce(
@@ -572,7 +617,7 @@ const GeneralCard: React.FC<Props> = ({
 
                     // Flex value based on average duration
                     const flexValue = avgDuration
-                      ? avgDuration / totalThisWeek // Assuming you have totalThisWeek calculated
+                      ? avgDuration / totalDurationForSelectedWeek // Assuming you have totalThisWeek calculated
                       : 0;
 
                     return avgDuration !== 0 && taskTotalDuration !== 0 ? (
@@ -610,7 +655,7 @@ const GeneralCard: React.FC<Props> = ({
               </>
             );
 
-          case "AvgBreaksPerSession":
+          case "weeklyAvgBreaksPerSession":
             return (
               <>
                 <Text
@@ -679,14 +724,14 @@ const GeneralCard: React.FC<Props> = ({
                             { color: theme["text-basic-color"] },
                           ]}
                         >
-                          {avgBreaks.toFixed(2)}
+                          {avgBreaks.toFixed(1)}
                         </Text>
                       </View>
                     ) : null;
                   })}
               </>
             );
-          case "TimeSpentOnBreaks":
+          case "weeklyTimeSpentOnBreaks":
             return (
               <>
                 <Text
@@ -784,7 +829,7 @@ const GeneralCard: React.FC<Props> = ({
                   })}
               </>
             );
-          case "GoalCompletionRate":
+          case "weeklyGoalCompletionRate":
             return (
               <>
                 <Text
@@ -825,6 +870,1037 @@ const GeneralCard: React.FC<Props> = ({
                         : 0; // This will be a percentage value between 0 and 100
 
                     return weekSessions.length !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${completionRate}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {completionRate.toFixed(0)}%
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+
+          case "monthlyTotal":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
+
+                    const filterSessionsForMonth = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected month
+                    let totalDurationForSelectedMonth = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForMonth = filterSessionsForMonth(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedMonth +=
+                          taskSessionsForMonth.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const monthSessions = task.sessions
+                      ? filterSessionsForMonth(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      monthSessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const flexValue = taskTotalDuration
+                      ? taskTotalDuration / totalDurationForSelectedMonth
+                      : 0;
+
+                    return taskTotalDuration !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${flexValue * 100}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {formatDuration(taskTotalDuration)}
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+
+          case "monthlyAvgSession":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
+
+                    const filterSessionsForMonth = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected month
+                    let totalDurationForSelectedMonth = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForMonth = filterSessionsForMonth(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedMonth +=
+                          taskSessionsForMonth.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const monthSessions = task.sessions
+                      ? filterSessionsForMonth(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      monthSessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const avgDuration =
+                      monthSessions.length > 0
+                        ? taskTotalDuration / monthSessions.length
+                        : 0;
+
+                    // Flex value based on average duration
+                    const flexValue = avgDuration
+                      ? avgDuration / totalDurationForSelectedMonth // Assuming you have totalThisWeek calculated
+                      : 0;
+
+                    return avgDuration !== 0 && taskTotalDuration !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${flexValue * 100}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {formatDuration(avgDuration)}
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+
+          case "monthlyAvgBreaksPerSession":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
+
+                    const filterSessionsForMonth = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected month
+                    let totalDurationForSelectedMonth = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForMonth = filterSessionsForMonth(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedMonth +=
+                          taskSessionsForMonth.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const monthSessions = task.sessions
+                      ? filterSessionsForMonth(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      monthSessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const totalBreaksForTask = monthSessions.reduce(
+                      (sum, session) => sum + (session.breaks || 0),
+                      0
+                    );
+                    const avgBreaks =
+                      monthSessions.length > 0
+                        ? totalBreaksForTask / monthSessions.length
+                        : 0;
+
+                    const flexValue = avgBreaks
+                      ? avgBreaks / totalBreaksForTask // Assuming you have totalThisWeek calculated
+                      : 0;
+
+                    return monthSessions.length !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${flexValue * 100}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {avgBreaks.toFixed(1)}
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+          case "monthlyTimeSpentOnBreaks":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
+
+                    const filterSessionsForMonth = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected month
+                    let totalDurationForSelectedMonth = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForMonth = filterSessionsForMonth(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedMonth +=
+                          taskSessionsForMonth.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const monthSessions = task.sessions
+                      ? filterSessionsForMonth(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      monthSessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const totalBreaksTimeThisMonth = tasks.reduce(
+                      (totalBreakTime, task) => {
+                        const monthSessions = task.sessions
+                          ? task.sessions.filter((session: any) => {
+                              const sessionDate = new Date(session.createdAt);
+                              return (
+                                sessionDate >= startDay &&
+                                sessionDate < nextDayAfterEnd
+                              );
+                            })
+                          : [];
+
+                        return (
+                          totalBreakTime +
+                          monthSessions.reduce(
+                            (sum, session) =>
+                              sum + (session.timeSpentOnBreaks || 0),
+                            0
+                          )
+                        );
+                      },
+                      0
+                    );
+
+                    const totalTimeSpentOnBreaksForTask = monthSessions.reduce(
+                      (sum, session) => sum + (session.timeSpentOnBreaks || 0),
+                      0
+                    );
+
+                    // For the flexValue calculation
+                    const flexValue = totalTimeSpentOnBreaksForTask
+                      ? totalTimeSpentOnBreaksForTask / totalBreaksTimeThisMonth
+                      : 0;
+
+                    return monthSessions.length !== 0 &&
+                      totalTimeSpentOnBreaksForTask !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${flexValue * 100}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {formatDuration(totalTimeSpentOnBreaksForTask)}
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+          case "monthlyGoalCompletionRate":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1);
+
+                    const filterSessionsForMonth = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected month
+                    let totalDurationForSelectedMonth = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForMonth = filterSessionsForMonth(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedMonth +=
+                          taskSessionsForMonth.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const monthSessions = task.sessions
+                      ? filterSessionsForMonth(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      monthSessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const flexValue = taskTotalDuration
+                      ? taskTotalDuration / totalDurationForSelectedMonth
+                      : 0;
+                    //hi
+
+                    // Get the count of sessions that meet or exceed the goal
+                    const completedSessionsCount = monthSessions.filter(
+                      (session) => session.totalDuration >= task.goal
+                    ).length;
+
+                    // Calculate the goal completion rate
+                    const completionRate =
+                      monthSessions.length > 0
+                        ? (completedSessionsCount / monthSessions.length) * 100
+                        : 0; // This will be a percentage value between 0 and 100
+
+                    return monthSessions.length !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${completionRate}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {completionRate.toFixed(0)}%
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+          case "dailyTotal":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
+
+                    const filterSessionsForDay = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected day
+                    let totalDurationForSelectedDay = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForDay = filterSessionsForDay(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedDay +=
+                          taskSessionsForDay.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const daySessions = task.sessions
+                      ? filterSessionsForDay(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      daySessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const flexValue = taskTotalDuration
+                      ? taskTotalDuration / totalDurationForSelectedDay
+                      : 0;
+
+                    return taskTotalDuration !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${flexValue * 100}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {formatDuration(taskTotalDuration)}
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+
+          case "dailyAvgSession":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
+
+                    const filterSessionsForDay = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected month
+                    let totalDurationForSelectedDay = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForDay = filterSessionsForDay(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedDay +=
+                          taskSessionsForDay.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const daySessions = task.sessions
+                      ? filterSessionsForDay(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      daySessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const avgDuration =
+                      daySessions.length > 0
+                        ? taskTotalDuration / daySessions.length
+                        : 0;
+
+                    // Flex value based on average duration
+                    const flexValue = avgDuration
+                      ? avgDuration / totalDurationForSelectedDay // Assuming you have totalThisWeek calculated
+                      : 0;
+
+                    return avgDuration !== 0 && taskTotalDuration !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${flexValue * 100}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {formatDuration(avgDuration)}
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+
+          case "dailyAvgBreaksPerSession":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
+
+                    const filterSessionsForDay = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected month
+                    let totalDurationForSelectedDay = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForDay = filterSessionsForDay(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedDay +=
+                          taskSessionsForDay.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const daySessions = task.sessions
+                      ? filterSessionsForDay(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      daySessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const totalBreaksForTask = daySessions.reduce(
+                      (sum, session) => sum + (session.breaks || 0),
+                      0
+                    );
+                    const avgBreaks =
+                      daySessions.length > 0
+                        ? totalBreaksForTask / daySessions.length
+                        : 0;
+
+                    const flexValue = avgBreaks
+                      ? avgBreaks / totalBreaksForTask // Assuming you have totalThisWeek calculated
+                      : 0;
+
+                    return daySessions.length !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${flexValue * 100}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {avgBreaks.toFixed(1)}
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+          case "dailyTimeSpentOnBreaks":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
+
+                    const filterSessionsForDay = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected month
+                    let totalDurationForSelectedDay = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForDay = filterSessionsForDay(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedDay +=
+                          taskSessionsForDay.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const daySessions = task.sessions
+                      ? filterSessionsForDay(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      daySessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const totalBreaksTimeThisDay = tasks.reduce(
+                      (totalBreakTime, task) => {
+                        const daySessions = task.sessions
+                          ? task.sessions.filter((session: any) => {
+                              const sessionDate = new Date(session.createdAt);
+                              return (
+                                sessionDate >= startDay &&
+                                sessionDate < nextDayAfterEnd
+                              );
+                            })
+                          : [];
+
+                        return (
+                          totalBreakTime +
+                          daySessions.reduce(
+                            (sum, session) =>
+                              sum + (session.timeSpentOnBreaks || 0),
+                            0
+                          )
+                        );
+                      },
+                      0
+                    );
+
+                    const totalTimeSpentOnBreaksForTask = daySessions.reduce(
+                      (sum, session) => sum + (session.timeSpentOnBreaks || 0),
+                      0
+                    );
+
+                    // For the flexValue calculation
+                    const flexValue = totalTimeSpentOnBreaksForTask
+                      ? totalTimeSpentOnBreaksForTask / totalBreaksTimeThisDay
+                      : 0;
+
+                    return daySessions.length !== 0 &&
+                      totalTimeSpentOnBreaksForTask !== 0 ? (
+                      <View key={index} style={[styles.taskContainer, {}]}>
+                        <Text
+                          style={[
+                            styles.taskName,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {task.name}
+                        </Text>
+                        <View style={{ width: "100%", marginBottom: 3 }}>
+                          <View
+                            style={{
+                              height: 20,
+                              width: `${flexValue * 100}%`,
+                              backgroundColor: colors[index % colors.length],
+                              borderRadius: 5,
+                            }}
+                          ></View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.taskDigit,
+                            { color: theme["text-basic-color"] },
+                          ]}
+                        >
+                          {formatDuration(totalTimeSpentOnBreaksForTask)}
+                        </Text>
+                      </View>
+                    ) : null;
+                  })}
+              </>
+            );
+          case "dailyGoalCompletionRate":
+            return (
+              <>
+                <Text
+                  style={[
+                    styles.title,
+                    { color: theme["text-basic-color"], fontSize: 17 },
+                  ]}
+                >
+                  {title}
+                </Text>
+                {tasks &&
+                  tasks.map((task, index) => {
+                    const startDay = new Date(start);
+                    const nextDayAfterEnd = new Date(end);
+                    startDay.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setHours(0, 0, 0, 0);
+                    nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1);
+
+                    const filterSessionsForDay = (taskSessions: any[]) => {
+                      return taskSessions.filter((session: any) => {
+                        const sessionDate = new Date(session.createdAt);
+                        return (
+                          sessionDate >= startDay &&
+                          sessionDate < nextDayAfterEnd
+                        );
+                      });
+                    };
+
+                    // Calculate total duration for the selected month
+                    let totalDurationForSelectedDay = 0;
+                    if (tasks) {
+                      tasks.forEach((task) => {
+                        const taskSessionsForDay = filterSessionsForDay(
+                          task.sessions || []
+                        );
+                        totalDurationForSelectedDay +=
+                          taskSessionsForDay.reduce(
+                            (sum, session) => sum + session.totalDuration,
+                            0
+                          );
+                      });
+                    }
+
+                    const daySessions = task.sessions
+                      ? filterSessionsForDay(task.sessions)
+                      : [];
+                    const taskTotalDuration =
+                      daySessions.reduce(
+                        (sum, session) => sum + session.totalDuration,
+                        0
+                      ) ?? 0;
+
+                    const flexValue = taskTotalDuration
+                      ? taskTotalDuration / totalDurationForSelectedDay
+                      : 0;
+                    //hi
+
+                    // Get the count of sessions that meet or exceed the goal
+                    const completedSessionsCount = daySessions.filter(
+                      (session) => session.totalDuration >= task.goal
+                    ).length;
+
+                    // Calculate the goal completion rate
+                    const completionRate =
+                      daySessions.length > 0
+                        ? (completedSessionsCount / daySessions.length) * 100
+                        : 0; // This will be a percentage value between 0 and 100
+
+                    return daySessions.length !== 0 ? (
                       <View key={index} style={[styles.taskContainer, {}]}>
                         <Text
                           style={[

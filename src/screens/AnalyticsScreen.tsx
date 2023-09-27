@@ -30,7 +30,7 @@ import { Canvas, Path, Skia } from "@shopify/react-native-skia";
 import { Circle, Svg, Line } from "react-native-svg";
 import { ScrollView } from "react-native-gesture-handler";
 import { ActivityIndicator } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import {
   HomeScreenRouteProp,
@@ -42,31 +42,39 @@ import { blackLogo } from "../images/ImageAssets";
 import { taskEventEmitter } from "../utils/eventEmitter";
 import ModalComponent from "../components/ModalComponent";
 import GeneralCard from "../components/GeneralCard";
+import user from "../store/user";
 
-type Props = {};
+type DayProps = {
+  day: string; // in YYYY-MM-DD format
+  isActive: boolean;
+};
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const WEEK_WIDTH = SCREEN_WIDTH / 3;
-const PADDING_WIDTH = Dimensions.get("window").width / 2 - WEEK_WIDTH / 2;
 
 type WeekProps = {
   week: string;
   isActive: boolean;
 };
 
+type MonthProps = {
+  month: string;
+  isActive: boolean;
+};
+
 const monthMapping: { [key: string]: number } = {
-  Jan: 0,
-  Feb: 1,
-  Mar: 2,
-  Apr: 3,
-  May: 4,
-  Jun: 5,
-  Jul: 6,
-  Aug: 7,
-  Sep: 8,
-  Oct: 9,
-  Nov: 10,
-  Dec: 11,
+  JAN: 0,
+  FEB: 1,
+  MAR: 2,
+  APR: 3,
+  MAY: 4,
+  JUN: 5,
+  JUL: 6,
+  AUG: 7,
+  SEP: 8,
+  OCT: 9,
+  NOV: 10,
+  DEC: 11,
 };
 
 const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
@@ -80,10 +88,11 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     (state: any) => state.user?.userSignupDate
   );
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
-  const handleWeekPress = (index: number) => {
-    setSelectedWeekIndex(index);
-    // Here, you can add any logic you need when a week is selected
-  };
+
+  const justMounted = useRef(true);
+
+  const weekScrollViewRef = useRef<ScrollView>(null);
+  const monthScrollViewRef = useRef<ScrollView>(null);
 
   const Week: React.FC<WeekProps> = ({ week, isActive }) => (
     <View
@@ -115,18 +124,18 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // 1. Generate Week Ranges:
   const generateWeekRanges = (signupDate: Date) => {
     const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
+      "JAN",
+      "FEB",
+      "MAR",
+      "APR",
+      "MAY",
+      "JUN",
+      "JUL",
+      "AUG",
+      "SEP",
+      "OCT",
+      "NOV",
+      "DEC",
     ];
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0);
@@ -368,21 +377,303 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     weekRangesWithDummy[currentWeekIndex]
   );
 
-  const weekSessions = tasks.flatMap((task) => {
-    return task.sessions
-      ? task.sessions.filter((session: any) => {
-          const sessionDate = new Date(session.createdAt);
-          const startDay = new Date(start);
-          const nextDayAfterEnd = new Date(end);
+  //handle Monthly
+  const generateMonthRanges = (signupDate: Date) => {
+    const monthNames = [
+      "JAN",
+      "FEB",
+      "MAR",
+      "APR",
+      "MAY",
+      "JUN",
+      "JUL",
+      "AUG",
+      "SEP",
+      "OCT",
+      "NOV",
+      "DEC",
+    ];
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    const monthRanges: string[] = [];
 
-          startDay.setHours(0, 0, 0, 0);
-          nextDayAfterEnd.setHours(0, 0, 0, 0);
-          nextDayAfterEnd.setDate(nextDayAfterEnd.getDate() + 1); // set to the next day
+    // Ensure signupDate is a Date object
+    let startDate = new Date(signupDate);
+    // Adjust the signupDate to the first of the month
+    startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
 
-          return sessionDate >= startDay && sessionDate < nextDayAfterEnd;
-        })
-      : [];
-  });
+    while (startDate <= currentDate) {
+      const startMonth = monthNames[startDate.getMonth()];
+
+      let monthRange = `${startMonth} ${startDate.getFullYear()}`;
+
+      monthRanges.push(monthRange);
+      startDate.setMonth(startDate.getMonth() + 1);
+    }
+
+    return monthRanges;
+  };
+
+  const getStartAndEndDatesForMonth = (monthRange: string) => {
+    const splitRange = monthRange.split(" ");
+    const month = monthMapping[splitRange[0]];
+    const year = parseInt(splitRange[1], 10);
+
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0); // last day of the month
+
+    return { monthStart, monthEnd };
+  };
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(1);
+
+  const handleMonthScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const currentIndex = Math.round(scrollPosition / WEEK_WIDTH);
+    setCurrentMonthIndex(currentIndex + 1);
+  };
+
+  const monthRanges = generateMonthRanges(userSignupDate);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
+
+  const monthRangesWithDummy = ["", ...monthRanges, ""];
+
+  const { monthStart, monthEnd } = getStartAndEndDatesForMonth(
+    monthRangesWithDummy[currentMonthIndex]
+  );
+
+  const handleMonthPress = (index: number) => {
+    setSelectedMonthIndex(index);
+    setCurrentMonthIndex(index);
+
+    // ... any other logic you might want to add here
+  };
+
+  const handleWeekPress = (index: number) => {
+    setSelectedWeekIndex(index);
+    setCurrentWeekIndex(index);
+
+    // ... any other logic you might want to add here
+  };
+
+  const Month: React.FC<MonthProps> = ({ month, isActive }) => (
+    <View
+      style={[
+        styles.monthContainer,
+        isActive
+          ? [
+              styles.activeMonth,
+              {
+                borderBottomColor: theme["text-basic-color"],
+                borderBottomWidth: 1,
+              },
+            ]
+          : {},
+      ]}
+    >
+      <Text
+        style={[
+          styles.monthText,
+          isActive
+            ? [styles.activeMonthText, { color: theme["text-basic-color"] }]
+            : {},
+        ]}
+      >
+        {month}
+      </Text>
+    </View>
+  );
+
+  useEffect(() => {
+    // Only run this effect after the first render
+    if (justMounted.current) {
+      justMounted.current = false;
+      return;
+    }
+
+    // If navigating back to this screen, set the week/month index to the previously selected one
+    setCurrentWeekIndex(selectedWeekIndex);
+    setCurrentMonthIndex(selectedMonthIndex);
+  }, [navigation]);
+
+  const getCurrentWeekIndex = (signupDate: Date) => {
+    const currentDate = new Date();
+    let startDate = new Date(signupDate);
+    const weekRanges = generateWeekRanges(startDate);
+    for (let i = 0; i < weekRanges.length; i++) {
+      const { start, end } = getStartAndEndDates(weekRanges[i]);
+      if (currentDate >= start && currentDate <= end) {
+        return i + 1; // +1 to adjust for the dummy value at the start
+      }
+    }
+    return 0;
+  };
+
+  const getCurrentMonthIndex = (signupDate: Date) => {
+    const currentDate = new Date();
+    let startDate = new Date(signupDate);
+    const currentMonth = startDate.getMonth();
+    const signupMonth = startDate.getMonth();
+    return currentMonth - signupMonth + 1; // +1 to adjust for the dummy value at the start
+  };
+  const isFocused = useIsFocused();
+  useEffect(() => {
+    const onTabPress = (e: any) => {
+      if (isFocused) {
+        // Prevent default behavior
+        e.preventDefault();
+
+        // Scroll to the real-life current week/month
+        setCurrentWeekIndex(getCurrentWeekIndex(userSignupDate));
+        setCurrentMonthIndex(getCurrentMonthIndex(userSignupDate));
+
+        if (weekScrollViewRef.current) {
+          weekScrollViewRef.current.scrollTo({
+            x: WEEK_WIDTH * (getCurrentWeekIndex(userSignupDate) - 1),
+            animated: true,
+          });
+        }
+
+        if (monthScrollViewRef.current) {
+          monthScrollViewRef.current.scrollTo({
+            x: WEEK_WIDTH * (getCurrentMonthIndex(userSignupDate) - 1),
+            animated: true,
+          });
+        }
+      }
+    };
+
+    const onFocus = () => {
+      // If navigating back to this screen, scroll to the last selected month/week
+      if (weekScrollViewRef.current) {
+        weekScrollViewRef.current.scrollTo({
+          x: WEEK_WIDTH * (currentWeekIndex - 1),
+          animated: true,
+        });
+      }
+
+      if (monthScrollViewRef.current) {
+        monthScrollViewRef.current.scrollTo({
+          x: WEEK_WIDTH * (currentMonthIndex - 1),
+          animated: true,
+        });
+      }
+    };
+
+    const unsubscribeTabPress = navigation.addListener("tabPress", onTabPress);
+    const unsubscribeFocus = navigation.addListener("focus", onFocus);
+
+    return () => {
+      unsubscribeTabPress();
+      unsubscribeFocus();
+    };
+  }, [navigation, isFocused, currentMonthIndex, currentWeekIndex]);
+
+  //Days
+  const generateDayRanges = (signupDate: Date) => {
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    currentDate.setDate(currentDate.getDate() + 1);
+
+    let startDate = new Date(signupDate);
+    startDate.setHours(0, 0, 0, 0);
+
+    const dayRanges: string[] = [];
+
+    while (startDate <= currentDate) {
+      dayRanges.push(startDate.toISOString().split("T")[0]);
+      startDate.setDate(startDate.getDate() + 1);
+    }
+
+    return dayRanges;
+  };
+
+  const getStartAndEndDatesForDay = (dayRange: string) => {
+    const start = new Date(dayRange);
+    const end = new Date(dayRange);
+    end.setHours(23, 59, 59, 999); // Set to end of the day
+
+    return { start, end };
+  };
+
+  const [currentDayIndex, setCurrentDayIndex] = useState(1);
+  const dayScrollViewRef = useRef<ScrollView>(null);
+
+  const handleDayScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const currentIndex = Math.round(scrollPosition / WEEK_WIDTH); // Assuming you have a DAY_WIDTH constant
+    setCurrentDayIndex(currentIndex + 1);
+  };
+
+  const dayRanges = generateDayRanges(userSignupDate);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const dayRangesWithDummy = ["", ...dayRanges, ""];
+
+  const { start: dayStart, end: dayEnd } = getStartAndEndDatesForDay(
+    dayRangesWithDummy[currentDayIndex]
+  );
+
+  type DayProps = {
+    day: string; // in YYYY-MM-DD format
+    isActive: boolean;
+  };
+
+  const Day: React.FC<DayProps> = ({ day, isActive }) => {
+    const formatDate = (dateString: string) => {
+      if (!dateString) return ""; // return an empty string if dateString is falsy
+
+      const date = new Date(dateString);
+
+      const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+      const monthNames = [
+        "JAN",
+        "FEB",
+        "MAR",
+        "APR",
+        "MAY",
+        "JUN",
+        "JUL",
+        "AUG",
+        "SEP",
+        "OCT",
+        "NOV",
+        "DEC",
+      ];
+
+      const dayOfWeek = dayNames[date.getDay()];
+      const month = monthNames[date.getMonth()];
+      const dayOfMonth = date.getDate();
+
+      return `${dayOfWeek}, ${month} ${dayOfMonth}`;
+    };
+
+    return (
+      <View
+        style={[
+          styles.dayContainer,
+          isActive
+            ? [
+                styles.activeDay,
+                {
+                  borderBottomColor: theme["text-basic-color"],
+                  borderBottomWidth: 1,
+                },
+              ]
+            : {},
+        ]}
+      >
+        <Text
+          style={[
+            styles.dayText,
+            isActive
+              ? [styles.activeDayText, { color: theme["text-basic-color"] }]
+              : {},
+          ]}
+        >
+          {formatDate(day)}
+        </Text>
+      </View>
+    );
+  };
 
   return (
     <Layout
@@ -613,8 +904,132 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     />
                   </View>
                 );
+              case "Daily":
+                return (
+                  <View style={{ flex: 1 }}>
+                    <ScrollView
+                      horizontal
+                      snapToInterval={WEEK_WIDTH}
+                      decelerationRate="fast"
+                      showsHorizontalScrollIndicator={false}
+                      ref={dayScrollViewRef}
+                      onScroll={handleDayScroll}
+                      scrollEventThrottle={16}
+                      style={styles.scrollView}
+                    >
+                      {dayRangesWithDummy.map((day, index) => (
+                        <Day
+                          key={`${day}-${index}`}
+                          day={day}
+                          isActive={index === currentDayIndex}
+                        />
+                      ))}
+                    </ScrollView>
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Total"}
+                      colors={colors}
+                      type={"dailyTotal"}
+                      start={dayStart}
+                      end={dayEnd}
+                    />
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Avg Session"}
+                      colors={colors}
+                      type={"dailyAvgSession"}
+                      start={dayStart}
+                      end={dayEnd}
+                    />
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Goal Completion Rate"}
+                      colors={colors}
+                      type={"dailyGoalCompletionRate"}
+                      start={dayStart}
+                      end={dayEnd}
+                    />
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Avg Breaks / Session"}
+                      colors={colors}
+                      type={"dailyAvgBreaksPerSession"}
+                      start={dayStart}
+                      end={dayEnd}
+                    />
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Time Spent on Breaks"}
+                      colors={colors}
+                      type={"dailyTimeSpentOnBreaks"}
+                      start={dayStart}
+                      end={dayEnd}
+                    />
+                  </View>
+                );
               case "Monthly":
-                return <Text>Unknown status.</Text>;
+                return (
+                  <View style={{ flex: 1 }}>
+                    <ScrollView
+                      horizontal
+                      snapToInterval={WEEK_WIDTH}
+                      decelerationRate="fast"
+                      showsHorizontalScrollIndicator={false}
+                      ref={monthScrollViewRef}
+                      onScroll={handleMonthScroll}
+                      scrollEventThrottle={16}
+                      style={styles.scrollView}
+                    >
+                      {monthRangesWithDummy.map((month, index) => (
+                        <Month
+                          key={`${month}-${index}`}
+                          month={month}
+                          isActive={index === currentMonthIndex}
+                        />
+                      ))}
+                    </ScrollView>
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Total"}
+                      colors={colors}
+                      type={"monthlyTotal"}
+                      start={monthStart}
+                      end={monthEnd}
+                    />
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Avg Session"}
+                      colors={colors}
+                      type={"monthlyAvgSession"}
+                      start={monthStart}
+                      end={monthEnd}
+                    />
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Goal Completion Rate"}
+                      colors={colors}
+                      type={"monthlyGoalCompletionRate"}
+                      start={monthStart}
+                      end={monthEnd}
+                    />
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Avg Breaks / Session"}
+                      colors={colors}
+                      type={"monthlyAvgBreaksPerSession"}
+                      start={monthStart}
+                      end={monthEnd}
+                    />
+                    <GeneralCard
+                      tasks={tasks}
+                      title={"Time Spent on Breaks"}
+                      colors={colors}
+                      type={"monthlyTimeSpentOnBreaks"}
+                      start={monthStart}
+                      end={monthEnd}
+                    />
+                  </View>
+                );
               case "Weekly":
                 return (
                   <View style={{ flex: 1 }}>
@@ -629,11 +1044,16 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       style={styles.scrollView}
                     >
                       {weekRangesWithDummy.map((week, index) => (
+                        // <TouchableOpacity
+                        //   key={`${week}-${index}`}
+                        //   onPress={() => handleWeekPress(index)}
+                        // >
                         <Week
                           key={`${week}-${index}`}
                           week={week}
                           isActive={index === currentWeekIndex}
                         />
+                        // </TouchableOpacity>
                       ))}
                     </ScrollView>
                     <GeneralCard
@@ -656,7 +1076,7 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       tasks={tasks}
                       title={"Goal Completion Rate"}
                       colors={colors}
-                      type={"GoalCompletionRate"}
+                      type={"weeklyGoalCompletionRate"}
                       start={start}
                       end={end}
                     />
@@ -664,7 +1084,7 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       tasks={tasks}
                       title={"Avg Breaks / Session"}
                       colors={colors}
-                      type={"AvgBreaksPerSession"}
+                      type={"weeklyAvgBreaksPerSession"}
                       start={start}
                       end={end}
                     />
@@ -672,7 +1092,7 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       tasks={tasks}
                       title={"Time Spent on Breaks"}
                       colors={colors}
-                      type={"TimeSpentOnBreaks"}
+                      type={"weeklyTimeSpentOnBreaks"}
                       start={start}
                       end={end}
                     />
@@ -721,7 +1141,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   weekText: {
-    fontSize: 15,
+    fontSize: 14,
     color: "grey",
   },
   activeWeek: {
@@ -729,5 +1149,46 @@ const styles = StyleSheet.create({
   },
   activeWeekText: {
     fontWeight: "bold",
+    fontSize: 14,
+  },
+
+  monthContainer: {
+    width: WEEK_WIDTH,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 10,
+    opacity: 0.9,
+    marginTop: 10,
+  },
+  monthText: {
+    fontSize: 14,
+    color: "grey",
+  },
+  activeMonth: {
+    opacity: 1,
+  },
+  activeMonthText: {
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+
+  dayContainer: {
+    width: WEEK_WIDTH,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 10,
+    opacity: 0.9,
+    marginTop: 10,
+  },
+  dayText: {
+    fontSize: 14,
+    color: "grey",
+  },
+  activeDay: {
+    opacity: 1,
+  },
+  activeDayText: {
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
