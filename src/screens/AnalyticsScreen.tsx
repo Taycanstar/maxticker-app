@@ -77,6 +77,22 @@ const monthMapping: { [key: string]: number } = {
   DEC: 11,
 };
 
+const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const monthNames = [
+  "JAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAY",
+  "JUN",
+  "JUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
+];
+
 const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { navigate } = useNavigation<StackNavigation>();
   const [currentItem, setCurrentItem] = useState<string>("General");
@@ -88,8 +104,9 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     (state: any) => state.user?.userSignupDate
   );
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
-
-  const justMounted = useRef(true);
+  const [dayScrollPosition, setDayScrollPosition] = useState(0);
+  const [monthScrollPosition, setMonthScrollPosition] = useState(0);
+  const [weekScrollPosition, setWeekScrollPosition] = useState(0);
 
   const weekScrollViewRef = useRef<ScrollView>(null);
   const monthScrollViewRef = useRef<ScrollView>(null);
@@ -121,22 +138,8 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       </Text>
     </View>
   );
-  // 1. Generate Week Ranges:
+
   const generateWeekRanges = (signupDate: Date) => {
-    const monthNames = [
-      "JAN",
-      "FEB",
-      "MAR",
-      "APR",
-      "MAY",
-      "JUN",
-      "JUL",
-      "AUG",
-      "SEP",
-      "OCT",
-      "NOV",
-      "DEC",
-    ];
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0);
     const weekRanges: string[] = [];
@@ -192,6 +195,34 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const weekRanges = generateWeekRanges(userSignupDate);
+
+  function getWeekStartDate() {
+    const now = new Date();
+    const dayOfWeek = now.getUTCDay(); // Sunday - Saturday : 0 - 6
+    const numDayFromStartOfWeek = now.getUTCDate() - dayOfWeek;
+    const startOfWeek = new Date(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      numDayFromStartOfWeek
+    );
+    return startOfWeek.toISOString().split("T")[0];
+  }
+  const findCurrentWeekIndex = () => {
+    const currentWeekStartStr = getWeekStartDate();
+
+    if (Array.isArray(weekRanges)) {
+      const index = weekRanges.indexOf(currentWeekStartStr);
+      return index === -1 ? weekRanges.length - 1 : index;
+    }
+
+    return -1;
+  };
+
+  const realLifeCurrentWeekIndex = findCurrentWeekIndex();
+
+  const [currentWeekIndex, setCurrentWeekIndex] = useState(
+    realLifeCurrentWeekIndex
+  );
 
   const onModalPress = () => {
     setIsModalVisible(!isModalVisible);
@@ -276,11 +307,6 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setTotalTaskTime(totalDuration);
   }, [tasks]);
 
-  const getWidthPct = (taskTime: number) => {
-    if (totalTaskTime === 0) return 0;
-    return taskTime / totalTaskTime;
-  };
-
   function calculateStreak(tasks: any) {
     // Flatten the array of sessions across all tasks
     const allSessions = tasks
@@ -362,12 +388,12 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return allSessions.length;
   }
 
-  const [currentWeekIndex, setCurrentWeekIndex] = useState(1);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
     const currentIndex = Math.round(scrollPosition / WEEK_WIDTH);
+    setWeekScrollPosition(scrollPosition);
     setCurrentWeekIndex(currentIndex + 1);
   };
 
@@ -378,21 +404,8 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   );
 
   //handle Monthly
+
   const generateMonthRanges = (signupDate: Date) => {
-    const monthNames = [
-      "JAN",
-      "FEB",
-      "MAR",
-      "APR",
-      "MAY",
-      "JUN",
-      "JUL",
-      "AUG",
-      "SEP",
-      "OCT",
-      "NOV",
-      "DEC",
-    ];
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0);
     const monthRanges: string[] = [];
@@ -424,36 +437,36 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     return { monthStart, monthEnd };
   };
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(1);
+
+  const monthRanges = generateMonthRanges(userSignupDate);
+
+  const findCurrentMonthIndex = () => {
+    const currentMonthStr = new Date().toISOString().slice(0, 7); // gets the 'YYYY-MM' format
+
+    if (Array.isArray(monthRanges)) {
+      const index = monthRanges.indexOf(currentMonthStr);
+      return index === -1 ? monthRanges.length - 1 : index;
+    }
+
+    return -1;
+  };
+  const realLifeCurrentMonthIndex = findCurrentMonthIndex();
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(
+    realLifeCurrentMonthIndex
+  );
 
   const handleMonthScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
     const currentIndex = Math.round(scrollPosition / WEEK_WIDTH);
+    setMonthScrollPosition(scrollPosition);
     setCurrentMonthIndex(currentIndex + 1);
   };
-
-  const monthRanges = generateMonthRanges(userSignupDate);
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
 
   const monthRangesWithDummy = ["", ...monthRanges, ""];
 
   const { monthStart, monthEnd } = getStartAndEndDatesForMonth(
     monthRangesWithDummy[currentMonthIndex]
   );
-
-  const handleMonthPress = (index: number) => {
-    setSelectedMonthIndex(index);
-    setCurrentMonthIndex(index);
-
-    // ... any other logic you might want to add here
-  };
-
-  const handleWeekPress = (index: number) => {
-    setSelectedWeekIndex(index);
-    setCurrentWeekIndex(index);
-
-    // ... any other logic you might want to add here
-  };
 
   const Month: React.FC<MonthProps> = ({ month, isActive }) => (
     <View
@@ -483,91 +496,6 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     </View>
   );
 
-  useEffect(() => {
-    // Only run this effect after the first render
-    if (justMounted.current) {
-      justMounted.current = false;
-      return;
-    }
-
-    // If navigating back to this screen, set the week/month index to the previously selected one
-    setCurrentWeekIndex(selectedWeekIndex);
-    setCurrentMonthIndex(selectedMonthIndex);
-  }, [navigation]);
-
-  const getCurrentWeekIndex = (signupDate: Date) => {
-    const currentDate = new Date();
-    let startDate = new Date(signupDate);
-    const weekRanges = generateWeekRanges(startDate);
-    for (let i = 0; i < weekRanges.length; i++) {
-      const { start, end } = getStartAndEndDates(weekRanges[i]);
-      if (currentDate >= start && currentDate <= end) {
-        return i + 1; // +1 to adjust for the dummy value at the start
-      }
-    }
-    return 0;
-  };
-
-  const getCurrentMonthIndex = (signupDate: Date) => {
-    const currentDate = new Date();
-    let startDate = new Date(signupDate);
-    const currentMonth = startDate.getMonth();
-    const signupMonth = startDate.getMonth();
-    return currentMonth - signupMonth + 1; // +1 to adjust for the dummy value at the start
-  };
-  const isFocused = useIsFocused();
-  useEffect(() => {
-    const onTabPress = (e: any) => {
-      if (isFocused) {
-        // Prevent default behavior
-        e.preventDefault();
-
-        // Scroll to the real-life current week/month
-        setCurrentWeekIndex(getCurrentWeekIndex(userSignupDate));
-        setCurrentMonthIndex(getCurrentMonthIndex(userSignupDate));
-
-        if (weekScrollViewRef.current) {
-          weekScrollViewRef.current.scrollTo({
-            x: WEEK_WIDTH * (getCurrentWeekIndex(userSignupDate) - 1),
-            animated: true,
-          });
-        }
-
-        if (monthScrollViewRef.current) {
-          monthScrollViewRef.current.scrollTo({
-            x: WEEK_WIDTH * (getCurrentMonthIndex(userSignupDate) - 1),
-            animated: true,
-          });
-        }
-      }
-    };
-
-    const onFocus = () => {
-      // If navigating back to this screen, scroll to the last selected month/week
-      if (weekScrollViewRef.current) {
-        weekScrollViewRef.current.scrollTo({
-          x: WEEK_WIDTH * (currentWeekIndex - 1),
-          animated: true,
-        });
-      }
-
-      if (monthScrollViewRef.current) {
-        monthScrollViewRef.current.scrollTo({
-          x: WEEK_WIDTH * (currentMonthIndex - 1),
-          animated: true,
-        });
-      }
-    };
-
-    const unsubscribeTabPress = navigation.addListener("tabPress", onTabPress);
-    const unsubscribeFocus = navigation.addListener("focus", onFocus);
-
-    return () => {
-      unsubscribeTabPress();
-      unsubscribeFocus();
-    };
-  }, [navigation, isFocused, currentMonthIndex, currentWeekIndex]);
-
   //Days
   const generateDayRanges = (signupDate: Date) => {
     const currentDate = new Date();
@@ -595,27 +523,39 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return { start, end };
   };
 
-  const [currentDayIndex, setCurrentDayIndex] = useState(1);
+  const savedDayScrollPosition = useRef<number>(0);
+
   const dayScrollViewRef = useRef<ScrollView>(null);
 
   const handleDayScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
-    const currentIndex = Math.round(scrollPosition / WEEK_WIDTH); // Assuming you have a DAY_WIDTH constant
+    setDayScrollPosition(event.nativeEvent.contentOffset.x);
+    const currentIndex = Math.round(scrollPosition / WEEK_WIDTH);
     setCurrentDayIndex(currentIndex + 1);
   };
 
   const dayRanges = generateDayRanges(userSignupDate);
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+
   const dayRangesWithDummy = ["", ...dayRanges, ""];
+  const findCurrentDayIndex = () => {
+    const currentDateStr = new Date().toISOString().split("T")[0];
+
+    if (Array.isArray(dayRanges)) {
+      const index = dayRanges.indexOf(currentDateStr);
+      return index === -1 ? dayRanges.length - 1 : index;
+    }
+
+    return -1;
+  };
+
+  const realLifeCurrentDayIndex = findCurrentDayIndex();
+  const [currentDayIndex, setCurrentDayIndex] = useState(
+    realLifeCurrentDayIndex
+  );
 
   const { start: dayStart, end: dayEnd } = getStartAndEndDatesForDay(
     dayRangesWithDummy[currentDayIndex]
   );
-
-  type DayProps = {
-    day: string; // in YYYY-MM-DD format
-    isActive: boolean;
-  };
 
   const Day: React.FC<DayProps> = ({ day, isActive }) => {
     const formatDate = (dateString: string) => {
@@ -623,28 +563,31 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       const date = new Date(dateString);
 
-      const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-      const monthNames = [
-        "JAN",
-        "FEB",
-        "MAR",
-        "APR",
-        "MAY",
-        "JUN",
-        "JUL",
-        "AUG",
-        "SEP",
-        "OCT",
-        "NOV",
-        "DEC",
-      ];
-
       const dayOfWeek = dayNames[date.getDay()];
       const month = monthNames[date.getMonth()];
       const dayOfMonth = date.getDate();
 
       return `${dayOfWeek}, ${month} ${dayOfMonth}`;
     };
+
+    const onFocus = () => {
+      if (dayScrollViewRef.current) {
+        dayScrollViewRef.current.scrollTo({
+          x: savedDayScrollPosition.current,
+          animated: false,
+        });
+      }
+    };
+
+    // Attach the listener
+    const unsubscribeFocus = navigation.addListener("focus", onFocus);
+
+    // And ensure you are cleaning up the listener on unmount. If you already have useEffect setting listeners, just add this one there.
+    useEffect(() => {
+      return () => {
+        unsubscribeFocus();
+      };
+    }, []);
 
     return (
       <View
@@ -674,6 +617,48 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       </View>
     );
   };
+  const scrollToEnd = (event: any) => {
+    if (dayScrollPosition === null && dayScrollViewRef.current) {
+      const width = event.nativeEvent.layout.width;
+      dayScrollViewRef.current.scrollTo({
+        x: width * (dayRangesWithDummy.length - 1),
+        animated: false,
+      });
+    }
+  };
+
+  const [isInitialRender, setIsInitialRender] = useState(true);
+
+  useEffect(() => {
+    if (dayScrollViewRef.current && isInitialRender) {
+      const position = currentDayIndex * WEEK_WIDTH;
+      dayScrollViewRef.current.scrollTo({ x: position, animated: false });
+      setIsInitialRender(false); // Set it to false after the first render
+    }
+  }, [dayScrollViewRef, currentDayIndex, isInitialRender]);
+
+  useEffect(() => {
+    if (
+      currentItem === "Daily" &&
+      dayScrollPosition !== 0 &&
+      dayScrollViewRef.current
+    ) {
+      dayScrollViewRef.current.scrollTo({
+        x: dayScrollPosition,
+        animated: false,
+      });
+    }
+    if (
+      currentItem === "Monthly" &&
+      monthScrollPosition !== 0 &&
+      monthScrollViewRef.current
+    ) {
+      monthScrollViewRef.current.scrollTo({
+        x: monthScrollPosition,
+        animated: false,
+      });
+    }
+  }, [currentItem]);
 
   return (
     <Layout
@@ -916,6 +901,7 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       onScroll={handleDayScroll}
                       scrollEventThrottle={16}
                       style={styles.scrollView}
+                      onLayout={scrollToEnd}
                     >
                       {dayRangesWithDummy.map((day, index) => (
                         <Day
