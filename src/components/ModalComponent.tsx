@@ -15,6 +15,7 @@ type Item = {
   icon?: any; // or a more specific type if you know what it is
   name: string;
   isPlus: boolean;
+  nav: string;
 };
 
 type Props = {
@@ -70,7 +71,7 @@ const ModalComponent: React.FC<Props> = ({
                   return (
                     <TouchableOpacity
                       key={index}
-                      onPress={() => handlePress(item.name)}
+                      onPress={() => handlePress(item)}
                       style={{
                         flexDirection: "row",
                         alignItems: "center",

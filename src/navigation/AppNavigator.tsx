@@ -59,6 +59,12 @@ import { StackCardInterpolationProps } from "@react-navigation/stack";
 import Add from "../components/Add";
 import Edit from "../components/Edit";
 import HomeScreen from "../screens/HomeScreen";
+import DailyScreen from "../screens/DailyScreen";
+import { getHeaderOptions } from "../utils/analyticsHeaderHelper";
+import ModalComponent from "../components/ModalComponent";
+import AnalyticsHeader from "../components/AnalyticsHeader";
+import MonthlyScreen from "../screens/MonthlyScreen";
+import WeeklyScreen from "../screens/WeeklyScreen";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -82,6 +88,9 @@ type DrawerRouteParams = {
 type DrawerRoutes = keyof DrawerRouteParams;
 
 export type ScreenNames = [
+  "Daily",
+  "Monthly",
+  "Weekly",
   "Add",
   "Login",
   "Auth",
@@ -99,6 +108,9 @@ export type ScreenNames = [
   "Multiple"
 ];
 export type RootStackParamList = {
+  Daily?: undefined;
+  Monthly?: undefined;
+  Weekly?: undefined;
   Login?: undefined;
   Auth?: undefined;
   Signup?: undefined;
@@ -229,6 +241,76 @@ const AuthStack = () => {
       <Stack.Screen name="ConfirmOtp" component={ConfirmOtpScreen} />
       <Stack.Screen name="SetNewPassword" component={SetNewPasswordScreen} />
     </Stack.Navigator>
+  );
+};
+
+type NavigationItem = {
+  name: string;
+  isPlus: boolean;
+  nav: string;
+};
+
+const items: NavigationItem[] = [
+  { name: "General", isPlus: false, nav: "Analytics" },
+  { name: "Daily", isPlus: true, nav: "Daily" },
+  { name: "Weekly", isPlus: true, nav: "Weekly" },
+  { name: "Monthly", isPlus: true, nav: "Monthly" },
+];
+
+const AnalyticsStack = ({ navigation }: any) => {
+  const theme = useTheme();
+  // const navigation = useNavigation();
+
+  const [currentItem, setCurrentItem] = useState<string>("General");
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+
+  const handleItemPress = (selectedItem: NavigationItem) => {
+    setCurrentItem(selectedItem.name);
+    setIsModalVisible(!isModalVisible);
+    navigation.navigate(selectedItem.nav);
+  };
+
+  return (
+    <>
+      <Stack.Navigator
+        initialRouteName="Analytics"
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: theme["background-basic-color-1"],
+            elevation: 0, // This removes the shadow for Android
+            borderBottomWidth: 0,
+            shadowOpacity: 0,
+          },
+          cardStyle: {
+            backgroundColor: theme["background-basic-color-1"], // This will set the background color for all screens
+          },
+          cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS,
+          header: (props) => (
+            <AnalyticsHeader
+              {...props}
+              theme={theme}
+              isModalVisible={isModalVisible}
+              onModalPress={() => {
+                setIsModalVisible(!isModalVisible);
+              }}
+              currentItem={currentItem}
+            />
+          ),
+        }}
+      >
+        <Stack.Screen name="Analytics" component={AnalyticsScreen} />
+        <Stack.Screen name="Daily" component={DailyScreen} />
+        <Stack.Screen name="Monthly" component={MonthlyScreen} />
+        <Stack.Screen name="Weekly" component={WeeklyScreen} />
+      </Stack.Navigator>
+      <ModalComponent
+        visible={isModalVisible}
+        height={0.45}
+        handlePress={handleItemPress}
+        onClose={() => setIsModalVisible(false)}
+        items={items}
+      />
+    </>
   );
 };
 
@@ -420,11 +502,11 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
         />
 
         <Tab.Screen
-          name="Analytics"
-          component={AnalyticsScreen}
+          name="Analytics "
+          component={AnalyticsStack}
           options={({ route, navigation }) => ({
             // tabBarVisible: getTabBarVisibility(route),
-            headerShown: true,
+            headerShown: false,
             headerStyle: {
               backgroundColor: theme["background-basic-color-1"],
               elevation: 0, // This removes the shadow for Android
@@ -435,7 +517,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
             tabBarIcon: ({ color, size, focused }) => (
               <TouchableOpacity
                 onPress={() => {
-                  navigation.navigate("Analytics");
+                  navigation.navigate("Analytics ");
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >

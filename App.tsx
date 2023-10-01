@@ -10,6 +10,7 @@ import { default as customLightTheme } from "./lightTheme.json";
 import React, { useState, useContext, useEffect } from "react";
 import { TaskProvider } from "./src/contexts/TaskContext";
 import { SubscriptionProvider } from "./src/contexts/SubscriptionContext";
+// import { ScrollPositionProvider } from "./src/contexts/ScrollContext";
 import { refreshTokenAction } from "./src/store/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -20,39 +21,10 @@ export default function App() {
     setTheme(nextTheme);
   };
 
-  // async function checkStoredToken() {
-  //   // Check if there's a token in AsyncStorage
-  //   const token = await AsyncStorage.getItem("token");
-  //   if (token) {
-  //     // Dispatch a refresh action to handle token validity and refreshing
-  //     store.dispatch(refreshTokenAction());
-  //   }
-  // }
-
-  // function startTokenRefreshPolling() {
-  //   // Check every 45 minutes
-  //   const intervalTime = 50 * 60 * 1000;
-
-  //   setInterval(() => {
-  //     const state = store.getState();
-  //     const tokenExpiry = state.user.tokenExpiry;
-  //     const currentTime = Date.now().valueOf() / 1000; // Convert to seconds
-
-  //     // If the token is close to expiring (e.g., within 5 minutes), refresh it
-  //     if (tokenExpiry && tokenExpiry - currentTime <= 10 * 60) {
-  //       store.dispatch(refreshTokenAction());
-  //     }
-  //   }, intervalTime);
-  // }
-
-  // useEffect(() => {
-  //   checkStoredToken();
-  //   startTokenRefreshPolling();
-  // }, []);
-
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <SubscriptionProvider>
+        {/* <ScrollPositionProvider> */}
         <TaskProvider>
           <ApplicationProvider
             {...eva}
@@ -67,6 +39,7 @@ export default function App() {
             </Provider>
           </ApplicationProvider>
         </TaskProvider>
+        {/* </ScrollPositionProvider> */}
       </SubscriptionProvider>
     </ThemeContext.Provider>
   );

@@ -18,6 +18,7 @@ import React, {
   useEffect,
   useContext,
   useCallback,
+  useMemo,
   useLayoutEffect,
 } from "react";
 import Colors from "../constants/Colors";
@@ -43,6 +44,7 @@ import { taskEventEmitter } from "../utils/eventEmitter";
 import ModalComponent from "../components/ModalComponent";
 import GeneralCard from "../components/GeneralCard";
 import user from "../store/user";
+// import { useScrollPosition } from "../contexts/ScrollContext";
 
 type DayProps = {
   day: string; // in YYYY-MM-DD format
@@ -51,6 +53,8 @@ type DayProps = {
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const WEEK_WIDTH = SCREEN_WIDTH / 3;
+const MONTH_WIDTH = SCREEN_WIDTH / 3;
+const DAY_WIDTH = SCREEN_WIDTH / 3;
 
 type WeekProps = {
   week: string;
@@ -94,6 +98,15 @@ const monthNames = [
 ];
 
 const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  // const {
+  //   dayScrollPosition,
+  //   setDayScrollPosition,
+  //   resetScrollPositions,
+  //   monthScrollPosition,
+  //   setMonthScrollPosition,
+  //   weekScrollPosition,
+  //   setWeekScrollPosition,
+  // } = useScrollPosition();
   const { navigate } = useNavigation<StackNavigation>();
   const [currentItem, setCurrentItem] = useState<string>("General");
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -103,13 +116,7 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const userSignupDate = useSelector(
     (state: any) => state.user?.userSignupDate
   );
-  const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
-  const [dayScrollPosition, setDayScrollPosition] = useState(0);
-  const [monthScrollPosition, setMonthScrollPosition] = useState(0);
-  const [weekScrollPosition, setWeekScrollPosition] = useState(0);
-
-  const weekScrollViewRef = useRef<ScrollView>(null);
-  const monthScrollViewRef = useRef<ScrollView>(null);
+  const [manualScrollSet, setManualScrollSet] = useState(false);
 
   const Week: React.FC<WeekProps> = ({ week, isActive }) => (
     <View
@@ -231,13 +238,14 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const handleItemPress = (item: any) => {
     setCurrentItem(item);
     setIsModalVisible(!isModalVisible);
+    navigate(item);
   };
 
   const items = [
-    { name: "General", isPlus: false },
-    { name: "Daily", isPlus: true },
-    { name: "Weekly", isPlus: true },
-    { name: "Monthly", isPlus: true },
+    { name: "General", isPlus: false, nav: "Analytics" },
+    { name: "Daily", isPlus: true, nav: "Daily" },
+    { name: "Weekly", isPlus: true, nav: "Weekly" },
+    { name: "Monthly", isPlus: true, nav: "Monthly" },
   ];
 
   useLayoutEffect(() => {
@@ -291,7 +299,6 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     "rgb(94,190,255)",
     theme["pale-gray"],
     "rgb(28,54,105)",
-
     theme["text-basic-color"],
   ];
 
@@ -388,278 +395,6 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return allSessions.length;
   }
 
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  const handleScroll = (event: any) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x;
-    const currentIndex = Math.round(scrollPosition / WEEK_WIDTH);
-    setWeekScrollPosition(scrollPosition);
-    setCurrentWeekIndex(currentIndex + 1);
-  };
-
-  const weekRangesWithDummy = ["", ...weekRanges, ""];
-
-  const { start, end } = getStartAndEndDates(
-    weekRangesWithDummy[currentWeekIndex]
-  );
-
-  //handle Monthly
-
-  const generateMonthRanges = (signupDate: Date) => {
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    const monthRanges: string[] = [];
-
-    // Ensure signupDate is a Date object
-    let startDate = new Date(signupDate);
-    // Adjust the signupDate to the first of the month
-    startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-
-    while (startDate <= currentDate) {
-      const startMonth = monthNames[startDate.getMonth()];
-
-      let monthRange = `${startMonth} ${startDate.getFullYear()}`;
-
-      monthRanges.push(monthRange);
-      startDate.setMonth(startDate.getMonth() + 1);
-    }
-
-    return monthRanges;
-  };
-
-  const getStartAndEndDatesForMonth = (monthRange: string) => {
-    const splitRange = monthRange.split(" ");
-    const month = monthMapping[splitRange[0]];
-    const year = parseInt(splitRange[1], 10);
-
-    const monthStart = new Date(year, month, 1);
-    const monthEnd = new Date(year, month + 1, 0); // last day of the month
-
-    return { monthStart, monthEnd };
-  };
-
-  const monthRanges = generateMonthRanges(userSignupDate);
-
-  const findCurrentMonthIndex = () => {
-    const currentMonthStr = new Date().toISOString().slice(0, 7); // gets the 'YYYY-MM' format
-
-    if (Array.isArray(monthRanges)) {
-      const index = monthRanges.indexOf(currentMonthStr);
-      return index === -1 ? monthRanges.length - 1 : index;
-    }
-
-    return -1;
-  };
-  const realLifeCurrentMonthIndex = findCurrentMonthIndex();
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(
-    realLifeCurrentMonthIndex
-  );
-
-  const handleMonthScroll = (event: any) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x;
-    const currentIndex = Math.round(scrollPosition / WEEK_WIDTH);
-    setMonthScrollPosition(scrollPosition);
-    setCurrentMonthIndex(currentIndex + 1);
-  };
-
-  const monthRangesWithDummy = ["", ...monthRanges, ""];
-
-  const { monthStart, monthEnd } = getStartAndEndDatesForMonth(
-    monthRangesWithDummy[currentMonthIndex]
-  );
-
-  const Month: React.FC<MonthProps> = ({ month, isActive }) => (
-    <View
-      style={[
-        styles.monthContainer,
-        isActive
-          ? [
-              styles.activeMonth,
-              {
-                borderBottomColor: theme["text-basic-color"],
-                borderBottomWidth: 1,
-              },
-            ]
-          : {},
-      ]}
-    >
-      <Text
-        style={[
-          styles.monthText,
-          isActive
-            ? [styles.activeMonthText, { color: theme["text-basic-color"] }]
-            : {},
-        ]}
-      >
-        {month}
-      </Text>
-    </View>
-  );
-
-  //Days
-  const generateDayRanges = (signupDate: Date) => {
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    currentDate.setDate(currentDate.getDate() + 1);
-
-    let startDate = new Date(signupDate);
-    startDate.setHours(0, 0, 0, 0);
-
-    const dayRanges: string[] = [];
-
-    while (startDate <= currentDate) {
-      dayRanges.push(startDate.toISOString().split("T")[0]);
-      startDate.setDate(startDate.getDate() + 1);
-    }
-
-    return dayRanges;
-  };
-
-  const getStartAndEndDatesForDay = (dayRange: string) => {
-    const start = new Date(dayRange);
-    const end = new Date(dayRange);
-    end.setHours(23, 59, 59, 999); // Set to end of the day
-
-    return { start, end };
-  };
-
-  const savedDayScrollPosition = useRef<number>(0);
-
-  const dayScrollViewRef = useRef<ScrollView>(null);
-
-  const handleDayScroll = (event: any) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x;
-    setDayScrollPosition(event.nativeEvent.contentOffset.x);
-    const currentIndex = Math.round(scrollPosition / WEEK_WIDTH);
-    setCurrentDayIndex(currentIndex + 1);
-  };
-
-  const dayRanges = generateDayRanges(userSignupDate);
-
-  const dayRangesWithDummy = ["", ...dayRanges, ""];
-  const findCurrentDayIndex = () => {
-    const currentDateStr = new Date().toISOString().split("T")[0];
-
-    if (Array.isArray(dayRanges)) {
-      const index = dayRanges.indexOf(currentDateStr);
-      return index === -1 ? dayRanges.length - 1 : index;
-    }
-
-    return -1;
-  };
-
-  const realLifeCurrentDayIndex = findCurrentDayIndex();
-  const [currentDayIndex, setCurrentDayIndex] = useState(
-    realLifeCurrentDayIndex
-  );
-
-  const { start: dayStart, end: dayEnd } = getStartAndEndDatesForDay(
-    dayRangesWithDummy[currentDayIndex]
-  );
-
-  const Day: React.FC<DayProps> = ({ day, isActive }) => {
-    const formatDate = (dateString: string) => {
-      if (!dateString) return ""; // return an empty string if dateString is falsy
-
-      const date = new Date(dateString);
-
-      const dayOfWeek = dayNames[date.getDay()];
-      const month = monthNames[date.getMonth()];
-      const dayOfMonth = date.getDate();
-
-      return `${dayOfWeek}, ${month} ${dayOfMonth}`;
-    };
-
-    const onFocus = () => {
-      if (dayScrollViewRef.current) {
-        dayScrollViewRef.current.scrollTo({
-          x: savedDayScrollPosition.current,
-          animated: false,
-        });
-      }
-    };
-
-    // Attach the listener
-    const unsubscribeFocus = navigation.addListener("focus", onFocus);
-
-    // And ensure you are cleaning up the listener on unmount. If you already have useEffect setting listeners, just add this one there.
-    useEffect(() => {
-      return () => {
-        unsubscribeFocus();
-      };
-    }, []);
-
-    return (
-      <View
-        style={[
-          styles.dayContainer,
-          isActive
-            ? [
-                styles.activeDay,
-                {
-                  borderBottomColor: theme["text-basic-color"],
-                  borderBottomWidth: 1,
-                },
-              ]
-            : {},
-        ]}
-      >
-        <Text
-          style={[
-            styles.dayText,
-            isActive
-              ? [styles.activeDayText, { color: theme["text-basic-color"] }]
-              : {},
-          ]}
-        >
-          {formatDate(day)}
-        </Text>
-      </View>
-    );
-  };
-  const scrollToEnd = (event: any) => {
-    if (dayScrollPosition === null && dayScrollViewRef.current) {
-      const width = event.nativeEvent.layout.width;
-      dayScrollViewRef.current.scrollTo({
-        x: width * (dayRangesWithDummy.length - 1),
-        animated: false,
-      });
-    }
-  };
-
-  const [isInitialRender, setIsInitialRender] = useState(true);
-
-  useEffect(() => {
-    if (dayScrollViewRef.current && isInitialRender) {
-      const position = currentDayIndex * WEEK_WIDTH;
-      dayScrollViewRef.current.scrollTo({ x: position, animated: false });
-      setIsInitialRender(false); // Set it to false after the first render
-    }
-  }, [dayScrollViewRef, currentDayIndex, isInitialRender]);
-
-  useEffect(() => {
-    if (
-      currentItem === "Daily" &&
-      dayScrollPosition !== 0 &&
-      dayScrollViewRef.current
-    ) {
-      dayScrollViewRef.current.scrollTo({
-        x: dayScrollPosition,
-        animated: false,
-      });
-    }
-    if (
-      currentItem === "Monthly" &&
-      monthScrollPosition !== 0 &&
-      monthScrollViewRef.current
-    ) {
-      monthScrollViewRef.current.scrollTo({
-        x: monthScrollPosition,
-        animated: false,
-      });
-    }
-  }, [currentItem]);
-
   return (
     <Layout
       style={[
@@ -672,422 +407,219 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           style={{ paddingBottom: 75 }}
         >
-          {(() => {
+          {/* {(() => {
             switch (currentItem) {
-              case "General":
-                return (
-                  <View style={{}}>
+              case "General": */}
+
+          <View style={{}}>
+            <View
+              style={{
+                marginBottom: 20,
+                marginTop: 45,
+                flexDirection: "row",
+                justifyContent: "space-around",
+                alignItems: "center",
+                width: "100%",
+              }}
+            >
+              <View
+                style={{
+                  marginHorizontal: 10,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: 100,
+                  // backgroundColor: "red",
+                }}
+              >
+                <Text
+                  style={{
+                    marginVertical: 5,
+                    color: theme["text-basic-color"],
+                    fontWeight: "bold",
+                    fontSize: 18,
+                  }}
+                >
+                  {calculateStreak(tasks)}
+                </Text>
+                <Text
+                  style={{
+                    color: theme["text-basic-color"],
+                    fontSize: 14,
+                    fontWeight: "bold",
+                  }}
+                >
+                  Streak
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  marginHorizontal: 10,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: 100,
+                }}
+              >
+                <Text
+                  style={{
+                    marginVertical: 5,
+                    color: theme["text-basic-color"],
+                    fontWeight: "bold",
+                    fontSize: 18,
+                  }}
+                >
+                  {formatDuration(calculateAverageSessionDuration(tasks))}
+                </Text>
+                <Text
+                  style={{
+                    color: theme["text-basic-color"],
+                    fontSize: 14,
+                    fontWeight: "bold",
+                  }}
+                >
+                  Avg session
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  marginHorizontal: 10,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: 100,
+                }}
+              >
+                <Text
+                  style={{
+                    marginVertical: 5,
+                    color: theme["text-basic-color"],
+                    fontWeight: "bold",
+                    fontSize: 18,
+                  }}
+                >
+                  {calculateTotalSessions(tasks)}
+                </Text>
+                <Text
+                  style={{
+                    color: theme["text-basic-color"],
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
+                >
+                  Total sessions
+                </Text>
+              </View>
+            </View>
+            <View
+              style={{
+                width: "100%",
+                marginTop: 35,
+                paddingHorizontal: 15,
+                height: 25,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                {tasks.map((task, index) => {
+                  const last = tasks.length - 1;
+                  if (!task) return null;
+
+                  const taskTotalDuration =
+                    task.sessions?.reduce(
+                      (sum, session) => sum + session.totalDuration,
+                      0
+                    ) ?? 0;
+
+                  const flexValue = totalTaskTime
+                    ? taskTotalDuration / totalTaskTime
+                    : 0;
+
+                  return (
+                    <View key={index} style={{ flex: flexValue }}>
+                      <View
+                        style={{
+                          height: 25,
+                          backgroundColor: colors[index % colors.length],
+                          borderTopLeftRadius:
+                            index === 0 && last !== 0 ? 7 : 0,
+                          borderBottomLeftRadius:
+                            index === 0 && last !== 0 ? 7 : 0,
+                          borderTopRightRadius:
+                            index === last && last !== 0 ? 7 : 0,
+                          borderBottomRightRadius:
+                            index === last && last !== 0 ? 7 : 0,
+                        }}
+                      ></View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View
+              style={{
+                // backgroundColor: "red",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                marginVertical: 15,
+              }}
+            >
+              {tasks &&
+                tasks.map((task, index) => {
+                  return (
                     <View
+                      key={index}
                       style={{
-                        marginBottom: 20,
-                        marginTop: 45,
                         flexDirection: "row",
-                        justifyContent: "space-around",
+                        marginRight: 15,
                         alignItems: "center",
-                        width: "100%",
                       }}
                     >
-                      <View
+                      <FontAwesome
+                        color={colors[index % colors.length]}
+                        size={15}
+                        name="square"
+                      />
+                      <Text
                         style={{
-                          marginHorizontal: 10,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          width: 100,
-                          // backgroundColor: "red",
+                          marginLeft: 5,
+                          color: theme["text-basic-color"],
                         }}
                       >
-                        <Text
-                          style={{
-                            marginVertical: 5,
-                            color: theme["text-basic-color"],
-                            fontWeight: "bold",
-                            fontSize: 18,
-                          }}
-                        >
-                          {calculateStreak(tasks)}
-                        </Text>
-                        <Text
-                          style={{
-                            color: theme["text-basic-color"],
-                            fontSize: 14,
-                            fontWeight: "bold",
-                          }}
-                        >
-                          Streak
-                        </Text>
-                      </View>
-
-                      <View
-                        style={{
-                          marginHorizontal: 10,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          width: 100,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            marginVertical: 5,
-                            color: theme["text-basic-color"],
-                            fontWeight: "bold",
-                            fontSize: 18,
-                          }}
-                        >
-                          {formatDuration(
-                            calculateAverageSessionDuration(tasks)
-                          )}
-                        </Text>
-                        <Text
-                          style={{
-                            color: theme["text-basic-color"],
-                            fontSize: 14,
-                            fontWeight: "bold",
-                          }}
-                        >
-                          Avg session
-                        </Text>
-                      </View>
-
-                      <View
-                        style={{
-                          marginHorizontal: 10,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          width: 100,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            marginVertical: 5,
-                            color: theme["text-basic-color"],
-                            fontWeight: "bold",
-                            fontSize: 18,
-                          }}
-                        >
-                          {calculateTotalSessions(tasks)}
-                        </Text>
-                        <Text
-                          style={{
-                            color: theme["text-basic-color"],
-                            fontSize: 14,
-                            fontWeight: "bold",
-                            textAlign: "center",
-                          }}
-                        >
-                          Total sessions
-                        </Text>
-                      </View>
+                        {task.name}
+                      </Text>
                     </View>
-                    <View
-                      style={{
-                        width: "100%",
-                        marginTop: 35,
-                        paddingHorizontal: 15,
-                        height: 25,
-                      }}
-                    >
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          width: "100%",
-                          height: "100%",
-                        }}
-                      >
-                        {tasks.map((task, index) => {
-                          const last = tasks.length - 1;
-                          if (!task) return null;
+                  );
+                })}
+            </View>
 
-                          const taskTotalDuration =
-                            task.sessions?.reduce(
-                              (sum, session) => sum + session.totalDuration,
-                              0
-                            ) ?? 0;
+            <GeneralCard
+              tasks={tasks}
+              title={"Today"}
+              colors={colors}
+              type={"today"}
+            />
 
-                          const flexValue = totalTaskTime
-                            ? taskTotalDuration / totalTaskTime
-                            : 0;
-
-                          return (
-                            <View key={index} style={{ flex: flexValue }}>
-                              <View
-                                style={{
-                                  height: 25,
-                                  backgroundColor:
-                                    colors[index % colors.length],
-                                  borderTopLeftRadius:
-                                    index === 0 && last !== 0 ? 7 : 0,
-                                  borderBottomLeftRadius:
-                                    index === 0 && last !== 0 ? 7 : 0,
-                                  borderTopRightRadius:
-                                    index === last && last !== 0 ? 7 : 0,
-                                  borderBottomRightRadius:
-                                    index === last && last !== 0 ? 7 : 0,
-                                }}
-                              ></View>
-                            </View>
-                          );
-                        })}
-                      </View>
-                    </View>
-
-                    <View
-                      style={{
-                        // backgroundColor: "red",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginVertical: 15,
-                      }}
-                    >
-                      {tasks &&
-                        tasks.map((task, index) => {
-                          return (
-                            <View
-                              key={index}
-                              style={{
-                                flexDirection: "row",
-                                marginRight: 15,
-                                alignItems: "center",
-                              }}
-                            >
-                              <FontAwesome
-                                color={colors[index % colors.length]}
-                                size={15}
-                                name="square"
-                              />
-                              <Text
-                                style={{
-                                  marginLeft: 5,
-                                  color: theme["text-basic-color"],
-                                }}
-                              >
-                                {task.name}
-                              </Text>
-                            </View>
-                          );
-                        })}
-                    </View>
-
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Today"}
-                      colors={colors}
-                      type={"today"}
-                    />
-
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"This Month"}
-                      colors={colors}
-                      type={"month"}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"This Week"}
-                      colors={colors}
-                      type={"week"}
-                    />
-                  </View>
-                );
-              case "Daily":
-                return (
-                  <View style={{ flex: 1 }}>
-                    <ScrollView
-                      horizontal
-                      snapToInterval={WEEK_WIDTH}
-                      decelerationRate="fast"
-                      showsHorizontalScrollIndicator={false}
-                      ref={dayScrollViewRef}
-                      onScroll={handleDayScroll}
-                      scrollEventThrottle={16}
-                      style={styles.scrollView}
-                      onLayout={scrollToEnd}
-                    >
-                      {dayRangesWithDummy.map((day, index) => (
-                        <Day
-                          key={`${day}-${index}`}
-                          day={day}
-                          isActive={index === currentDayIndex}
-                        />
-                      ))}
-                    </ScrollView>
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Total"}
-                      colors={colors}
-                      type={"dailyTotal"}
-                      start={dayStart}
-                      end={dayEnd}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Avg Session"}
-                      colors={colors}
-                      type={"dailyAvgSession"}
-                      start={dayStart}
-                      end={dayEnd}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Goal Completion Rate"}
-                      colors={colors}
-                      type={"dailyGoalCompletionRate"}
-                      start={dayStart}
-                      end={dayEnd}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Avg Breaks / Session"}
-                      colors={colors}
-                      type={"dailyAvgBreaksPerSession"}
-                      start={dayStart}
-                      end={dayEnd}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Time Spent on Breaks"}
-                      colors={colors}
-                      type={"dailyTimeSpentOnBreaks"}
-                      start={dayStart}
-                      end={dayEnd}
-                    />
-                  </View>
-                );
-              case "Monthly":
-                return (
-                  <View style={{ flex: 1 }}>
-                    <ScrollView
-                      horizontal
-                      snapToInterval={WEEK_WIDTH}
-                      decelerationRate="fast"
-                      showsHorizontalScrollIndicator={false}
-                      ref={monthScrollViewRef}
-                      onScroll={handleMonthScroll}
-                      scrollEventThrottle={16}
-                      style={styles.scrollView}
-                    >
-                      {monthRangesWithDummy.map((month, index) => (
-                        <Month
-                          key={`${month}-${index}`}
-                          month={month}
-                          isActive={index === currentMonthIndex}
-                        />
-                      ))}
-                    </ScrollView>
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Total"}
-                      colors={colors}
-                      type={"monthlyTotal"}
-                      start={monthStart}
-                      end={monthEnd}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Avg Session"}
-                      colors={colors}
-                      type={"monthlyAvgSession"}
-                      start={monthStart}
-                      end={monthEnd}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Goal Completion Rate"}
-                      colors={colors}
-                      type={"monthlyGoalCompletionRate"}
-                      start={monthStart}
-                      end={monthEnd}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Avg Breaks / Session"}
-                      colors={colors}
-                      type={"monthlyAvgBreaksPerSession"}
-                      start={monthStart}
-                      end={monthEnd}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Time Spent on Breaks"}
-                      colors={colors}
-                      type={"monthlyTimeSpentOnBreaks"}
-                      start={monthStart}
-                      end={monthEnd}
-                    />
-                  </View>
-                );
-              case "Weekly":
-                return (
-                  <View style={{ flex: 1 }}>
-                    <ScrollView
-                      horizontal
-                      snapToInterval={WEEK_WIDTH}
-                      decelerationRate="fast"
-                      showsHorizontalScrollIndicator={false}
-                      ref={scrollViewRef}
-                      onScroll={handleScroll}
-                      scrollEventThrottle={16}
-                      style={styles.scrollView}
-                    >
-                      {weekRangesWithDummy.map((week, index) => (
-                        // <TouchableOpacity
-                        //   key={`${week}-${index}`}
-                        //   onPress={() => handleWeekPress(index)}
-                        // >
-                        <Week
-                          key={`${week}-${index}`}
-                          week={week}
-                          isActive={index === currentWeekIndex}
-                        />
-                        // </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Total"}
-                      colors={colors}
-                      type={"weeklyTotal"}
-                      start={start}
-                      end={end}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Avg Session"}
-                      colors={colors}
-                      type={"weeklyAvgSession"}
-                      start={start}
-                      end={end}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Goal Completion Rate"}
-                      colors={colors}
-                      type={"weeklyGoalCompletionRate"}
-                      start={start}
-                      end={end}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Avg Breaks / Session"}
-                      colors={colors}
-                      type={"weeklyAvgBreaksPerSession"}
-                      start={start}
-                      end={end}
-                    />
-                    <GeneralCard
-                      tasks={tasks}
-                      title={"Time Spent on Breaks"}
-                      colors={colors}
-                      type={"weeklyTimeSpentOnBreaks"}
-                      start={start}
-                      end={end}
-                    />
-                  </View>
-                );
-              default:
-                return <Text>Unknown status.</Text>;
-            }
-          })()}
+            <GeneralCard
+              tasks={tasks}
+              title={"This Month"}
+              colors={colors}
+              type={"month"}
+            />
+            <GeneralCard
+              tasks={tasks}
+              title={"This Week"}
+              colors={colors}
+              type={"week"}
+            />
+          </View>
         </ScrollView>
       </View>
       <ModalComponent
@@ -1139,7 +671,7 @@ const styles = StyleSheet.create({
   },
 
   monthContainer: {
-    width: WEEK_WIDTH,
+    width: MONTH_WIDTH,
     justifyContent: "center",
     alignItems: "center",
     padding: 10,
@@ -1159,7 +691,7 @@ const styles = StyleSheet.create({
   },
 
   dayContainer: {
-    width: WEEK_WIDTH,
+    width: DAY_WIDTH,
     justifyContent: "center",
     alignItems: "center",
     padding: 10,
