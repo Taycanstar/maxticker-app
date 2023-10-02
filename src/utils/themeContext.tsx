@@ -5,9 +5,12 @@ import React, {
   useContext,
 } from "react";
 
+import { Appearance } from "react-native";
+
 type ThemeContextType = {
   theme: string;
-  toggleTheme: () => void;
+
+  toggleTheme: (themeChoice?: string) => void;
 };
 
 export const ThemeContext = createContext<ThemeContextType>({
@@ -22,8 +25,12 @@ type Props = {
 export const ThemeProvider: FunctionComponent<Props> = ({ children }) => {
   const [theme, setTheme] = useState<string>("light");
 
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
+  const toggleTheme = (themeChoice?: string) => {
+    if (themeChoice === "system") {
+      setTheme(Appearance.getColorScheme() || "light");
+    } else {
+      setTheme(theme === "light" ? "dark" : "light");
+    }
   };
 
   return (

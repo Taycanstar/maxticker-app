@@ -79,7 +79,7 @@ const ModalComponent: React.FC<Props> = ({
                         paddingVertical: 15,
                         backgroundColor: theme["btn-bg"],
                         marginBottom: 15,
-                        paddingHorizontal: 15,
+                        // paddingHorizontal: 15,
                         borderRadius: 8,
                         justifyContent: "space-between",
                       }}

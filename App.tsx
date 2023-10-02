@@ -10,15 +10,29 @@ import { default as customLightTheme } from "./lightTheme.json";
 import React, { useState, useContext, useEffect } from "react";
 import { TaskProvider } from "./src/contexts/TaskContext";
 import { SubscriptionProvider } from "./src/contexts/SubscriptionContext";
-// import { ScrollPositionProvider } from "./src/contexts/ScrollContext";
+import { Appearance } from "react-native";
 import { refreshTokenAction } from "./src/store/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function App() {
   const [theme, setTheme] = useState<string>("dark");
-  const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "dark";
-    setTheme(nextTheme);
+  // const toggleTheme = () => {
+  //   const nextTheme = theme === "light" ? "dark" : "light";
+
+  //   setTheme(nextTheme);
+  // };
+
+  const toggleTheme = (themeChoice?: string) => {
+    if (themeChoice === "system") {
+      setTheme(Appearance.getColorScheme() || "light");
+    } else if (
+      themeChoice === "dark" ||
+      (themeChoice === undefined && theme === "light")
+    ) {
+      setTheme("dark");
+    } else {
+      setTheme("light");
+    }
   };
 
   return (

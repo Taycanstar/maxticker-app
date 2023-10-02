@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createDrawerNavigator } from "@react-navigation/drawer";
@@ -21,6 +21,7 @@ import {
   TouchableOpacity,
   View,
   Image,
+  Appearance,
   TouchableWithoutFeedback,
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
@@ -65,6 +66,7 @@ import ModalComponent from "../components/ModalComponent";
 import AnalyticsHeader from "../components/AnalyticsHeader";
 import MonthlyScreen from "../screens/MonthlyScreen";
 import WeeklyScreen from "../screens/WeeklyScreen";
+import { ThemeContext } from "../utils/themeContext";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -542,6 +544,7 @@ const CustomDrawerItem: React.FC<{
   onPress: () => void;
 }> = ({ label, iconName, focused, onPress }) => {
   const theme = useTheme();
+
   const color = focused ? theme["text-basic-color"] : theme["text-basic-color"];
   return (
     <TouchableOpacity style={styles.itemContainer} onPress={onPress}>
@@ -569,25 +572,62 @@ const styles = StyleSheet.create({
 
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const themeContext = useContext(ThemeContext);
+  const colorScheme = Appearance.getColorScheme();
+
+  const items: any = [
+    { name: "System", isPlus: false },
+    { name: "Dark", isPlus: false },
+    { name: "Light", isPlus: false },
+  ];
+
+  const handlePress = (routeName: string) => {
+    if (routeName === "Color Scheme") {
+      setIsModalVisible(true);
+    }
+  };
+
+  const handleColorScheme = (item: any) => {
+    if (item.name === "Dark" && themeContext.theme !== "dark") {
+      themeContext.toggleTheme(); // This will toggle the theme
+    } else if (item.name === "Light" && themeContext.theme !== "light") {
+      themeContext.toggleTheme(); // This will toggle the theme
+    } else if (item.name === "System") {
+      themeContext.toggleTheme("system");
+    }
+
+    setIsModalVisible(false);
+  };
+
   return (
-    <DrawerContentScrollView {...props}>
-      {props.state.routes.map((route, index) => {
-        if (route.name === "TabBar") return null; // Skip rendering the TabBar
+    <>
+      <DrawerContentScrollView {...props}>
+        {props.state.routes.map((route, index) => {
+          if (route.name === "TabBar") return null; // Skip rendering the TabBar
 
-        const focused = index === props.state.index;
-        const { iconName } = route.params as { iconName: string };
+          const focused = index === props.state.index;
+          const { iconName } = route.params as { iconName: string };
 
-        return (
-          <CustomDrawerItem
-            key={route.key}
-            label={route.name}
-            focused={focused}
-            iconName={iconName}
-            onPress={() => props.navigation.navigate(route.name)}
-          />
-        );
-      })}
-    </DrawerContentScrollView>
+          return (
+            <CustomDrawerItem
+              key={route.key}
+              label={route.name}
+              focused={focused}
+              iconName={iconName}
+              onPress={() => handlePress(route.name)}
+            />
+          );
+        })}
+      </DrawerContentScrollView>
+      <ModalComponent
+        visible={isModalVisible}
+        height={0.45}
+        handlePress={handleColorScheme}
+        onClose={() => setIsModalVisible(false)}
+        items={items}
+      />
+    </>
   );
 };
 
@@ -595,6 +635,7 @@ const MainStack = () => {
   const navigation = useNavigation();
   const theme = useTheme();
   const isDarkTheme = theme["background-basic-color-1"] === "#000";
+
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} />}
