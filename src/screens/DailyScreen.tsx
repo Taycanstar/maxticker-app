@@ -132,17 +132,6 @@ const DailyScreen: React.FC = () => {
     return monthRanges;
   };
 
-  const getStartAndEndDatesForMonth = (monthRange: string) => {
-    const splitRange = monthRange.split(" ");
-    const month = monthMapping[splitRange[0]];
-    const year = parseInt(splitRange[1], 10);
-
-    const monthStart = new Date(year, month, 1);
-    const monthEnd = new Date(year, month + 1, 0); // last day of the month
-
-    return { monthStart, monthEnd };
-  };
-
   const generateDayRanges = (signupDate: Date) => {
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0);
@@ -193,6 +182,14 @@ const DailyScreen: React.FC = () => {
     dayRangesWithDummy[currentDayIndex]
   );
 
+  const handleFlatListReady = () => {
+    // Scroll to the last item in the FlatList
+    flatListRef.current?.scrollToIndex({
+      index: dayRangesWithDummy.length - 2,
+      animated: false,
+    });
+  };
+
   return (
     <View
       style={[
@@ -203,11 +200,6 @@ const DailyScreen: React.FC = () => {
       <FlatList
         horizontal
         snapToInterval={DAY_WIDTH}
-        contentContainerStyle={
-          {
-            /*maxHeight: 64*/
-          }
-        }
         ref={flatListRef}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
@@ -219,6 +211,17 @@ const DailyScreen: React.FC = () => {
         renderItem={({ item, index }) => (
           <Day day={item} isActive={index === currentDayIndex} />
         )}
+        getItemLayout={(data, index) => ({
+          length: DAY_WIDTH,
+          offset: DAY_WIDTH * index,
+          index,
+        })}
+        onLayout={() =>
+          flatListRef.current?.scrollToIndex({
+            index: dayRangesWithDummy.length - 2,
+            animated: false,
+          })
+        }
       />
       <ScrollView
         style={{ paddingBottom: 100 }}

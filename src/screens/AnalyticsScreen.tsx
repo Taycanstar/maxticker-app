@@ -81,7 +81,6 @@ const monthMapping: { [key: string]: number } = {
   DEC: 11,
 };
 
-const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const monthNames = [
   "JAN",
   "FEB",
@@ -98,138 +97,12 @@ const monthNames = [
 ];
 
 const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  // const {
-  //   dayScrollPosition,
-  //   setDayScrollPosition,
-  //   resetScrollPositions,
-  //   monthScrollPosition,
-  //   setMonthScrollPosition,
-  //   weekScrollPosition,
-  //   setWeekScrollPosition,
-  // } = useScrollPosition();
   const { navigate } = useNavigation<StackNavigation>();
   const [currentItem, setCurrentItem] = useState<string>("General");
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const theme = useTheme();
   const [totalTaskTime, setTotalTaskTime] = useState<number>(0);
   const { tasks } = useTasks();
-  const userSignupDate = useSelector(
-    (state: any) => state.user?.userSignupDate
-  );
-  const [manualScrollSet, setManualScrollSet] = useState(false);
-
-  const Week: React.FC<WeekProps> = ({ week, isActive }) => (
-    <View
-      style={[
-        styles.weekContainer,
-        isActive
-          ? [
-              styles.activeWeek,
-              {
-                borderBottomColor: theme["text-basic-color"],
-                borderBottomWidth: 1,
-              },
-            ]
-          : {},
-      ]}
-    >
-      <Text
-        style={[
-          styles.weekText,
-          isActive
-            ? [styles.activeWeekText, { color: theme["text-basic-color"] }]
-            : {},
-        ]}
-      >
-        {week}
-      </Text>
-    </View>
-  );
-
-  const generateWeekRanges = (signupDate: Date) => {
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    const weekRanges: string[] = [];
-
-    // Adjust the signupDate to the closest previous Sunday
-    let startDate = new Date(signupDate);
-    while (startDate.getDay() !== 0) {
-      // 0 represents Sunday
-      startDate.setDate(startDate.getDate() - 1);
-    }
-    startDate.setHours(0, 0, 0, 0);
-
-    while (startDate <= currentDate) {
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-
-      const startMonth = monthNames[startDate.getMonth()];
-      const endMonth = monthNames[endDate.getMonth()];
-      const startDay = startDate.getDate();
-      const endDay = endDate.getDate();
-
-      let weekRange =
-        startMonth === endMonth
-          ? `${startMonth} ${startDay} - ${endDay}`
-          : `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
-
-      weekRanges.push(weekRange);
-      startDate.setDate(startDate.getDate() + 7);
-    }
-
-    return weekRanges;
-  };
-
-  const getStartAndEndDates = (weekRange: string) => {
-    const splitRange = weekRange.split(" - ");
-
-    const startMonthAndDay = splitRange[0].split(" ");
-    const endDay = parseInt(splitRange[1], 10);
-
-    const startYear = new Date().getFullYear();
-    const startMonth = monthMapping[startMonthAndDay[0]];
-    const startDay = parseInt(startMonthAndDay[1], 10);
-
-    let start = new Date(startYear, startMonth, startDay);
-    let end = new Date(startYear, startMonth, endDay);
-
-    // Adjusting for year-end crossover
-    if (end < start) {
-      end.setFullYear(end.getFullYear() + 1);
-    }
-
-    return { start, end };
-  };
-
-  const weekRanges = generateWeekRanges(userSignupDate);
-
-  function getWeekStartDate() {
-    const now = new Date();
-    const dayOfWeek = now.getUTCDay(); // Sunday - Saturday : 0 - 6
-    const numDayFromStartOfWeek = now.getUTCDate() - dayOfWeek;
-    const startOfWeek = new Date(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      numDayFromStartOfWeek
-    );
-    return startOfWeek.toISOString().split("T")[0];
-  }
-  const findCurrentWeekIndex = () => {
-    const currentWeekStartStr = getWeekStartDate();
-
-    if (Array.isArray(weekRanges)) {
-      const index = weekRanges.indexOf(currentWeekStartStr);
-      return index === -1 ? weekRanges.length - 1 : index;
-    }
-
-    return -1;
-  };
-
-  const realLifeCurrentWeekIndex = findCurrentWeekIndex();
-
-  const [currentWeekIndex, setCurrentWeekIndex] = useState(
-    realLifeCurrentWeekIndex
-  );
 
   const onModalPress = () => {
     setIsModalVisible(!isModalVisible);
@@ -248,51 +121,51 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     { name: "Monthly", isPlus: true, nav: "Monthly" },
   ];
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerTitle: () => (
-        <>
-          <Image
-            source={blackLogo}
-            style={{ width: 60, height: 60 }}
-            resizeMode="contain"
-          />
-        </>
-      ),
+  // useLayoutEffect(() => {
+  //   navigation.setOptions({
+  //     headerTitle: () => (
+  //       <>
+  //         <Image
+  //           source={blackLogo}
+  //           style={{ width: 60, height: 60 }}
+  //           resizeMode="contain"
+  //         />
+  //       </>
+  //     ),
 
-      headerTitleStyle: {
-        color: theme["text-basic-color"],
-        fontSize: 20,
-      },
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={onModalPress}
-          style={{
-            paddingHorizontal: 15,
-            flexDirection: "row",
-            backgroundColor: theme["background-basic-color-1"],
-          }}
-        >
-          <Text
-            style={{
-              color: theme["text-basic-color"],
-              fontSize: 22,
-              fontWeight: "500",
-              marginRight: 5,
-            }}
-          >
-            {currentItem}
-          </Text>
-          <Feather
-            color={Colors.metagray2}
-            size={20}
-            name={isModalVisible ? "chevron-up" : "chevron-down"}
-          />
-        </TouchableOpacity>
-      ),
-      headerRight: null,
-    });
-  }, [isModalVisible]);
+  //     headerTitleStyle: {
+  //       color: theme["text-basic-color"],
+  //       fontSize: 20,
+  //     },
+  //     headerLeft: () => (
+  //       <TouchableOpacity
+  //         onPress={onModalPress}
+  //         style={{
+  //           paddingHorizontal: 15,
+  //           flexDirection: "row",
+  //           backgroundColor: theme["background-basic-color-1"],
+  //         }}
+  //       >
+  //         <Text
+  //           style={{
+  //             color: theme["text-basic-color"],
+  //             fontSize: 22,
+  //             fontWeight: "500",
+  //             marginRight: 5,
+  //           }}
+  //         >
+  //           {currentItem}
+  //         </Text>
+  //         <Feather
+  //           color={Colors.metagray2}
+  //           size={20}
+  //           name={isModalVisible ? "chevron-up" : "chevron-down"}
+  //         />
+  //       </TouchableOpacity>
+  //     ),
+  //     headerRight: null,
+  //   });
+  // }, [isModalVisible]);
 
   const colors = [
     "rgb(55,120,181)",

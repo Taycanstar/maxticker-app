@@ -283,6 +283,8 @@ const AnalyticsStack = ({ navigation }: any) => {
             borderBottomWidth: 0,
             shadowOpacity: 0,
           },
+          animationEnabled: false,
+          presentation: "card",
           cardStyle: {
             backgroundColor: theme["background-basic-color-1"], // This will set the background color for all screens
           },
