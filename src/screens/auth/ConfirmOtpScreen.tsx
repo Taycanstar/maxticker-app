@@ -5,6 +5,7 @@ import {
   Image,
   TouchableWithoutFeedback,
   TouchableOpacity,
+  ActivityIndicator,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -175,22 +176,28 @@ const ConfirmOtpScreen: React.FC<ConfirmOtpScreenProps> = ({ route }) => {
               <View style={{ width: "100%" }}>
                 {isError && <ErrorText text={errorText} />}
               </View>
-              <TouchableOpacity
-                onPress={() => {
-                  if (resend === "Resend") {
-                    onResend();
-                  }
-                }}
-              >
-                <Text
-                  style={{
-                    color: theme["text-basic-color"],
-                    fontWeight: "600",
-                  }}
-                >
-                  {resend}
-                </Text>
-              </TouchableOpacity>
+              <View>
+                {loading ? (
+                  <ActivityIndicator />
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (resend === "Resend") {
+                        onResend();
+                      }
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: theme["text-basic-color"],
+                        fontWeight: "600",
+                      }}
+                    >
+                      {resend}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </ScrollView>
         </View>

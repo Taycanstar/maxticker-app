@@ -137,7 +137,7 @@ const LoginScreen: React.FC = () => {
                     { color: theme["text-basic-color"] },
                   ]}
                 >
-                  Log in with your Humuli account
+                  Log in with your Maxticker account
                 </Text>
               </View>
 

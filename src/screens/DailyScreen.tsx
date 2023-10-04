@@ -182,14 +182,6 @@ const DailyScreen: React.FC = () => {
     dayRangesWithDummy[currentDayIndex]
   );
 
-  const handleFlatListReady = () => {
-    // Scroll to the last item in the FlatList
-    flatListRef.current?.scrollToIndex({
-      index: dayRangesWithDummy.length - 2,
-      animated: false,
-    });
-  };
-
   return (
     <View
       style={[
@@ -217,10 +209,12 @@ const DailyScreen: React.FC = () => {
           index,
         })}
         onLayout={() =>
-          flatListRef.current?.scrollToIndex({
-            index: dayRangesWithDummy.length - 2,
-            animated: false,
-          })
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({
+              index: dayRangesWithDummy.length - 2,
+              animated: false,
+            });
+          }, 100)
         }
       />
       <ScrollView

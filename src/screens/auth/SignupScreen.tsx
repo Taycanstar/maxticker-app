@@ -153,7 +153,7 @@ const LoginScreen: React.FC = () => {
                     { color: theme["text-basic-color"] },
                   ]}
                 >
-                  Create a Humuli account
+                  Create a Maxticker account
                 </Text>
               </View>
               <CustomInput

@@ -182,6 +182,14 @@ const MonthlyScreen: React.FC = () => {
         renderItem={({ item, index }) => (
           <Month month={item} isActive={index === currentMonthIndex} />
         )}
+        onLayout={() =>
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({
+              index: monthRangesWithDummy.length - 2,
+              animated: false,
+            });
+          }, 100)
+        }
       />
       <ScrollView
         style={{ paddingBottom: 100 }}

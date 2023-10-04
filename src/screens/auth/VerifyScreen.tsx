@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
+  ActivityIndicator,
   Platform,
 } from "react-native";
 import React, { useState, useEffect, useCallback } from "react";
@@ -183,22 +184,29 @@ const VerifyScreen: React.FC<VerifyScreenProps> = ({ route }) => {
               <View style={{ width: "100%" }}>
                 {isError && <ErrorText text={errorText} />}
               </View>
-              <TouchableOpacity
-                onPress={() => {
-                  if (resend === "Resend") {
-                    onResend();
-                  }
-                }}
-              >
-                <Text
-                  style={{
-                    color: theme["text-basic-color"],
-                    fontWeight: "600",
-                  }}
-                >
-                  {resend}
-                </Text>
-              </TouchableOpacity>
+
+              <View>
+                {loading ? (
+                  <ActivityIndicator />
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (resend === "Resend") {
+                        onResend();
+                      }
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: theme["text-basic-color"],
+                        fontWeight: "600",
+                      }}
+                    >
+                      {resend}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </ScrollView>
         </View>

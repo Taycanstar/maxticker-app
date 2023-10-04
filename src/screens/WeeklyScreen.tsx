@@ -223,6 +223,14 @@ const WeeklyScreen: React.FC = () => {
         renderItem={({ item, index }) => (
           <Week week={item} isActive={index === currentWeekIndex} />
         )}
+        onLayout={() =>
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({
+              index: weekRangesWithDummy.length - 2,
+              animated: false,
+            });
+          }, 100)
+        }
       />
       <ScrollView
         style={{ paddingBottom: 100 }}
