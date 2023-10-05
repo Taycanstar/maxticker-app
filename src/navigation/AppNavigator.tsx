@@ -67,6 +67,7 @@ import AnalyticsHeader from "../components/AnalyticsHeader";
 import MonthlyScreen from "../screens/MonthlyScreen";
 import WeeklyScreen from "../screens/WeeklyScreen";
 import { ThemeContext } from "../utils/themeContext";
+import { useSubscription } from "../contexts/SubscriptionContext";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -260,6 +261,7 @@ const items: NavigationItem[] = [
 ];
 
 const AnalyticsStack = ({ navigation }: any) => {
+  const { subscription, setSubscription } = useSubscription();
   const theme = useTheme();
   // const navigation = useNavigation();
 
@@ -267,9 +269,14 @@ const AnalyticsStack = ({ navigation }: any) => {
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
   const handleItemPress = (selectedItem: NavigationItem) => {
-    setCurrentItem(selectedItem.name);
-    setIsModalVisible(!isModalVisible);
-    navigation.navigate(selectedItem.nav);
+    if (subscription === "plus") {
+      setCurrentItem(selectedItem.name);
+      setIsModalVisible(!isModalVisible);
+      navigation.navigate(selectedItem.nav);
+    } else {
+      navigation.navigate("Subscription");
+      setIsModalVisible(!isModalVisible);
+    }
   };
 
   return (
@@ -373,6 +380,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
       <Tab.Navigator
         tabBar={(props) => <GradientTabBar {...props} />}
         screenOptions={{
+          lazy: false,
           headerShown: false,
           // tabBarShowLabel: false,
           tabBarActiveTintColor: theme["text-basic-color"],
@@ -602,11 +610,12 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
     setIsModalVisible(false);
   };
 
+  const { navigation } = props;
   return (
     <>
       <DrawerContentScrollView {...props}>
         {props.state.routes.map((route, index) => {
-          if (route.name === "TabBar") return null; // Skip rendering the TabBar
+          if (route.name === "TabBar") return null;
 
           const focused = index === props.state.index;
           const { iconName } = route.params as { iconName: string };
@@ -617,7 +626,13 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
               label={route.name}
               focused={focused}
               iconName={iconName}
-              onPress={() => handlePress(route.name)}
+              onPress={() => {
+                if (route.name === "TabBar") {
+                  handlePress(route.name);
+                } else {
+                  navigation.navigate(route.name);
+                }
+              }}
             />
           );
         })}
@@ -679,6 +694,18 @@ const MainStack = () => {
             borderBottomWidth: 0,
             shadowOpacity: 0,
           },
+          headerLeft: (props) => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ paddingHorizontal: 10 }}
+            >
+              <Feather
+                name="arrow-left"
+                size={25}
+                color={theme["text-basic-color"]}
+              />
+            </TouchableOpacity>
+          ),
         }}
       />
 

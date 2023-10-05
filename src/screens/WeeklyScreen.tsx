@@ -226,7 +226,7 @@ const WeeklyScreen: React.FC = () => {
         onLayout={() =>
           setTimeout(() => {
             flatListRef.current?.scrollToIndex({
-              index: weekRangesWithDummy.length - 2,
+              index: weekRangesWithDummy.length - 1,
               animated: false,
             });
           }, 100)

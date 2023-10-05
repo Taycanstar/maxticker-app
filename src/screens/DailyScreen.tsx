@@ -211,7 +211,7 @@ const DailyScreen: React.FC = () => {
         onLayout={() =>
           setTimeout(() => {
             flatListRef.current?.scrollToIndex({
-              index: dayRangesWithDummy.length - 2,
+              index: dayRangesWithDummy.length - 1,
               animated: false,
             });
           }, 100)

@@ -26,11 +26,10 @@ interface SessionData {
 
 const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
   const [isReady, setIsReady] = useState<boolean>(false);
-
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(true);
   const theme = useTheme();
   const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const { endSession, tasks } = useTasks();
+  const { endSession, tasks, loading } = useTasks();
   const [timerState, setTimerState] = useState<
     "stopped" | "running" | "paused"
   >("stopped");
@@ -46,10 +45,8 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
     history: [],
     breaks: 0,
     timeSpentOnBreaks: 0,
-    // ... any other fields you need
   });
 
-  // Update the local state based on user actions
   const handleStart = () => {
     setSessionData((prevData) => ({
       ...prevData,
@@ -71,7 +68,29 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
 
   useEffect(() => {
     const handleTaskStateChange = (data: { taskId: string; state: string }) => {
+      if (!tasks) return; // Ensure tasks is available inside the handler
+
       if (data.taskId === id) {
+        console.log(data.state, "received current State");
+        // ... rest of the code
+      }
+    };
+
+    taskEventEmitter.on("taskStateChanged", handleTaskStateChange);
+
+    // Cleanup the listener when the component unmounts
+    return () => {
+      taskEventEmitter.off("taskStateChanged", handleTaskStateChange);
+    };
+  }, []); // Empty dependency array to ensure it runs only on mount and unmount
+
+  useEffect(() => {
+    // Ensure tasks is available before setting up the event listener
+    if (!tasks) return;
+
+    const handleTaskStateChange = (data: { taskId: string; state: string }) => {
+      if (data.taskId === id) {
+        console.log(data.state, "received current State");
         if (data.state === "running") {
           setTimerState("running");
           console.log("Received timerStarted event in Stopwatch");
@@ -87,7 +106,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
 
     taskEventEmitter.on("taskStateChanged", handleTaskStateChange);
 
-    // Cleanup the listener when the component unmounts
+    // Cleanup the listener when the component unmounts or when tasks changes
     return () => {
       taskEventEmitter.off("taskStateChanged", handleTaskStateChange);
     };
@@ -137,13 +156,11 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
 
     const now = performance.now();
 
-    // If the session is currently running, add the current duration to totalDuration
     if (timerState === "running") {
       const currentDuration = now - sessionData.startTime;
       finalSessionData.totalDuration += currentDuration;
     }
 
-    // If a break is currently ongoing, add its duration to timeSpentOnBreaks
     if (breakStartTime) {
       const currentBreakDuration = now - breakStartTime;
       finalSessionData.timeSpentOnBreaks += currentBreakDuration;
@@ -151,7 +168,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
 
     try {
       if (id) {
-        await endSession(id, finalSessionData); // Send the taskId and final data to the backend
+        await endSession(id, finalSessionData);
       } else {
         console.error("No current task found");
       }

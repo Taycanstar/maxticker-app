@@ -23,78 +23,23 @@ import React, {
 } from "react";
 import Colors from "../constants/Colors";
 import { Layout, useTheme } from "@ui-kitten/components";
-import AppLoading from "expo-app-loading";
-import * as Font from "expo-font";
-import Feather from "@expo/vector-icons/Feather";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Canvas, Path, Skia } from "@shopify/react-native-skia";
-import { Circle, Svg, Line } from "react-native-svg";
 import { ScrollView } from "react-native-gesture-handler";
 import { ActivityIndicator } from "react-native";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
-import { useSelector } from "react-redux";
 import {
   HomeScreenRouteProp,
   type StackNavigation,
 } from "../navigation/AppNavigator";
 import { useTasks, Task } from "../contexts/TaskContext";
-import { useFocusEffect } from "@react-navigation/native";
-import { blackLogo } from "../images/ImageAssets";
-import { taskEventEmitter } from "../utils/eventEmitter";
 import ModalComponent from "../components/ModalComponent";
 import GeneralCard from "../components/GeneralCard";
 import user from "../store/user";
-// import { useScrollPosition } from "../contexts/ScrollContext";
-
-type DayProps = {
-  day: string; // in YYYY-MM-DD format
-  isActive: boolean;
-};
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const WEEK_WIDTH = SCREEN_WIDTH / 3;
 const MONTH_WIDTH = SCREEN_WIDTH / 3;
 const DAY_WIDTH = SCREEN_WIDTH / 3;
-
-type WeekProps = {
-  week: string;
-  isActive: boolean;
-};
-
-type MonthProps = {
-  month: string;
-  isActive: boolean;
-};
-
-const monthMapping: { [key: string]: number } = {
-  JAN: 0,
-  FEB: 1,
-  MAR: 2,
-  APR: 3,
-  MAY: 4,
-  JUN: 5,
-  JUL: 6,
-  AUG: 7,
-  SEP: 8,
-  OCT: 9,
-  NOV: 10,
-  DEC: 11,
-};
-
-const monthNames = [
-  "JAN",
-  "FEB",
-  "MAR",
-  "APR",
-  "MAY",
-  "JUN",
-  "JUL",
-  "AUG",
-  "SEP",
-  "OCT",
-  "NOV",
-  "DEC",
-];
 
 const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { navigate } = useNavigation<StackNavigation>();
@@ -103,10 +48,6 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
   const [totalTaskTime, setTotalTaskTime] = useState<number>(0);
   const { tasks } = useTasks();
-
-  const onModalPress = () => {
-    setIsModalVisible(!isModalVisible);
-  };
 
   const handleItemPress = (item: any) => {
     setCurrentItem(item);
@@ -120,52 +61,6 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     { name: "Weekly", isPlus: true, nav: "Weekly" },
     { name: "Monthly", isPlus: true, nav: "Monthly" },
   ];
-
-  // useLayoutEffect(() => {
-  //   navigation.setOptions({
-  //     headerTitle: () => (
-  //       <>
-  //         <Image
-  //           source={blackLogo}
-  //           style={{ width: 60, height: 60 }}
-  //           resizeMode="contain"
-  //         />
-  //       </>
-  //     ),
-
-  //     headerTitleStyle: {
-  //       color: theme["text-basic-color"],
-  //       fontSize: 20,
-  //     },
-  //     headerLeft: () => (
-  //       <TouchableOpacity
-  //         onPress={onModalPress}
-  //         style={{
-  //           paddingHorizontal: 15,
-  //           flexDirection: "row",
-  //           backgroundColor: theme["background-basic-color-1"],
-  //         }}
-  //       >
-  //         <Text
-  //           style={{
-  //             color: theme["text-basic-color"],
-  //             fontSize: 22,
-  //             fontWeight: "500",
-  //             marginRight: 5,
-  //           }}
-  //         >
-  //           {currentItem}
-  //         </Text>
-  //         <Feather
-  //           color={Colors.metagray2}
-  //           size={20}
-  //           name={isModalVisible ? "chevron-up" : "chevron-down"}
-  //         />
-  //       </TouchableOpacity>
-  //     ),
-  //     headerRight: null,
-  //   });
-  // }, [isModalVisible]);
 
   const colors = [
     "rgb(55,120,181)",

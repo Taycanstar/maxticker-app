@@ -185,7 +185,7 @@ const MonthlyScreen: React.FC = () => {
         onLayout={() =>
           setTimeout(() => {
             flatListRef.current?.scrollToIndex({
-              index: monthRangesWithDummy.length - 2,
+              index: monthRangesWithDummy.length - 1,
               animated: false,
             });
           }, 100)

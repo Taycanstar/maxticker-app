@@ -33,10 +33,8 @@ export interface TaskContextType {
   deleteTask: (taskId: string) => Promise<void>;
   updateTask: (task: Task) => Promise<void>;
   endSession: (taskId: string, sessionData: SessionData) => Promise<void>;
-  // setGlobalTimerState: (
-  //   state: "stopped" | "running" | "paused" | string
-  // ) => void;
   handleTimer: (taskId: any, action: "start" | "pause" | "reset") => void;
+  loading?: boolean;
 }
 
 interface TaskProviderProps {
@@ -46,7 +44,6 @@ interface TaskProviderProps {
 export const TaskContext = createContext<TaskContextType | undefined>(
   undefined
 );
-
 export const useTasks = () => {
   const context = useContext(TaskContext);
   if (!context) {
@@ -84,6 +81,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [globalTimerState, setGlobalTimerState] = useState("stopped");
+  const [loading, setLoading] = useState(true);
 
   const fetchTasks = async () => {
     try {
@@ -99,6 +97,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
       setTasks(
         fetchedTasks.map((task: Task) => ({ ...task, timerState: "stopped" }))
       );
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching tasks:", error);
     }
@@ -257,6 +256,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
         updateTask,
         endSession,
         handleTimer,
+        loading,
         // ... Add other session-related methods to the value prop as needed
       }}
     >
