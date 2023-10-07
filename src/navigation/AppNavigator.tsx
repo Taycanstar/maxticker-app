@@ -68,6 +68,8 @@ import MonthlyScreen from "../screens/MonthlyScreen";
 import WeeklyScreen from "../screens/WeeklyScreen";
 import { ThemeContext } from "../utils/themeContext";
 import { useSubscription } from "../contexts/SubscriptionContext";
+import ProfileScreen from "../screens/ProfileScreen";
+import PersonalInfoScreen from "../screens/PersonalInfoScreen";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -91,7 +93,9 @@ type DrawerRouteParams = {
 type DrawerRoutes = keyof DrawerRouteParams;
 
 export type ScreenNames = [
+  "Profile",
   "Daily",
+  "PersonalInfo",
   "Monthly",
   "Weekly",
   "Add",
@@ -108,9 +112,14 @@ export type ScreenNames = [
   "Modal",
   "Edit",
   "Home",
-  "Multiple"
+  "Multiple",
+  "Account"
 ];
+
 export type RootStackParamList = {
+  Account?: undefined;
+  PersonalInfo?: undefined;
+  Profile?: undefined;
   Daily?: undefined;
   Monthly?: undefined;
   Weekly?: undefined;
@@ -188,7 +197,9 @@ const customCardStyleInterpolator = ({
   };
 };
 
-function RootNavigator() {
+function RootNavigator({ navigation }: any) {
+  const theme = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -243,6 +254,50 @@ const AuthStack = () => {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="ConfirmOtp" component={ConfirmOtpScreen} />
       <Stack.Screen name="SetNewPassword" component={SetNewPasswordScreen} />
+    </Stack.Navigator>
+  );
+};
+
+const AccountStack = ({ navigation }: any) => {
+  const theme = useTheme();
+  return (
+    <Stack.Navigator
+      initialRouteName="Account"
+      screenOptions={{
+        headerShown: false,
+        cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS,
+      }}
+    >
+      <Stack.Screen
+        name="Account"
+        component={AccountScreen}
+        options={{
+          headerShown: true,
+          headerTitle: "Account",
+          headerTintColor: theme["text-basic-color"],
+          headerRight: () => null,
+          headerStyle: {
+            backgroundColor: theme["background-basic-color-1"],
+            elevation: 0, // This removes the shadow for Android
+            borderBottomWidth: 0,
+            shadowOpacity: 0,
+          },
+          headerLeft: (props) => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ paddingHorizontal: 10 }}
+            >
+              <Feather
+                name="arrow-left"
+                size={25}
+                color={theme["text-basic-color"]}
+              />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
     </Stack.Navigator>
   );
 };
@@ -582,6 +637,7 @@ const styles = StyleSheet.create({
 
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
+
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const themeContext = useContext(ThemeContext);
   const colorScheme = Appearance.getColorScheme();
@@ -627,7 +683,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
               focused={focused}
               iconName={iconName}
               onPress={() => {
-                if (route.name === "TabBar") {
+                if (route.name === "Color Scheme") {
                   handlePress(route.name);
                 } else {
                   navigation.navigate(route.name);
@@ -680,33 +736,33 @@ const MainStack = () => {
         }}
       />
       <Drawer.Screen
-        name="Account"
-        component={AccountScreen}
+        name="Account "
+        component={AccountStack}
         initialParams={{ iconName: "user" }}
-        options={{
-          headerShown: true,
-          headerTitle: "Account",
-          headerTintColor: theme["text-basic-color"],
-          headerRight: () => null,
-          headerStyle: {
-            backgroundColor: theme["background-basic-color-1"],
-            elevation: 0, // This removes the shadow for Android
-            borderBottomWidth: 0,
-            shadowOpacity: 0,
-          },
-          headerLeft: (props) => (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ paddingHorizontal: 10 }}
-            >
-              <Feather
-                name="arrow-left"
-                size={25}
-                color={theme["text-basic-color"]}
-              />
-            </TouchableOpacity>
-          ),
-        }}
+        // options={{
+        //   headerShown: true,
+        //   headerTitle: "Account",
+        //   headerTintColor: theme["text-basic-color"],
+        //   headerRight: () => null,
+        //   headerStyle: {
+        //     backgroundColor: theme["background-basic-color-1"],
+        //     elevation: 0, // This removes the shadow for Android
+        //     borderBottomWidth: 0,
+        //     shadowOpacity: 0,
+        //   },
+        //   headerLeft: (props) => (
+        //     <TouchableOpacity
+        //       onPress={() => navigation.goBack()}
+        //       style={{ paddingHorizontal: 10 }}
+        //     >
+        //       <Feather
+        //         name="arrow-left"
+        //         size={25}
+        //         color={theme["text-basic-color"]}
+        //       />
+        //     </TouchableOpacity>
+        //   ),
+        // }}
       />
 
       <Drawer.Screen

@@ -20,7 +20,7 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-import Feather from "@expo/vector-icons/Feather";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { type StackNavigation } from "../../navigation/AppNavigator";
 import { Layout, useTheme } from "@ui-kitten/components";
@@ -28,6 +28,7 @@ import { blackLogo } from "../../images/ImageAssets";
 import { createCheckoutSession } from "../../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
+import { useSubscription } from "../../contexts/SubscriptionContext";
 
 type Props = {};
 
@@ -43,6 +44,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const [oldPrice, setOldPrice] = useState<string>("$59.99");
   const dispatch = useDispatch<AppDispatch>();
   const [loading, setLoading] = useState<boolean>(false);
+  const { subscription, setSubscription } = useSubscription();
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -52,6 +54,8 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       setLoading(false);
     }, 1000);
   };
+
+  const handleCancel = () => {};
 
   return (
     <Layout
@@ -78,8 +82,9 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
                 fontWeight: "700",
               }}
             >
-              Unlock Maxticker Plus for premium tools, limitless customization,
-              and expanded possibilities.
+              {subscription === "standard"
+                ? "You have now access to premium tools, limitless customization and expanded possibilities."
+                : "Unlock Maxticker Plus for premium tools, limitless customization,and expanded possibilities."}
             </Text>
           </View>
 
@@ -99,56 +104,58 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
         </View>
 
         <View style={{ marginVertical: 20 }}>
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <View style={{ flexDirection: "row" }}>
-              <Text
-                style={{
-                  color: theme["text-basic-color"],
-                  fontSize: 17,
-                  fontWeight: "500",
-                  marginBottom: 10,
-                }}
-              >
-                {isEnabled ? "Monthly" : "Annually"}
-              </Text>
-              {!isEnabled && (
-                <View
+          {subscription === "standard" && (
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <View style={{ flexDirection: "row" }}>
+                <Text
                   style={{
-                    backgroundColor: "rgba(9, 121, 105, 0.5)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    // width: 70,
-                    borderRadius: 50,
-                    height: 25,
-                    marginHorizontal: 10,
-                    paddingHorizontal: 8,
+                    color: theme["text-basic-color"],
+                    fontSize: 17,
+                    fontWeight: "500",
+                    marginBottom: 10,
                   }}
                 >
-                  <Text
+                  {isEnabled ? "Monthly" : "Annually"}
+                </Text>
+                {!isEnabled && (
+                  <View
                     style={{
-                      color: "rgb(175, 225, 175)",
-                      fontWeight: "bold",
-                      fontSize: 12,
+                      backgroundColor: "rgba(9, 121, 105, 0.5)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      // width: 70,
+                      borderRadius: 50,
+                      height: 25,
+                      marginHorizontal: 10,
+                      paddingHorizontal: 8,
                     }}
                   >
-                    SAVE 16%
-                  </Text>
-                </View>
-              )}
+                    <Text
+                      style={{
+                        color: "rgb(175, 225, 175)",
+                        fontWeight: "bold",
+                        fontSize: 12,
+                      }}
+                    >
+                      SAVE 16%
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Switch
+                trackColor={{
+                  false: theme["ios-green"],
+                  true: theme["ios-blue"],
+                }}
+                thumbColor="#fff"
+                ios_backgroundColor={theme["ios-green"]}
+                onValueChange={toggleSwitch}
+                value={isEnabled}
+              />
             </View>
-            <Switch
-              trackColor={{
-                false: theme["ios-green"],
-                true: theme["ios-blue"],
-              }}
-              thumbColor="#fff"
-              ios_backgroundColor={theme["ios-green"]}
-              onValueChange={toggleSwitch}
-              value={isEnabled}
-            />
-          </View>
+          )}
 
           <View
             style={{
@@ -250,41 +257,108 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
             </View>
           </View>
         </View>
+        {subscription === "plus" && (
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <View style={{ flexDirection: "row" }}>
+              <Text
+                style={{
+                  color: theme["text-basic-color"],
+                  fontSize: 17,
+                  fontWeight: "800",
+                  marginBottom: 10,
+                }}
+              >
+                Subscription
+              </Text>
+            </View>
+            <View
+              style={{
+                borderRadius: 100,
+                flexDirection: "row",
+                paddingHorizontal: 15,
+                paddingVertical: 5,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: theme["card-bg"],
+              }}
+            >
+              <Ionicons
+                color={theme["ios-blue"]}
+                size={18}
+                name="checkmark-circle"
+              />
+              <Text
+                style={{
+                  color: theme["text-basic-color"],
+                  marginLeft: 5,
+                  fontWeight: "600",
+                }}
+              >
+                Active
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
       <View
         style={{ backgroundColor: theme["btn-bg"], padding: 25, flex: 0.2 }}
       >
-        <TouchableOpacity
-          onPress={handleSubmit}
-          style={{
-            backgroundColor: theme["text-basic-color"],
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 15,
-            borderRadius: 50,
-          }}
-        >
-          {!isEnabled && (
-            <Text
-              style={{
-                textDecorationLine: "line-through",
-                color: theme["background-basic-color-1"],
-              }}
-            >
-              {oldPrice}{" "}
-            </Text>
-          )}
-
-          <Text
+        {subscription === "standard" ? (
+          <TouchableOpacity
+            onPress={handleSubmit}
             style={{
-              color: theme["background-basic-color-1"],
-              fontWeight: "bold",
+              backgroundColor: theme["text-basic-color"],
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 15,
+              borderRadius: 50,
             }}
           >
-            {!isEnabled ? "$49.99 / year" : "$4.99 / month"}
-          </Text>
-        </TouchableOpacity>
+            {!isEnabled && (
+              <Text
+                style={{
+                  textDecorationLine: "line-through",
+                  color: theme["background-basic-color-1"],
+                }}
+              >
+                {oldPrice}{" "}
+              </Text>
+            )}
+
+            <Text
+              style={{
+                color: theme["background-basic-color-1"],
+                fontWeight: "bold",
+              }}
+            >
+              {!isEnabled ? "$49.99 / year" : "$4.99 / month"}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={handleCancel}
+            style={{
+              backgroundColor: theme["card-bg"],
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 15,
+              borderRadius: 50,
+            }}
+          >
+            <Text
+              style={{
+                color: theme["ios-red"],
+                fontWeight: "600",
+              }}
+            >
+              Cancel subscription
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </Layout>
   );

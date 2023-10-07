@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import api from "../api";
 
-type SubscriptionType = "basic" | "plus";
+type SubscriptionType = "standard" | "plus";
 
 type SubscriptionContextType = {
   subscription: SubscriptionType;
@@ -34,7 +34,8 @@ export const useSubscription = () => {
 export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [subscription, setSubscription] = useState<SubscriptionType>("basic");
+  const [subscription, setSubscription] =
+    useState<SubscriptionType>("standard");
 
   const fetchSubscription = async () => {
     try {

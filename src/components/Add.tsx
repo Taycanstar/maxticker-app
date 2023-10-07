@@ -182,7 +182,7 @@ const Add: React.FC = ({ navigation }: any) => {
   };
 
   const handleColor = () => {
-    if (subscription == "basic") {
+    if (subscription == "standard") {
       navigation.navigate("Subscription");
     } else if (subscription == "plus") {
       setIsStrokeVisible(!isStrokeVisible);
@@ -317,7 +317,7 @@ const Add: React.FC = ({ navigation }: any) => {
               >
                 {color}
               </Text>
-              {subscription === "basic" ? (
+              {subscription === "standard" ? (
                 <View style={{ flexDirection: "row" }}>
                   <View
                     style={{

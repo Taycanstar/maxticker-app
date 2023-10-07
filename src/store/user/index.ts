@@ -194,6 +194,21 @@ export const fetchUserByValue = createAsyncThunk(
   }
 );
 
+export const fetchUserById = createAsyncThunk(
+  "user/fetchById",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/api/get-user-by-id/${id}`);
+      return response.data.user;
+    } catch (error: any) {
+      console.log(error, "<= Error");
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
 export const confirmUser = createAsyncThunk(
   "user/confirmUser",
   async (
@@ -410,6 +425,41 @@ export const createCheckoutSession = createAsyncThunk(
       //   error.response ? error.response.data : error.message
       // );
       console.log(error.response ? error.response.data : error.message);
+    }
+  }
+);
+
+export const editProfile = createAsyncThunk(
+  "user/editProfile",
+  async (
+    data: { firstName: string; lastName: string; id: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.put(`/u/edit-profile/${data.id}`, data);
+      console.log(response);
+      return response.data;
+    } catch (error: any) {
+      console.log(error);
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
+export const getUserById = createAsyncThunk(
+  "user/getUserById",
+  async (data: { id: any }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/u/get-user-by-id/${data.id}`, data);
+      console.log(response);
+      return response.data;
+    } catch (error: any) {
+      console.log(error);
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
     }
   }
 );
