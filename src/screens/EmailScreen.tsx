@@ -12,15 +12,14 @@ import Feather from "@expo/vector-icons/Feather";
 import CustomInput from "../components/CustomInput";
 import CustomPasswordInput from "../components/CustomPasswordInput";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUserById } from "../store/user";
+import { changeEmail, fetchUserById } from "../store/user";
 import { AppDispatch } from "../store";
 import { StackNavigation } from "../navigation/AppNavigator";
 import { useNavigation } from "@react-navigation/native";
 import { editProfile, getUserById } from "../store/user";
-import axios from "axios";
 import api from "../api";
 
-const PersonalInfoScreen: React.FC = ({ navigation }: any) => {
+const EmailScreen: React.FC = ({ navigation }: any) => {
   const { navigate } = useNavigation<StackNavigation>();
   const theme = useTheme();
   const dispatch = useDispatch<AppDispatch>();
@@ -30,15 +29,32 @@ const PersonalInfoScreen: React.FC = ({ navigation }: any) => {
   const userData = useSelector((state: any) => state.user);
   const userId = userData?.data?.user?._id;
   const [data, setData] = useState(null);
+  const [email, setEmail] = useState("");
 
-  const [email, setEmail] = useState<any>("");
-  const [birthday, setBirthday] = useState<any>("");
-  const [password, setPassword] = useState<any>("");
+  const onSave = async () => {
+    let action = await dispatch(changeEmail({ email: email, id: userId }));
+
+    if ("error" in action) {
+      setIsError(true);
+      const errorMessage = (action.payload as { message: string }).message;
+      setErrorText(errorMessage);
+      setTimeout(() => setIsError(false), 4000);
+      console.log(`Error on Screen`, errorMessage);
+      return true;
+    } else {
+      navigation.navigate("Home");
+      console.log("worked");
+    }
+
+    setTimeout(() => {
+      setLoading(false);
+    }, 100);
+  };
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
-      headerTitle: "Personal information",
+      headerTitle: "Email",
       headerTintColor: theme["text-basic-color"],
 
       headerStyle: {
@@ -60,9 +76,15 @@ const PersonalInfoScreen: React.FC = ({ navigation }: any) => {
         </TouchableOpacity>
       ),
 
-      headerRight: () => null,
+      headerRight: () => (
+        <TouchableOpacity onPress={onSave} style={{ paddingHorizontal: 15 }}>
+          <Text style={{ color: theme["text-basic-color"], fontSize: 17 }}>
+            Save
+          </Text>
+        </TouchableOpacity>
+      ),
     });
-  }, [email, birthday]);
+  }, [email]);
 
   useEffect(() => {
     let mounted = true;
@@ -73,8 +95,6 @@ const PersonalInfoScreen: React.FC = ({ navigation }: any) => {
         if (mounted) {
           setData(data);
           setEmail(data.email);
-          setBirthday(data.birthday);
-
           setLoading(false);
         }
       } catch (error) {
@@ -82,7 +102,6 @@ const PersonalInfoScreen: React.FC = ({ navigation }: any) => {
       }
     };
     loadData();
-
     return () => {
       mounted = false;
     };
@@ -92,82 +111,24 @@ const PersonalInfoScreen: React.FC = ({ navigation }: any) => {
     <SafeAreaView
       style={{ backgroundColor: theme["background-basic-color-1"], flex: 1 }}
     >
-      <View
-        style={{
-          paddingVertical: 15,
-          backgroundColor: theme["card-bg"],
-          borderRadius: 12,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => navigate("Email")}
-          style={{
-            flexDirection: "row",
-            paddingHorizontal: 10,
-            // paddingVertical: 10,
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottomWidth: 0.5,
-            paddingBottom: 10,
-            borderBottomColor: theme["border-gray"],
-          }}
-        >
-          <View>
-            <Text
-              style={{
-                color: theme["text-basic-color"],
-                fontWeight: "700",
-                marginBottom: 3,
-              }}
-            >
-              Email
-            </Text>
-            <Text style={{ color: theme["text-basic-color"], fontSize: 14 }}>
-              {email}
-            </Text>
-          </View>
-          <Feather
-            name="chevron-right"
-            size={20}
-            color={theme["text-basic-color"]}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{
-            flexDirection: "row",
-            paddingHorizontal: 10,
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingTop: 10,
-            borderBottomColor: theme["border-gray"],
-          }}
-        >
-          <View>
-            <Text
-              style={{
-                color: theme["text-basic-color"],
-                fontWeight: "700",
-                marginBottom: 3,
-              }}
-            >
-              Birthday
-            </Text>
-            <Text style={{ color: theme["text-basic-color"], fontSize: 14 }}>
-              {birthday}
-            </Text>
-          </View>
-          <Feather
-            name="chevron-right"
-            size={20}
-            color={theme["text-basic-color"]}
-          />
-        </TouchableOpacity>
+      <View style={{ paddingVertical: 15 }}>
+        <CustomInput
+          placeholder="Email"
+          textColor={theme["text-basic-color"]}
+          bgColor={theme["input-background-color-1"]}
+          borderColor={theme["input-border-color-1"]}
+          onChange={(newText) => setEmail(newText)}
+          autoCapitalize="none"
+          value={email}
+          inputMode="text"
+          placeholderColor={theme["input-placeholder-color"]}
+        />
       </View>
     </SafeAreaView>
   );
 };
 
-export default PersonalInfoScreen;
+export default EmailScreen;
 
 const styles = StyleSheet.create({
   itemContainer: {

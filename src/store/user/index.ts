@@ -464,6 +464,22 @@ export const getUserById = createAsyncThunk(
   }
 );
 
+export const changeEmail = createAsyncThunk(
+  "user/changeEmail",
+  async (data: { id: string; email: string }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/u/change-email/${data.id}`, data);
+      console.log(response);
+      return response.data;
+    } catch (error: any) {
+      console.log(error);
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState,

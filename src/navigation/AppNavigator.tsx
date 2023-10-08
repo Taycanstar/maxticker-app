@@ -70,6 +70,7 @@ import { ThemeContext } from "../utils/themeContext";
 import { useSubscription } from "../contexts/SubscriptionContext";
 import ProfileScreen from "../screens/ProfileScreen";
 import PersonalInfoScreen from "../screens/PersonalInfoScreen";
+import EmailScreen from "../screens/EmailScreen";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -93,6 +94,7 @@ type DrawerRouteParams = {
 type DrawerRoutes = keyof DrawerRouteParams;
 
 export type ScreenNames = [
+  "Email",
   "Profile",
   "Daily",
   "PersonalInfo",
@@ -118,6 +120,7 @@ export type ScreenNames = [
 
 export type RootStackParamList = {
   Account?: undefined;
+  Email?: undefined;
   PersonalInfo?: undefined;
   Profile?: undefined;
   Daily?: undefined;
@@ -298,6 +301,7 @@ const AccountStack = ({ navigation }: any) => {
       />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
+      <Stack.Screen name="Email" component={EmailScreen} />
     </Stack.Navigator>
   );
 };
