@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useContext } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createDrawerNavigator } from "@react-navigation/drawer";
+import {
+  DrawerNavigationProp,
+  createDrawerNavigator,
+} from "@react-navigation/drawer";
 import { createStackNavigator } from "@react-navigation/stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AuthScreen from "../screens/auth/AuthScreen";
@@ -71,6 +74,8 @@ import { useSubscription } from "../contexts/SubscriptionContext";
 import ProfileScreen from "../screens/ProfileScreen";
 import PersonalInfoScreen from "../screens/PersonalInfoScreen";
 import EmailScreen from "../screens/EmailScreen";
+import PrivacyPolicy from "../screens/PrivacyPolicy";
+import Terms from "../screens/Terms";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -94,6 +99,9 @@ type DrawerRouteParams = {
 type DrawerRoutes = keyof DrawerRouteParams;
 
 export type ScreenNames = [
+  "PrivacyPolicy",
+  "Terms",
+  "About",
   "Email",
   "Profile",
   "Daily",
@@ -119,7 +127,10 @@ export type ScreenNames = [
 ];
 
 export type RootStackParamList = {
+  PrivacyPolicy?: undefined;
+  Terms?: undefined;
   Account?: undefined;
+  About?: undefined;
   Email?: undefined;
   PersonalInfo?: undefined;
   Profile?: undefined;
@@ -157,6 +168,8 @@ export type RootStackParamList = {
   Multiple?: undefined;
   Subscription?: undefined;
 };
+
+type DrawerNavProp = DrawerNavigationProp<RootStackParamList, "Subscription">;
 export type DetailsScreenRouteProp = RouteProp<RootStackParamList, "Details">;
 export type VerifyScreenRouteProp = RouteProp<RootStackParamList, "Verify">;
 export type HomeScreenRouteProp = RouteProp<RootStackParamList, "Home">;
@@ -302,6 +315,50 @@ const AccountStack = ({ navigation }: any) => {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
       <Stack.Screen name="Email" component={EmailScreen} />
+    </Stack.Navigator>
+  );
+};
+
+const AboutStack = ({ navigation }: any) => {
+  const theme = useTheme();
+  return (
+    <Stack.Navigator
+      initialRouteName="About"
+      screenOptions={{
+        headerShown: false,
+        cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS,
+      }}
+    >
+      <Stack.Screen
+        name="About"
+        component={AboutScreen}
+        options={{
+          headerShown: true,
+          headerTitle: "About",
+          headerTintColor: theme["text-basic-color"],
+          headerRight: () => null,
+          headerStyle: {
+            backgroundColor: theme["background-basic-color-1"],
+            elevation: 0, // This removes the shadow for Android
+            borderBottomWidth: 0,
+            shadowOpacity: 0,
+          },
+          headerLeft: (props) => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ paddingHorizontal: 10 }}
+            >
+              <Feather
+                name="arrow-left"
+                size={25}
+                color={theme["text-basic-color"]}
+              />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
+      <Stack.Screen name="Terms" component={Terms} />
     </Stack.Navigator>
   );
 };
@@ -709,7 +766,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
 };
 
 const MainStack = () => {
-  const navigation = useNavigation();
+  const navigation2 = useNavigation<DrawerNavProp>();
   const theme = useTheme();
   const isDarkTheme = theme["background-basic-color-1"] === "#000";
 
@@ -743,30 +800,6 @@ const MainStack = () => {
         name="Account "
         component={AccountStack}
         initialParams={{ iconName: "user" }}
-        // options={{
-        //   headerShown: true,
-        //   headerTitle: "Account",
-        //   headerTintColor: theme["text-basic-color"],
-        //   headerRight: () => null,
-        //   headerStyle: {
-        //     backgroundColor: theme["background-basic-color-1"],
-        //     elevation: 0, // This removes the shadow for Android
-        //     borderBottomWidth: 0,
-        //     shadowOpacity: 0,
-        //   },
-        //   headerLeft: (props) => (
-        //     <TouchableOpacity
-        //       onPress={() => navigation.goBack()}
-        //       style={{ paddingHorizontal: 10 }}
-        //     >
-        //       <Feather
-        //         name="arrow-left"
-        //         size={25}
-        //         color={theme["text-basic-color"]}
-        //       />
-        //     </TouchableOpacity>
-        //   ),
-        // }}
       />
 
       <Drawer.Screen
@@ -791,7 +824,7 @@ const MainStack = () => {
           headerRight: () => null,
           headerLeft: (props) => (
             <TouchableOpacity
-              onPress={() => navigation.goBack()}
+              onPress={() => navigation2.goBack()}
               style={{ paddingHorizontal: 10 }}
             >
               <Feather
@@ -803,7 +836,7 @@ const MainStack = () => {
           ),
           headerStyle: {
             backgroundColor: theme["background-basic-color-1"],
-            elevation: 0, // This removes the shadow for Android
+            elevation: 0,
             borderBottomWidth: 0,
             shadowOpacity: 0,
           },
@@ -834,8 +867,8 @@ const MainStack = () => {
         }}
       />
       <Drawer.Screen
-        name="About"
-        component={AboutScreen}
+        name="About "
+        component={AboutStack}
         initialParams={{ iconName: "info" }}
         options={{
           headerShown: false,
