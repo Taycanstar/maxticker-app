@@ -87,11 +87,14 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
     try {
       const token = await getTokenFromStorage();
 
-      const response = await fetch("http://localhost:8000/task/fetch-all", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        "https://git.heroku.com/maxticker.git/task/fetch-all",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       const fetchedTasks = await response.json();
       // setTasks(fetchedTasks);
       setTasks(
@@ -135,14 +138,17 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
   const addTask = async (newTask: Task) => {
     try {
       const token = await getTokenFromStorage();
-      const response = await fetch("http://localhost:8000/task/new-task", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newTask),
-      });
+      const response = await fetch(
+        "https://git.heroku.com/maxticker.git/task/new-task",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newTask),
+        }
+      );
       const savedTask = await response.json();
       setTasks((prevTasks) => [...prevTasks, savedTask]);
     } catch (error) {
@@ -153,7 +159,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
   const deleteTask = async (taskId: string) => {
     try {
       const token = await getTokenFromStorage();
-      await fetch(`http://localhost:8000/task/${taskId}`, {
+      await fetch(`https://git.heroku.com/maxticker.git/task/${taskId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -171,14 +177,17 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
   const updateTask = async (updatedTask: Task) => {
     try {
       const token = await getTokenFromStorage();
-      await fetch(`http://localhost:8000/task/${updatedTask._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updatedTask),
-      });
+      await fetch(
+        `https://git.heroku.com/maxticker.git/task/${updatedTask._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(updatedTask),
+        }
+      );
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
           task._id === updatedTask._id ? updatedTask : task
@@ -205,7 +214,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
       const token = await getTokenFromStorage();
 
       const response = await fetch(
-        `http://localhost:8000/task/${id}/end-session`,
+        `https://git.heroku.com/maxticker.git/task/${id}/end-session`,
         {
           method: "POST",
           headers: {
