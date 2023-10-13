@@ -230,6 +230,31 @@ export const confirmUser = createAsyncThunk(
   }
 );
 
+export const changeMfPassword = createAsyncThunk(
+  "user/changeMfPassword",
+  async (
+    data: {
+      oldPassword: string;
+      password: string;
+      id: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.put(
+        `/u/change-profile-password/${data.id}`,
+        data
+      );
+      return response.data;
+    } catch (error: any) {
+      console.log(error);
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
 export const checkUserExists = createAsyncThunk(
   "user/checkUserExists",
   async (email: string, { rejectWithValue }) => {

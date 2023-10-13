@@ -28,6 +28,7 @@ const rows: Props[] = [
   { label: "Profile", iconName: "settings", nav: "Profile" },
   { label: "Subscription", iconName: "check", nav: "Subscription" },
   { label: "Personal information", iconName: "user", nav: "PersonalInfo" },
+  { label: "Password and Security", iconName: "shield", nav: "Password" },
 ];
 
 const AccountScreen: React.FC = () => {

@@ -76,6 +76,8 @@ import PersonalInfoScreen from "../screens/PersonalInfoScreen";
 import EmailScreen from "../screens/EmailScreen";
 import PrivacyPolicy from "../screens/PrivacyPolicy";
 import Terms from "../screens/Terms";
+import PasswordScreen from "../screens/PasswordScreen";
+import ChangePassword from "../screens/ChangePassword";
 
 export type Props = {};
 type DrawerRouteProp = RouteProp<DrawerRouteParams, DrawerRoutes>;
@@ -99,6 +101,8 @@ type DrawerRouteParams = {
 type DrawerRoutes = keyof DrawerRouteParams;
 
 export type ScreenNames = [
+  "ChangePassword",
+  "Password",
   "PrivacyPolicy",
   "Terms",
   "About",
@@ -127,6 +131,8 @@ export type ScreenNames = [
 ];
 
 export type RootStackParamList = {
+  ChangePassword?: undefined;
+  Password?: undefined;
   PrivacyPolicy?: undefined;
   Terms?: undefined;
   Account?: undefined;
@@ -184,7 +190,6 @@ export type ConfirmOtpScreenRouteProp = RouteProp<
 
 export type EditRouteProp = RouteProp<RootStackParamList, "Edit">;
 
-// export type RootStackParamList = Record<ScreenNames[number], undefined>;
 export type StackNavigation = StackNavigationProp<RootStackParamList>;
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -315,6 +320,8 @@ const AccountStack = ({ navigation }: any) => {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
       <Stack.Screen name="Email" component={EmailScreen} />
+      <Stack.Screen name="Password" component={PasswordScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePassword} />
     </Stack.Navigator>
   );
 };
@@ -842,14 +849,14 @@ const MainStack = () => {
           },
         }}
       />
-      <Drawer.Screen
+      {/* <Drawer.Screen
         name="Notifications"
         component={NotificationsScreen}
         initialParams={{ iconName: "bell" }}
         options={{
           headerShown: false,
         }}
-      />
+      /> */}
       <Drawer.Screen
         name="Color Scheme"
         component={ColorScheme}
@@ -858,14 +865,14 @@ const MainStack = () => {
           headerShown: false,
         }}
       />
-      <Drawer.Screen
+      {/* <Drawer.Screen
         name="Send feedback"
         component={SendFeedbackScreen}
         initialParams={{ iconName: "message-square" }}
         options={{
           headerShown: false,
         }}
-      />
+      /> */}
       <Drawer.Screen
         name="About "
         component={AboutStack}
