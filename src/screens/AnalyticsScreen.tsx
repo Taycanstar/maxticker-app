@@ -85,8 +85,8 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   function calculateStreak(tasks: any) {
     // Flatten the array of sessions across all tasks
     const allSessions = tasks
-      .flatMap((task: Task) => task.sessions)
-      .map((session: any) => new Date(session.createdAt));
+      .flatMap((task: Task) => task?.sessions)
+      .map((session: any) => new Date(session?.createdAt));
 
     // Sort the sessions by date in ascending order
     allSessions.sort((a: any, b: any) => a - b);
@@ -113,7 +113,7 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   function calculateAverageSessionDuration(tasks: any) {
     // Flatten the array of sessions across all tasks
-    const allSessions = tasks.flatMap((task: Task) => task.sessions);
+    const allSessions = tasks.flatMap((task: Task) => task?.sessions);
 
     if (allSessions.length === 0) {
       return 0; // Return 0 if there are no sessions
@@ -121,12 +121,12 @@ const AnalyticsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     // Calculate the total duration of all sessions
     const totalDuration = allSessions.reduce(
-      (sum: any, session: any) => sum + session.totalDuration,
+      (sum: any, session: any) => sum + session?.totalDuration,
       0
     );
 
     // Calculate the average session duration in milliseconds
-    const averageDuration = totalDuration / allSessions.length;
+    const averageDuration = totalDuration / allSessions?.length;
 
     return averageDuration;
   }
