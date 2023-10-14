@@ -88,7 +88,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
       const token = await getTokenFromStorage();
 
       const response = await fetch(
-        "https://git.heroku.com/maxticker.git/task/fetch-all",
+        "https://maxticker-55df64f66a64.herokuapp.com/task/fetch-all",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -139,7 +139,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
     try {
       const token = await getTokenFromStorage();
       const response = await fetch(
-        "https://git.heroku.com/maxticker.git/task/new-task",
+        "https://maxticker-55df64f66a64.herokuapp.com/task/new-task",
         {
           method: "POST",
           headers: {
@@ -159,12 +159,15 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
   const deleteTask = async (taskId: string) => {
     try {
       const token = await getTokenFromStorage();
-      await fetch(`https://git.heroku.com/maxticker.git/task/${taskId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await fetch(
+        `https://maxticker-55df64f66a64.herokuapp.com/task/${taskId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setTasks((prevTasks) =>
         prevTasks.filter((task) => String(task._id) !== String(taskId))
       );
@@ -178,7 +181,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
     try {
       const token = await getTokenFromStorage();
       await fetch(
-        `https://git.heroku.com/maxticker.git/task/${updatedTask._id}`,
+        `https://maxticker-55df64f66a64.herokuapp.com/task/${updatedTask._id}`,
         {
           method: "PUT",
           headers: {
@@ -214,7 +217,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
       const token = await getTokenFromStorage();
 
       const response = await fetch(
-        `https://git.heroku.com/maxticker.git/task/${id}/end-session`,
+        `https://maxticker-55df64f66a64.herokuapp.com/task/${id}/end-session`,
         {
           method: "POST",
           headers: {

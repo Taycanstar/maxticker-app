@@ -20,7 +20,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const LOCAL = "https://git.heroku.com/maxticker.git";
+const LOCAL = "https://maxticker-55df64f66a64.herokuapp.com/";
 const api = axios.create({ baseURL: `${LOCAL}` });
 
 type TokenExpiredCallback = () => void;
