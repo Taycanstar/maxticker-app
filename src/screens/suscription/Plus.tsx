@@ -19,6 +19,9 @@ import {
   Switch,
   Image,
   ActivityIndicator,
+  Linking,
+  Alert,
+  Platform,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
@@ -29,6 +32,15 @@ import { createCheckoutSession } from "../../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
 import { useSubscription } from "../../contexts/SubscriptionContext";
+import {
+  StripeProvider,
+  usePlatformPay,
+  PlatformPayButton,
+  PlatformPay,
+  useStripe,
+} from "@stripe/stripe-react-native";
+import api from "../../api";
+// import * as Linking from "expo-linking";
 
 type Props = {};
 
@@ -45,17 +57,127 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const dispatch = useDispatch<AppDispatch>();
   const [loading, setLoading] = useState<boolean>(false);
   const { subscription, setSubscription } = useSubscription();
+  const [ready, setReady] = useState(false);
+  const [clientSecret, setClientSecret] = useState("");
+  const { isPlatformPaySupported, confirmPlatformPayPayment } =
+    usePlatformPay();
+  const userData = useSelector((state: any) => state.user);
+  const userId = userData?.data?.user?._id;
+  const [data, setData] = useState(null);
+  const [email, setEmail] = useState("");
+  const { confirmPayment } = useStripe();
 
+  // useEffect(() => {
+  //   setup();
+  // }, []);
+
+  // const setup = async () => {
+  //   if (!(await isPlatformPaySupported())) {
+  //     Alert.alert(
+  //       "Error",
+  //       `${Platform.OS === "android" ? "Google" : "Apple"} Pay is not supported`
+  //     );
+  //     return;
+  //   }
+
+  //   const response = await fetch(`${api}/pay/create-payment-intent`, {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({
+  //       currency: "usd",
+  //     }),
+  //   });
+
+  //   const result = await response.json();
+  //   setClientSecret(result.clientSecret());
+  //   setReady(true);
+  // };
+  async function createCheckoutSession() {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/pay/create-checkout-session`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Include any other headers your API requires
+          },
+          body: JSON.stringify({
+            userId: userId,
+          }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`Network response was not ok ${response.statusText}`);
+      }
+      // const { sessionId } = await response.json();
+      // return sessionId;
+      const { checkoutUrl } = await response.json(); // Extract checkoutUrl from response
+      return checkoutUrl;
+    } catch (error) {
+      console.error("Failed to fetch session:", error);
+      throw error;
+    }
+  }
   const handleSubmit = async () => {
-    setLoading(true);
-    await dispatch(createCheckoutSession);
+    try {
+      // Step 1: Fetch the session ID from your backend
+      // const sessionId = await createCheckoutSession();
+      const checkoutUrl = await createCheckoutSession();
 
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+      // Step 2: Redirect the user to Stripe's checkout page
+      // const stripeUrl = `https://checkout.stripe.com/pay/${sessionId}`;
+      Linking.openURL(checkoutUrl);
+    } catch (error: any) {
+      console.error("Error creating checkout session:", error.message);
+      // Optionally show an error message to the user...
+    }
   };
 
+  const handleOpenURL = (event: any) => {
+    if (event.url.startsWith("my-app://success")) {
+      // Handle successful payment
+      console.log("Payment was successful");
+    } else if (event.url.startsWith("my-app://cancel")) {
+      // Handle cancelled payment
+      console.log("Payment was cancelled");
+    }
+  };
+
+  useEffect(() => {
+    // Add event listener for url event
+    const subscription = Linking.addEventListener("url", handleOpenURL);
+
+    // Clean up event listener
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   const handleCancel = () => {};
+
+  useEffect(() => {
+    let mounted = true;
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const { data } = await api.get(`/api/get-user-by-id/${userId}`);
+        if (mounted) {
+          setData(data);
+          setEmail(data.email);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    loadData();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <Layout
@@ -106,7 +228,10 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
         <View style={{ marginVertical: 20 }}>
           {subscription === "standard" && (
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
             >
               <View style={{ flexDirection: "row" }}>
                 <Text

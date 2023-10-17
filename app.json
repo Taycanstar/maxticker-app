@@ -1,23 +1,33 @@
 {
   "expo": {
+    "plugins": [
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.maxticker",
+          "enableGooglePay": true
+        }
+      ]
+    ],
+    "scheme": "myapp",
     "name": "moodmotif-app",
     "slug": "cronoverse",
-    "version": "1.0.0",
+    "version": "1.01",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/app/Assets.xcassets/AppIcon.appiconset/1024.png",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/app/Assets.xcassets/AppIcon.appiconset/1024.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "userInterfaceStyle": "light",
+
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.app.maxticker"
     },
+    "ios.icon": "./assets/app/Assets.xcassets/AppIcon.appiconset/1024.png",
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

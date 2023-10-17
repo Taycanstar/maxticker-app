@@ -13,6 +13,7 @@ import { SubscriptionProvider } from "./src/contexts/SubscriptionContext";
 import { Appearance } from "react-native";
 import { refreshTokenAction } from "./src/store/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StripeProvider } from "@stripe/stripe-react-native";
 
 export default function App() {
   const [theme, setTheme] = useState<string>("dark");
@@ -37,24 +38,29 @@ export default function App() {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <SubscriptionProvider>
-        {/* <ScrollPositionProvider> */}
-        <TaskProvider>
-          <ApplicationProvider
-            {...eva}
-            theme={{
-              ...eva[theme as keyof typeof eva],
-              ...(theme === "light" ? customLightTheme : customDarkTheme),
-            }}
-          >
-            <Provider store={store}>
-              <StatusBar style={theme === "dark" ? "light" : "dark"} />
-              <AppNavigator />
-            </Provider>
-          </ApplicationProvider>
-        </TaskProvider>
-        {/* </ScrollPositionProvider> */}
-      </SubscriptionProvider>
+      <StripeProvider
+        publishableKey="pk_test_51JGZkjIkJrKrc9JwM8pLmHvCw0x8fYvGWwbcmp1Q0IUfuHRTjNyFg7rAng2eLUHpqnnFat8FRuvIuwy8Pk5dGz7w00HIV0Cagh"
+        merchantIdentifier="merchant.com.maxticker"
+      >
+        <SubscriptionProvider>
+          {/* <ScrollPositionProvider> */}
+          <TaskProvider>
+            <ApplicationProvider
+              {...eva}
+              theme={{
+                ...eva[theme as keyof typeof eva],
+                ...(theme === "light" ? customLightTheme : customDarkTheme),
+              }}
+            >
+              <Provider store={store}>
+                <StatusBar style={theme === "dark" ? "light" : "dark"} />
+                <AppNavigator />
+              </Provider>
+            </ApplicationProvider>
+          </TaskProvider>
+          {/* </ScrollPositionProvider> */}
+        </SubscriptionProvider>
+      </StripeProvider>
     </ThemeContext.Provider>
   );
 }
