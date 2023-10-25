@@ -45,7 +45,9 @@
     "react-native-uuid": "^2.0.1",
     "react-redux": "^8.1.2",
     "tiny-emitter": "^2.1.0",
-    "@stripe/stripe-react-native": "0.28.0"
+    "@stripe/stripe-react-native": "0.28.0",
+    "expo-linking": "~5.0.2",
+    "expo-web-browser": "~12.3.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

@@ -42,24 +42,22 @@ export default function App() {
         publishableKey="pk_test_51JGZkjIkJrKrc9JwM8pLmHvCw0x8fYvGWwbcmp1Q0IUfuHRTjNyFg7rAng2eLUHpqnnFat8FRuvIuwy8Pk5dGz7w00HIV0Cagh"
         merchantIdentifier="merchant.com.maxticker"
       >
-        <SubscriptionProvider>
-          {/* <ScrollPositionProvider> */}
-          <TaskProvider>
-            <ApplicationProvider
-              {...eva}
-              theme={{
-                ...eva[theme as keyof typeof eva],
-                ...(theme === "light" ? customLightTheme : customDarkTheme),
-              }}
-            >
-              <Provider store={store}>
+        <Provider store={store}>
+          <SubscriptionProvider>
+            <TaskProvider>
+              <ApplicationProvider
+                {...eva}
+                theme={{
+                  ...eva[theme as keyof typeof eva],
+                  ...(theme === "light" ? customLightTheme : customDarkTheme),
+                }}
+              >
                 <StatusBar style={theme === "dark" ? "light" : "dark"} />
                 <AppNavigator />
-              </Provider>
-            </ApplicationProvider>
-          </TaskProvider>
-          {/* </ScrollPositionProvider> */}
-        </SubscriptionProvider>
+              </ApplicationProvider>
+            </TaskProvider>
+          </SubscriptionProvider>
+        </Provider>
       </StripeProvider>
     </ThemeContext.Provider>
   );

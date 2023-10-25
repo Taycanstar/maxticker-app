@@ -8,6 +8,8 @@ import React, {
   useEffect,
 } from "react";
 import api from "../api";
+import { URL } from "../constants/api";
+import { useDispatch, useSelector } from "react-redux";
 
 type SubscriptionType = "standard" | "plus";
 
@@ -25,7 +27,7 @@ export const useSubscription = () => {
   const context = useContext(SubscriptionContext);
   if (!context) {
     throw new Error(
-      "useSubscription must be used within a SubscriptionProvider"
+      "useSubscription must be used within a Subscript ionProvider"
     );
   }
   return context;
@@ -36,18 +38,25 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [subscription, setSubscription] =
     useState<SubscriptionType>("standard");
-
+  const userData = useSelector((state: any) => state.user);
+  const userId = userData?.data?.user?._id;
   const fetchSubscription = async () => {
     try {
-      // Make the API call (replace with your endpoint and authentication headers if needed)
-      let response = await fetch(`${api}/u/get-subscription`);
-      if (!response.ok) throw new Error("Network response not ok");
+      let response = await fetch(`${URL}u/get-subscription/${userId}`);
+
+      if (!response.ok) {
+        console.error("Network response not ok, status:", response.status);
+        const text = await response.text();
+        console.error("Error response body:", text);
+        throw new Error(`Network response not ok, status: ${response.status}`);
+      }
 
       let data = await response.json();
-      setSubscription(data.subscription); // assuming the returned object has a 'subscription' key
+      setSubscription(data.subscription);
+      console.log("Backend Subscription:", data.subscription);
       console.log("success");
     } catch (error) {
-      console.error("Failed fetching subscription data: ", error);
+      console.error("Failed fetching subscription data:", error);
     }
   };
 

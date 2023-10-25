@@ -19,7 +19,6 @@ import {
   Switch,
   Image,
   ActivityIndicator,
-  Linking,
   Alert,
   Platform,
 } from "react-native";
@@ -32,6 +31,8 @@ import { createCheckoutSession } from "../../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
 import { useSubscription } from "../../contexts/SubscriptionContext";
+import * as WebBrowser from "expo-web-browser";
+
 import {
   StripeProvider,
   usePlatformPay,
@@ -40,6 +41,8 @@ import {
   useStripe,
 } from "@stripe/stripe-react-native";
 import api from "../../api";
+import * as Linking from "expo-linking";
+
 // import * as Linking from "expo-linking";
 
 type Props = {};
@@ -67,33 +70,6 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const { confirmPayment } = useStripe();
 
-  // useEffect(() => {
-  //   setup();
-  // }, []);
-
-  // const setup = async () => {
-  //   if (!(await isPlatformPaySupported())) {
-  //     Alert.alert(
-  //       "Error",
-  //       `${Platform.OS === "android" ? "Google" : "Apple"} Pay is not supported`
-  //     );
-  //     return;
-  //   }
-
-  //   const response = await fetch(`${api}/pay/create-payment-intent`, {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({
-  //       currency: "usd",
-  //     }),
-  //   });
-
-  //   const result = await response.json();
-  //   setClientSecret(result.clientSecret());
-  //   setReady(true);
-  // };
   async function createCheckoutSession() {
     try {
       const response = await fetch(
@@ -126,10 +102,13 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       // Step 1: Fetch the session ID from your backend
       // const sessionId = await createCheckoutSession();
       const checkoutUrl = await createCheckoutSession();
-
-      // Step 2: Redirect the user to Stripe's checkout page
-      // const stripeUrl = `https://checkout.stripe.com/pay/${sessionId}`;
-      Linking.openURL(checkoutUrl);
+      const result = await WebBrowser.openBrowserAsync(checkoutUrl);
+      if (result.type === "cancel") {
+        console.log("Payment was cancelled");
+      } else if (result.type === "dismiss") {
+        console.log("Browser was closed");
+      }
+      // Linking.openURL(checkoutUrl);
     } catch (error: any) {
       console.error("Error creating checkout session:", error.message);
       // Optionally show an error message to the user...
@@ -137,10 +116,10 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   };
 
   const handleOpenURL = (event: any) => {
-    if (event.url.startsWith("my-app://success")) {
+    if (event.url.startsWith(Linking.createURL("/success"))) {
       // Handle successful payment
       console.log("Payment was successful");
-    } else if (event.url.startsWith("my-app://cancel")) {
+    } else if (event.url.startsWith(Linking.createURL("/cancel"))) {
       // Handle cancelled payment
       console.log("Payment was cancelled");
     }
