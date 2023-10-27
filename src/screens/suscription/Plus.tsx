@@ -27,7 +27,7 @@ import { useNavigation } from "@react-navigation/native";
 import { type StackNavigation } from "../../navigation/AppNavigator";
 import { Layout, useTheme } from "@ui-kitten/components";
 import { blackLogo } from "../../images/ImageAssets";
-import { createCheckoutSession } from "../../store/user";
+import { createCheckoutSession, cancelSubscription } from "../../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
 import { useSubscription } from "../../contexts/SubscriptionContext";
@@ -59,7 +59,8 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const [oldPrice, setOldPrice] = useState<string>("$59.99");
   const dispatch = useDispatch<AppDispatch>();
   const [loading, setLoading] = useState<boolean>(false);
-  const { subscription, setSubscription } = useSubscription();
+  const { subscription, setSubscription, fetchSubscription } =
+    useSubscription();
   const [ready, setReady] = useState(false);
   const [clientSecret, setClientSecret] = useState("");
   const { isPlatformPaySupported, confirmPlatformPayPayment } =
@@ -67,13 +68,17 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const userData = useSelector((state: any) => state.user);
   const userId = userData?.data?.user?._id;
   const [data, setData] = useState(null);
+  const [isCancelVisible, setIsCancelVisible] = useState(false);
   const [email, setEmail] = useState("");
+  const [isError, setIsError] = useState(false);
+  const [errorText, setErrorText] = useState("");
   const { confirmPayment } = useStripe();
 
   async function createCheckoutSession() {
     try {
       const response = await fetch(
-        `http://localhost:8000/pay/create-checkout-session`,
+        // `http://localhost:8000/pay/create-checkout-session`,
+        `https://maxticker-55df64f66a64.herokuapp.com/pay/create-checkout-session`,
         {
           method: "POST",
           headers: {
@@ -108,6 +113,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       } else if (result.type === "dismiss") {
         console.log("Browser was closed");
       }
+      fetchSubscription();
       // Linking.openURL(checkoutUrl);
     } catch (error: any) {
       console.error("Error creating checkout session:", error.message);
@@ -157,6 +163,26 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       mounted = false;
     };
   }, []);
+
+  const handleCancelPress = async () => {
+    let action = await dispatch(cancelSubscription(userId));
+    if ("error" in action) {
+      setIsError(true);
+      const errorMessage = (action.payload as { message: string }).message;
+      setErrorText(errorMessage);
+      setTimeout(() => setIsError(false), 4000);
+      console.log(`Error on Screen`, errorMessage);
+      setIsCancelVisible(false);
+      return true;
+    } else {
+      console.log("success subscription cancelled");
+      setSubscription("standard");
+      setIsCancelVisible(false);
+    }
+    setTimeout(() => {
+      setLoading(false);
+    }, 100);
+  };
 
   return (
     <Layout
@@ -409,6 +435,9 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       <View
         style={{ backgroundColor: theme["btn-bg"], padding: 25, flex: 0.2 }}
       >
+        <TouchableOpacity onPress={fetchSubscription}>
+          {/* <Text style={{ color: "#fff" }}> PRESS ME</Text> */}
+        </TouchableOpacity>
         {subscription === "standard" ? (
           <TouchableOpacity
             onPress={handleSubmit}
@@ -443,7 +472,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            onPress={handleCancel}
+            onPress={() => setIsCancelVisible(true)}
             style={{
               backgroundColor: theme["card-bg"],
               flexDirection: "row",
@@ -464,8 +493,144 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
           </TouchableOpacity>
         )}
       </View>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isCancelVisible}
+        onRequestClose={() => {
+          setIsCancelVisible(!isCancelVisible);
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsCancelVisible(false)}>
+          <View style={styles.deleteOverlay}>
+            <View style={styles.centeredViewDel}>
+              <View
+                style={[
+                  styles.modalViewDel,
+                  { backgroundColor: theme["btn-bg"] },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.textStyle,
+                    {
+                      color: theme["text-basic-color"],
+                      textAlign: "center",
+                      marginVertical: 15,
+                    },
+                  ]}
+                >
+                  Confirm Cancellation
+                </Text>
+                <Text
+                  style={[
+                    styles.textStyle,
+                    {
+                      color: theme["text-basic-color"],
+                      fontWeight: "400",
+                      paddingHorizontal: 30,
+                      fontSize: 14,
+                      marginBottom: 15,
+                    },
+                  ]}
+                >
+                  If you confirm and end your subscription now, you can still
+                  access it until the remaining of the billing period
+                </Text>
+
+                <TouchableOpacity
+                  onPress={handleCancelPress}
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: theme["btn-bg"],
+                      borderColor: theme["border-gray"],
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.textStyle, { color: theme["meta-red"] }]}
+                  >
+                    Confirm
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: theme["btn-bg"],
+                      borderColor: theme["border-gray"],
+                      paddingBottom: 0,
+                    },
+                  ]}
+                  onPress={() => setIsCancelVisible(false)}
+                >
+                  <Text
+                    style={[
+                      styles.textStyle,
+                      { color: theme["text-basic-color"], fontWeight: "400" },
+                    ]}
+                  >
+                    Not now
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </Layout>
   );
 };
 
 export default Plus;
+
+const styles = StyleSheet.create({
+  centeredViewDel: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 0,
+  },
+  modalViewDel: {
+    width: "80%",
+
+    backgroundColor: "transparent",
+    borderRadius: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    paddingVertical: 15,
+  },
+  button: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 15,
+    flexDirection: "row",
+    paddingVertical: 15,
+    borderTopWidth: 0.5,
+  },
+  textStyle: {
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  textStyle2: {
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  deleteOverlay: {
+    flex: 1,
+    // justifyContent: "center",
+    // alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.2)", // semi-transparent background
+  },
+});

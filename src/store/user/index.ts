@@ -2,6 +2,7 @@ import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RootState } from "../index";
+import axios from "axios";
 
 interface UserState {
   data?: {
@@ -200,6 +201,24 @@ export const fetchUserById = createAsyncThunk(
     try {
       const response = await api.get(`/api/get-user-by-id/${id}`);
       return response.data.user;
+    } catch (error: any) {
+      console.log(error, "<= Error");
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
+export const cancelSubscription = createAsyncThunk(
+  "user/cancelSubscription",
+  async (id: any, { rejectWithValue }) => {
+    try {
+      // const response = await api.put(`/u/cancel-subscription/${id}`);
+      const response = await axios.put(
+        `http://localhost:8000/u/cancel-subscription/${id}`
+      );
+      return response.data;
     } catch (error: any) {
       console.log(error, "<= Error");
       return rejectWithValue(

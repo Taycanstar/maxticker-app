@@ -13,6 +13,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 type SubscriptionType = "standard" | "plus";
 
+const WS_URL = "wss://maxticker-55df64f66a64.herokuapp.com";
+
 type SubscriptionContextType = {
   subscription: SubscriptionType;
   setSubscription: (type: SubscriptionType) => void;
@@ -38,6 +40,8 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [subscription, setSubscription] =
     useState<SubscriptionType>("standard");
+  const [ws, setWs] = useState<WebSocket | null>(null);
+
   const userData = useSelector((state: any) => state.user);
   const userId = userData?.data?.user?._id;
   const fetchSubscription = async () => {
@@ -63,6 +67,33 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     fetchSubscription(); // Fetch subscription on component mount
   }, []); // The empty dependency array means this useEffect runs once when the component mounts
+  useEffect(() => {
+    if (!userId) return; // Ensure there's a userId
+
+    const websocket = new WebSocket(`${WS_URL}?userId=${userId}`);
+
+    websocket.onopen = () => {
+      console.log("WebSocket connection established");
+    };
+
+    websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.event === "subscription_updated") {
+        console.log("Subscription updated:", data.subscription);
+        setSubscription(data.subscription);
+      }
+    };
+
+    websocket.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    setWs(websocket);
+
+    return () => {
+      websocket.close();
+    };
+  }, [userId]); // Only run this effect when userId changes
 
   return (
     <SubscriptionContext.Provider

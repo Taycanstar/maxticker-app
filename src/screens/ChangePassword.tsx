@@ -37,9 +37,6 @@ const ChangePassword: React.FC = ({ navigation }: any) => {
 
   const onSave = async () => {
     // console.log("Sending request with:", oldPassword, password, userId);
-    console.log("Old Password:", oldPassword);
-    console.log("New Password:", password);
-    console.log("User ID:", userId);
 
     let action = await dispatch(
       changeMfPassword({ oldPassword, password, id: userId })
