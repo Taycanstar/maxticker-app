@@ -61,10 +61,6 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const { subscription, setSubscription, fetchSubscription } =
     useSubscription();
-  const [ready, setReady] = useState(false);
-  const [clientSecret, setClientSecret] = useState("");
-  const { isPlatformPaySupported, confirmPlatformPayPayment } =
-    usePlatformPay();
   const userData = useSelector((state: any) => state.user);
   const userId = userData?.data?.user?._id;
   const [data, setData] = useState(null);
@@ -73,6 +69,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const [isError, setIsError] = useState(false);
   const [errorText, setErrorText] = useState("");
   const { confirmPayment } = useStripe();
+  const [item, setItem] = useState("");
 
   async function createCheckoutSession() {
     try {
@@ -87,6 +84,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
           },
           body: JSON.stringify({
             userId: userId,
+            item: isEnabled ? "monthly" : "annually",
           }),
         }
       );
@@ -140,8 +138,6 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       subscription.remove();
     };
   }, []);
-
-  const handleCancel = () => {};
 
   useEffect(() => {
     let mounted = true;
@@ -435,9 +431,9 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       <View
         style={{ backgroundColor: theme["btn-bg"], padding: 25, flex: 0.2 }}
       >
-        <TouchableOpacity onPress={fetchSubscription}>
-          {/* <Text style={{ color: "#fff" }}> PRESS ME</Text> */}
-        </TouchableOpacity>
+        {/* <TouchableOpacity onPress={fetchSubscription}> */}
+        {/* <Text style={{ color: "#fff" }}> PRESS ME</Text> */}
+        {/* </TouchableOpacity> */}
         {subscription === "standard" ? (
           <TouchableOpacity
             onPress={handleSubmit}
