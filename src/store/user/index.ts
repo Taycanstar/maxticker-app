@@ -146,15 +146,20 @@ export const emailExists = createAsyncThunk(
   }
 );
 
-export const logoutUser = createAsyncThunk("user/logout", async () => {
-  try {
-    await AsyncStorage.removeItem("token");
-    await AsyncStorage.removeItem("refreshToken");
-    return Promise.resolve();
-  } catch (error) {
-    throw error;
+export const logoutUser = createAsyncThunk(
+  "user/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      await AsyncStorage.removeItem("token");
+
+      console.log("Logout successful");
+      return Promise.resolve("Logout successful");
+    } catch (error) {
+      console.error("Logout failed", error);
+      return rejectWithValue("Logout failed");
+    }
   }
-});
+);
 
 export const fetchUserData = createAsyncThunk(
   "user/fetch",
@@ -214,10 +219,28 @@ export const cancelSubscription = createAsyncThunk(
   "user/cancelSubscription",
   async (id: any, { rejectWithValue }) => {
     try {
-      // const response = await api.put(`/u/cancel-subscription/${id}`);
-      const response = await axios.put(
-        `http://localhost:8000/u/cancel-subscription/${id}`
+      const response = await api.put(`/u/cancel-subscription/${id}`);
+      // const response = await axios.put(
+      //   `http://localhost:8000/u/cancel-subscription/${id}`
+      // );
+      return response.data;
+    } catch (error: any) {
+      console.log(error, "<= Error");
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
       );
+    }
+  }
+);
+
+export const deleteUser = createAsyncThunk(
+  "user/deleteUser",
+  async (id: any, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(`/u/delete-user/${id}`);
+      // const response = await axios.put(
+      //   `http://localhost:8000/u/delete-user/${id}`
+      // );
       return response.data;
     } catch (error: any) {
       console.log(error, "<= Error");

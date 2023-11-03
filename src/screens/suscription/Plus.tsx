@@ -32,6 +32,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../../store";
 import { useSubscription } from "../../contexts/SubscriptionContext";
 import * as WebBrowser from "expo-web-browser";
+import Purchases from "react-native-purchases";
 
 import {
   StripeProvider,
@@ -171,13 +172,86 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       setIsCancelVisible(false);
       return true;
     } else {
-      console.log("success subscription cancelled");
+      console.log("success subscription cancelled ");
       setSubscription("standard");
       setIsCancelVisible(false);
     }
     setTimeout(() => {
       setLoading(false);
     }, 100);
+  };
+
+  // const handleMonthly = async () => {
+  //   try {
+  //     const offerings = await Purchases.getOfferings();
+  //     if (
+  //       offerings.current !== null &&
+  //       offerings.current.availablePackages.length > 0
+  //     ) {
+  //       // Log all available packages
+  //       // console.log("Available Packages:", offerings.current.availablePackages);
+
+  //       const monthlyPackage = offerings.current.availablePackages.find(
+  //         (pkg) => pkg.identifier === "$rc_monthly"
+  //       );
+  //       if (monthlyPackage) {
+  //         // You can now use monthlyPackage to display package information and make purchases
+  //         console.log("Monthly Package found:", monthlyPackage);
+  //       } else {
+  //         console.log("Monthly package not found");
+  //       }
+  //     } else {
+  //       console.log("No packages are available");
+  //     }
+  //   } catch (e) {
+  //     console.error("Error fetching offerings:", e);
+  //   }
+  // };
+  const handleMonthly = async () => {
+    try {
+      const offerings = await Purchases.getOfferings();
+      if (
+        offerings.current !== null &&
+        offerings.current.availablePackages.length > 0
+      ) {
+        const monthlyPackage = offerings.current.availablePackages.find(
+          (pkg) => pkg.identifier === "$rc_monthly"
+        );
+        if (monthlyPackage) {
+          // Monthly Package found, proceed with purchase
+          console.log("Monthly Package found:", monthlyPackage);
+          try {
+            const { customerInfo } = await Purchases.purchasePackage(
+              monthlyPackage
+            );
+            // Assuming you have an entitlement identifier like 'premium_access'
+            if (customerInfo.entitlements.active["Plus"]) {
+              console.log("Purchase successful, entitlement is active");
+              // Unlock the premium content
+            } else {
+              console.log(
+                "Purchase successful, but the entitlement is not active"
+              );
+              // The purchase was successful but the entitlement is not active, handle this case
+            }
+          } catch (e: any) {
+            if (!e.userCancelled) {
+              // Handle the error, user did not cancel but the purchase failed
+              console.error("Purchase failed with error:", e);
+            } else {
+              // User cancelled the purchase
+              console.log("User cancelled the purchase");
+            }
+          }
+        } else {
+          console.log("Monthly package not found");
+        }
+      } else {
+        console.log("No packages are available");
+      }
+    } catch (e) {
+      console.error("Error fetching offerings:", e);
+    }
   };
 
   return (
@@ -207,7 +281,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
             >
               {subscription === "standard"
                 ? "You have now access to premium tools, limitless customization and expanded possibilities."
-                : "Unlock Maxticker Plus for premium tools, limitless customization,and expanded possibilities."}
+                : "Unlock Maxticker Plus for premium tools, limitless customization and expanded possibilities."}
             </Text>
           </View>
 
@@ -436,7 +510,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
         {/* </TouchableOpacity> */}
         {subscription === "standard" ? (
           <TouchableOpacity
-            onPress={handleSubmit}
+            onPress={handleMonthly}
             style={{
               backgroundColor: theme["text-basic-color"],
               flexDirection: "row",

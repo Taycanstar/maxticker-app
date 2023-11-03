@@ -10,10 +10,15 @@ import { default as customLightTheme } from "./lightTheme.json";
 import React, { useState, useContext, useEffect } from "react";
 import { TaskProvider } from "./src/contexts/TaskContext";
 import { SubscriptionProvider } from "./src/contexts/SubscriptionContext";
-import { Appearance } from "react-native";
+import { Appearance, Platform } from "react-native";
 import { refreshTokenAction } from "./src/store/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StripeProvider } from "@stripe/stripe-react-native";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
+
+if (__DEV__) {
+  import("expo-dev-client");
+}
 
 export default function App() {
   const [theme, setTheme] = useState<string>("dark");
@@ -36,6 +41,26 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    const setUpPurchases = async () => {
+      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+
+      try {
+        if (Platform.OS === "ios") {
+          await Purchases.configure({
+            apiKey: "appl_rsGwllAosgwUriBuKFFUMSIQqrM",
+          });
+        }
+        // else if (Platform.OS === "android") {
+        //   await Purchases.configure({ apiKey: "your_android_public_api_key" });
+        // }
+      } catch (error) {
+        console.error("Error setting up Purchases:", error);
+      }
+    };
+
+    setUpPurchases();
+  }, []);
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <StripeProvider

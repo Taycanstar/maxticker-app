@@ -10,9 +10,9 @@
       ]
     ],
     "scheme": "myapp",
-    "name": "moodmotif-app",
+    "name": "Maxticker",
     "slug": "cronoverse",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/app/Assets.xcassets/AppIcon.appiconset/1024.png",
     "splash": {

@@ -550,6 +550,7 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
               elevation: 0, // This removes the shadow for Android
               borderBottomWidth: 0,
               shadowOpacity: 0,
+              paddingTop: 15,
             },
             tabBarIcon: ({ color, size, focused }) => (
               <TouchableOpacity
