@@ -547,6 +547,20 @@ export const changeEmail = createAsyncThunk(
   }
 );
 
+export const remoteStart = createAsyncThunk(
+  "user/remoteStart",
+  async (deviceId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/u/remote-start", { deviceId });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -744,6 +758,23 @@ const userSlice = createSlice({
         state.error = null;
         state.token = null;
         state.refreshToken = null;
+      })
+
+      .addCase(remoteStart.pending, (state) => {
+        // Handle the loading state
+        state.status = "loading";
+      })
+      .addCase(remoteStart.fulfilled, (state, action) => {
+        // Handle the success state
+        // Update the state based on the response
+        state.status = "loggedIn"; // or another appropriate status
+        state.data = action.payload; // assuming the response contains user data
+        state.error = null;
+      })
+      .addCase(remoteStart.rejected, (state, action) => {
+        // Handle the error state
+        state.status = "error";
+        state.error = action.payload; // this will contain the error message
       });
   },
 });

@@ -85,13 +85,15 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
 
   const fetchTasks = async () => {
     try {
-      const token = await getTokenFromStorage();
-
+      // const token = await getTokenFromStorage();
+      const token = await AsyncStorage.getItem("deviceId");
       const response = await fetch(
-        "https://maxticker-55df64f66a64.herokuapp.com/task/fetch-all",
+        `https://maxticker-55df64f66a64.herokuapp.com/task/fetch-all/${token}`,
+        // `http://localhost:8000/task/fetch-all/${token}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            // Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -125,6 +127,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
       )
     );
   };
+
   const handleTimer = (taskId: string, action: "start" | "pause" | "reset") => {
     if (action === "start") {
       startTimer(taskId);
@@ -137,16 +140,18 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
 
   const addTask = async (newTask: Task) => {
     try {
-      const token = await getTokenFromStorage();
+      // const token = await getTokenFromStorage();
+      const token = await AsyncStorage.getItem("deviceId");
       const response = await fetch(
         "https://maxticker-55df64f66a64.herokuapp.com/task/new-task",
+        // "http://localhost:8000/task/new-task",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            // Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(newTask),
+          body: JSON.stringify({ ...newTask, deviceId: token }),
         }
       );
       const savedTask = await response.json();
@@ -158,13 +163,17 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
 
   const deleteTask = async (taskId: string) => {
     try {
-      const token = await getTokenFromStorage();
+      // const token = await getTokenFromStorage();
+      const token = await AsyncStorage.getItem("deviceId");
+
       await fetch(
         `https://maxticker-55df64f66a64.herokuapp.com/task/${taskId}`,
+        // `http://localhost:8000/task/fetch-all/${token}`,
         {
           method: "DELETE",
           headers: {
-            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            // Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -179,14 +188,17 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
 
   const updateTask = async (updatedTask: Task) => {
     try {
-      const token = await getTokenFromStorage();
+      // const token = await getTokenFromStorage();
+
+      const token = await AsyncStorage.getItem("deviceId");
       await fetch(
         `https://maxticker-55df64f66a64.herokuapp.com/task/${updatedTask._id}`,
+        // `http://localhost:8000/task/${updatedTask._id}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            // Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(updatedTask),
         }
@@ -203,7 +215,8 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
 
   const getTokenFromStorage = async () => {
     try {
-      return await AsyncStorage.getItem("token");
+      // return await AsyncStorage.getItem("token");
+      const token = await AsyncStorage.getItem("deviceId");
     } catch (error) {
       console.error("Failed to get token from AsyncStorage:", error);
       return null;
@@ -214,17 +227,18 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
 
   const endSession: EndSessionFunction = async (id, sessionData) => {
     try {
-      const token = await getTokenFromStorage();
-
+      // const token = await getTokenFromStorage();
+      const token = await AsyncStorage.getItem("deviceId");
       const response = await fetch(
         `https://maxticker-55df64f66a64.herokuapp.com/task/${id}/end-session`,
+        // `http://localhost:8000/task/${id}/end-session`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            // Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(sessionData), // Send the sessionData in the request body
+          body: JSON.stringify({ ...sessionData, deviceId: token }), /// Send the sessionData in the request body
         }
       );
 

@@ -12,7 +12,7 @@
     "scheme": "myapp",
     "name": "Maxticker",
     "slug": "cronoverse",
-    "version": "1.0.4",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/app/Assets.xcassets/AppIcon.appiconset/1024.png",
     "splash": {
@@ -24,6 +24,7 @@
 
     "assetBundlePatterns": ["**/*"],
     "ios": {
+      "buildNumber": "1",
       "supportsTablet": true,
       "bundleIdentifier": "com.app.maxticker",
       "infoPlist": {

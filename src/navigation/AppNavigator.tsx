@@ -550,7 +550,6 @@ const MainTab: React.FC<MainTabProps> = ({ navigation }) => {
               elevation: 0, // This removes the shadow for Android
               borderBottomWidth: 0,
               shadowOpacity: 0,
-              paddingTop: 15,
             },
             tabBarIcon: ({ color, size, focused }) => (
               <TouchableOpacity
@@ -890,7 +889,8 @@ const AppNavigator: React.FC<Props> = (Props: Props) => {
   const userStatus = useSelector((state: any) => state.user.status);
   return (
     <NavigationContainer>
-      {userStatus === "loggedIn" ? <MainStack /> : <AuthStack />}
+      {/* {userStatus === "loggedIn" ? <MainStack /> : <AuthStack />} */}
+      <MainStack />
     </NavigationContainer>
   );
 };

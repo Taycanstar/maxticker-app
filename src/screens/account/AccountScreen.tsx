@@ -30,8 +30,8 @@ type Props = {
 const rows: Props[] = [
   { label: "Profile", iconName: "settings", nav: "Profile" },
   { label: "Subscription", iconName: "check", nav: "Subscription" },
-  { label: "Personal information", iconName: "user", nav: "PersonalInfo" },
-  { label: "Password and Security", iconName: "shield", nav: "Password" },
+  // { label: "Personal information", iconName: "user", nav: "PersonalInfo" },
+  // { label: "Password and Security", iconName: "shield", nav: "Password" },
 ];
 
 const AccountScreen: React.FC = () => {
@@ -80,7 +80,7 @@ const AccountScreen: React.FC = () => {
         );
       })}
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.itemContainer}
         onPress={async () => {
           const action = dispatch(logoutUser);
@@ -115,7 +115,7 @@ const AccountScreen: React.FC = () => {
           size={25}
           color={theme["text-basic-color"]}
         />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </SafeAreaView>
   );
 };

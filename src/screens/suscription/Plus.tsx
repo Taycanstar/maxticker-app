@@ -33,14 +33,6 @@ import { RootState, AppDispatch } from "../../store";
 import { useSubscription } from "../../contexts/SubscriptionContext";
 import * as WebBrowser from "expo-web-browser";
 import Purchases from "react-native-purchases";
-
-import {
-  StripeProvider,
-  usePlatformPay,
-  PlatformPayButton,
-  PlatformPay,
-  useStripe,
-} from "@stripe/stripe-react-native";
 import api from "../../api";
 import * as Linking from "expo-linking";
 
@@ -69,8 +61,9 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [isError, setIsError] = useState(false);
   const [errorText, setErrorText] = useState("");
-  const { confirmPayment } = useStripe();
   const [item, setItem] = useState("");
+
+  console.log(userId, "idd");
 
   async function createCheckoutSession() {
     try {
@@ -101,44 +94,6 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       throw error;
     }
   }
-  const handleSubmit = async () => {
-    try {
-      // Step 1: Fetch the session ID from your backend
-      // const sessionId = await createCheckoutSession();
-      const checkoutUrl = await createCheckoutSession();
-      const result = await WebBrowser.openBrowserAsync(checkoutUrl);
-      if (result.type === "cancel") {
-        console.log("Payment was cancelled");
-      } else if (result.type === "dismiss") {
-        console.log("Browser was closed");
-      }
-      fetchSubscription();
-      // Linking.openURL(checkoutUrl);
-    } catch (error: any) {
-      console.error("Error creating checkout session:", error.message);
-      // Optionally show an error message to the user...
-    }
-  };
-
-  const handleOpenURL = (event: any) => {
-    if (event.url.startsWith(Linking.createURL("/success"))) {
-      // Handle successful payment
-      console.log("Payment was successful");
-    } else if (event.url.startsWith(Linking.createURL("/cancel"))) {
-      // Handle cancelled payment
-      console.log("Payment was cancelled");
-    }
-  };
-
-  useEffect(() => {
-    // Add event listener for url event
-    const subscription = Linking.addEventListener("url", handleOpenURL);
-
-    // Clean up event listener
-    return () => {
-      subscription.remove();
-    };
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -161,6 +116,8 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
     };
   }, []);
 
+  console.log(data, "datta");
+
   const handleCancelPress = async () => {
     let action = await dispatch(cancelSubscription(userId));
     if ("error" in action) {
@@ -181,68 +138,52 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
     }, 100);
   };
 
-  // const handleMonthly = async () => {
-  //   try {
-  //     const offerings = await Purchases.getOfferings();
-  //     if (
-  //       offerings.current !== null &&
-  //       offerings.current.availablePackages.length > 0
-  //     ) {
-  //       // Log all available packages
-  //       // console.log("Available Packages:", offerings.current.availablePackages);
-
-  //       const monthlyPackage = offerings.current.availablePackages.find(
-  //         (pkg) => pkg.identifier === "$rc_monthly"
-  //       );
-  //       if (monthlyPackage) {
-  //         // You can now use monthlyPackage to display package information and make purchases
-  //         console.log("Monthly Package found:", monthlyPackage);
-  //       } else {
-  //         console.log("Monthly package not found");
-  //       }
-  //     } else {
-  //       console.log("No packages are available");
-  //     }
-  //   } catch (e) {
-  //     console.error("Error fetching offerings:", e);
-  //   }
-  // };
-  const handleMonthly = async () => {
+  const handleMonthly = async (userId: any) => {
     try {
+      // Step 1: Log in the user with their unique identifier
+      const loginResult = await Purchases.logIn(userId);
+      const customerInfoAtLogin = loginResult.customerInfo;
+      const created = loginResult.created;
+
+      // Check if the user was just created in this logIn call
+      if (created) {
+        console.log("New user created in RevenueCat");
+      }
+
+      // Step 2: Fetch offerings
       const offerings = await Purchases.getOfferings();
+
       if (
         offerings.current !== null &&
         offerings.current.availablePackages.length > 0
       ) {
+        // Step 3: Find the correct package and make the purchase
         const monthlyPackage = offerings.current.availablePackages.find(
           (pkg) => pkg.identifier === "$rc_monthly"
         );
+
         if (monthlyPackage) {
-          // Monthly Package found, proceed with purchase
           console.log("Monthly Package found:", monthlyPackage);
-          try {
-            const { customerInfo } = await Purchases.purchasePackage(
-              monthlyPackage
+
+          // Make the purchase
+          const purchaseResult = await Purchases.purchasePackage(
+            monthlyPackage
+          );
+          const customerInfoAfterPurchase = purchaseResult.customerInfo;
+
+          // Check for active entitlements
+          if (customerInfoAfterPurchase.entitlements.active["Plus"]) {
+            console.log("Purchase successful, entitlement is active");
+
+            // Unlock the premium content
+          } else {
+            console.log(
+              "Purchase successful, but the entitlement is not active"
             );
-            // Assuming you have an entitlement identifier like 'premium_access'
-            if (customerInfo.entitlements.active["Plus"]) {
-              console.log("Purchase successful, entitlement is active");
-              // Unlock the premium content
-            } else {
-              console.log(
-                "Purchase successful, but the entitlement is not active"
-              );
-              // The purchase was successful but the entitlement is not active, handle this case
-            }
-          } catch (e: any) {
-            if (!e.userCancelled) {
-              // Handle the error, user did not cancel but the purchase failed
-              console.error("Purchase failed with error:", e);
-            } else {
-              // User cancelled the purchase
-              console.log("User cancelled the purchase");
-            }
+
+            // The purchase was successful but the entitlement is not active, handle this case
           }
+          fetchSubscription();
         } else {
           console.log("Monthly package not found");
         }
@@ -250,8 +191,72 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
         console.log("No packages are available");
       }
     } catch (e) {
-      console.error("Error fetching offerings:", e);
+      console.error("An error occurred:", e);
     }
+  };
+
+  const handleAnnually = async (userId: any) => {
+    try {
+      // Step 1: Log in the user with their unique identifier
+      const loginResult = await Purchases.logIn(userId);
+      const customerInfoAtLogin = loginResult.customerInfo;
+      const created = loginResult.created;
+
+      // Check if the user was just created in this logIn call
+      if (created) {
+        console.log("New user created in RevenueCat");
+      }
+
+      // Step 2: Fetch offerings
+      const offerings = await Purchases.getOfferings();
+
+      if (
+        offerings.current !== null &&
+        offerings.current.availablePackages.length > 0
+      ) {
+        // Step 3: Find the correct package and make the purchase
+        const annualPackage = offerings.current.availablePackages.find(
+          (pkg) => pkg.identifier === "$rc_annual"
+        );
+
+        if (annualPackage) {
+          console.log("Monthly Package found:", annualPackage);
+
+          // Make the purchase
+          const purchaseResult = await Purchases.purchasePackage(annualPackage);
+          const customerInfoAfterPurchase = purchaseResult.customerInfo;
+
+          // Check for active entitlements
+          if (customerInfoAfterPurchase.entitlements.active["Plus"]) {
+            console.log("Purchase successful, entitlement is active");
+
+            // Unlock the premium content
+          } else {
+            console.log(
+              "Purchase successful, but the entitlement is not active"
+            );
+
+            // The purchase was successful but the entitlement is not active, handle this case
+          }
+          fetchSubscription();
+        } else {
+          console.log("Monthly package not found");
+        }
+      } else {
+        console.log("No packages are available");
+      }
+    } catch (e) {
+      console.error("An error occurred:", e);
+    }
+  };
+
+  const handleSub = () => {
+    if (!isEnabled) {
+      handleAnnually(userId);
+    } else {
+      handleMonthly(userId);
+    }
+    fetchSubscription();
   };
 
   return (
@@ -505,12 +510,12 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       <View
         style={{ backgroundColor: theme["btn-bg"], padding: 25, flex: 0.2 }}
       >
-        {/* <TouchableOpacity onPress={fetchSubscription}> */}
-        {/* <Text style={{ color: "#fff" }}> PRESS ME</Text> */}
-        {/* </TouchableOpacity> */}
+        {/* <TouchableOpacity onPress={fetchSubscription}>
+          <Text style={{ color: "#fff" }}> PRESS ME</Text>
+        </TouchableOpacity> */}
         {subscription === "standard" ? (
           <TouchableOpacity
-            onPress={handleMonthly}
+            onPress={handleSub}
             style={{
               backgroundColor: theme["text-basic-color"],
               flexDirection: "row",
@@ -540,28 +545,27 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
               {!isEnabled ? "$49.99 / year" : "$4.99 / month"}
             </Text>
           </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            onPress={() => setIsCancelVisible(true)}
-            style={{
-              backgroundColor: theme["card-bg"],
-              flexDirection: "row",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: 15,
-              borderRadius: 50,
-            }}
-          >
-            <Text
-              style={{
-                color: theme["ios-red"],
-                fontWeight: "600",
-              }}
-            >
-              Cancel subscription
-            </Text>
-          </TouchableOpacity>
-        )}
+        ) : // <TouchableOpacity
+        //   onPress={() => setIsCancelVisible(true)}
+        //   style={{
+        //     backgroundColor: theme["card-bg"],
+        //     flexDirection: "row",
+        //     justifyContent: "center",
+        //     alignItems: "center",
+        //     padding: 15,
+        //     borderRadius: 50,
+        //   }}
+        // >
+        //   <Text
+        //     style={{
+        //       color: theme["ios-red"],
+        //       fontWeight: "600",
+        //     }}
+        //   >
+        //     Cancel subscription
+        //   </Text>
+        // </TouchableOpacity>
+        null}
       </View>
       <Modal
         animationType="slide"
