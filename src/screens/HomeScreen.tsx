@@ -10,6 +10,7 @@ import {
   TouchableWithoutFeedback,
   Dimensions,
   Image,
+  AppState,
 } from "react-native";
 import React, {
   useState,
@@ -37,6 +38,9 @@ import { useTasks, Task } from "../contexts/TaskContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { blackLogo } from "../images/ImageAssets";
 import { taskEventEmitter } from "../utils/eventEmitter";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import BackgroundTimer from "react-native-background-timer";
+import BackgroundService from "react-native-background-actions";
 
 type Props = {};
 
@@ -83,13 +87,16 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     };
   }>({});
 
-  const toggleContextMenu = () => {
-    setContextMenuVisible(!contextMenuVisible);
+  const backgroundTask = async (): Promise<void> => {
+    while (BackgroundService.isRunning()) {
+      console.log("Running in background");
+      await new Promise((r) => setTimeout(r, 1000));
+    }
   };
 
   // Define the local state
   const [sessionData, setSessionData] = useState<SessionData>({
-    startTime: performance.now(),
+    startTime: Date.now(),
     totalDuration: 0,
     status: "stopped",
     laps: [],
@@ -100,65 +107,115 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   });
 
   // Update the local state based on user actions
-  const handleStart = () => {
+  // const handleStart = () => {
+  //   setSessionData((prevData) => ({
+  //     ...prevData,
+  //     status: "running",
+  //     startTime: Date.now(),
+  //   }));
+  // };
+
+  // const handlePause = () => {
+  //   if (sessionData.startTime !== null) {
+  //     const now = Date.now();
+  //     const duration = now - sessionData.startTime;
+
+  //     setSessionData((prevData) => ({
+  //       ...prevData,
+  //       status: "paused",
+  //       totalDuration: prevData.totalDuration + duration,
+  //     }));
+  //   }
+  // };
+
+  const handleEndSession = async () => {
+    const now = Date.now();
+
+    // If the session is currently running, calculate the current duration
+    const currentDuration =
+      timerState === "running" && typeof sessionData.startTime === "number"
+        ? now - sessionData.startTime
+        : 0;
+
+    // If a break is ongoing, calculate the current break duration
+    const currentBreakDuration = breakStartTime ? now - breakStartTime : 0;
+
+    try {
+      if (
+        tasks[activeTaskIndex] &&
+        tasks[activeTaskIndex]._id &&
+        typeof sessionData.startTime === "number"
+      ) {
+        // Prepare finalSessionData with a valid startTime
+        const finalSessionData = {
+          ...sessionData,
+          totalDuration: sessionData.totalDuration + currentDuration,
+          timeSpentOnBreaks:
+            sessionData.timeSpentOnBreaks + currentBreakDuration,
+          startTime: sessionData.startTime, // startTime is guaranteed to be a number here
+        };
+
+        await endSession(tasks[activeTaskIndex]._id, finalSessionData);
+        await BackgroundService.stop();
+      } else {
+        console.error(
+          "Cannot end session: Invalid task or session start time."
+        );
+      }
+    } catch (error) {
+      console.error("Error ending session:", error);
+    }
+
+    // Reset local state
+    setSessionData({
+      startTime: 0, // Reset startTime to null or an initial value
+      totalDuration: 0,
+      status: "stopped",
+      laps: [],
+      history: [],
+      breaks: 0,
+      timeSpentOnBreaks: 0,
+    });
+
+    setLaps([]); // Reset laps state
+  };
+
+  const handleStart = async () => {
     setSessionData((prevData) => ({
       ...prevData,
       status: "running",
-      startTime: performance.now(),
+      startTime: Date.now(), // Start time is set to current time
     }));
+    setTimerState("running");
+
+    try {
+      await BackgroundService.start(backgroundTask, {
+        taskName: "Timer",
+        taskTitle: "Timer is running",
+        taskDesc: "The timer is now running in the background",
+        taskIcon: {
+          name: "ic_launcher",
+          type: "mipmap",
+        },
+        color: "#ff00ff",
+        parameters: { delay: 1000 },
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handlePause = () => {
-    const now = performance.now();
+  const handlePause = async () => {
+    const now = Date.now();
     const duration = now - sessionData.startTime;
-
     setSessionData((prevData) => ({
       ...prevData,
       status: "paused",
       totalDuration: prevData.totalDuration + duration,
     }));
-  };
-
-  const handleEndSession = async () => {
-    let finalSessionData = { ...sessionData };
-
-    const now = performance.now();
-
-    // If the session is currently running, add the current duration to totalDuration
-    if (timerState === "running") {
-      const currentDuration = now - sessionData.startTime;
-      finalSessionData.totalDuration += currentDuration;
-    }
-
-    // If a break is currently ongoing, add its duration to timeSpentOnBreaks
-    if (breakStartTime) {
-      const currentBreakDuration = now - breakStartTime;
-      finalSessionData.timeSpentOnBreaks += currentBreakDuration;
-    }
-
-    try {
-      if (tasks[activeTaskIndex] && tasks[activeTaskIndex]._id) {
-        await endSession(tasks[activeTaskIndex]._id, finalSessionData); // Send the taskId and final data to the backend
-      } else {
-        console.error("No current task found");
-      }
-
-      // Reset the local state
-      setSessionData({
-        startTime: performance.now(),
-        totalDuration: 0,
-        status: "stopped",
-        laps: [],
-        history: [],
-        breaks: 0,
-        timeSpentOnBreaks: 0,
-      });
-
-      // Reset the local laps state
-      setLaps([]);
-    } catch (error) {
-      console.error("Error ending session:", error);
-    }
+    setTimerState("paused");
+    setElapsedTime((prevElapsedTime) => prevElapsedTime + duration);
+    await BackgroundService.stop();
   };
 
   // setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
@@ -184,21 +241,23 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     }, [fetchTasks])
   );
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    let startTime: number;
+  //old start
+  // useEffect(() => {
+  //   let interval: NodeJS.Timeout;
+  //   let startTime: number;
 
-    if (timerState === "running") {
-      startTime = performance.now() - elapsedTime;
-      interval = setInterval(() => {
-        setElapsedTime(performance.now() - startTime);
-      }, 10);
-    } else if (timerState === "stopped") {
-      setElapsedTime(0);
-    }
+  //   if (timerState === "running") {
+  //     startTime = Date.now() - elapsedTime;
+  //     interval = setInterval(() => {
+  //       setElapsedTime(Date.now() - startTime);
+  //     }, 1000);
+  //   } else if (timerState === "stopped") {
+  //     setElapsedTime(0);
+  //   }
 
-    return () => clearInterval(interval);
-  }, [timerState]);
+  //   return () => clearInterval(interval);
+  // }, [timerState]);
+  //old end
 
   const onAddPress = () => {
     navigate("Add");
@@ -206,14 +265,6 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   const formatNumber = (num: number): string => {
     return num.toString().padStart(2, "0");
   };
-
-  const minutes = formatNumber(Math.floor(elapsedTime / 60000));
-  const seconds = formatNumber(Math.floor((elapsedTime % 60000) / 1000));
-  const milliseconds = formatNumber(Math.floor((elapsedTime % 1000) / 10));
-
-  const percentage = Math.min((elapsedTime / goalTime) * 100, 100);
-
-  const strokeDashoffset = 314 * (1 - percentage / 100);
 
   const handleLap = () => {
     const newLap = {
@@ -236,13 +287,13 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
       handlePause(); // Pause the timer if it's running
     }
 
-    setBreakStartTime(performance.now());
+    setBreakStartTime(Date.now());
   };
 
   const handleEndBreak = () => {
     if (breakStartTime) {
       // Check if breakStartTime is not null
-      const now = performance.now();
+      const now = Date.now();
       const breakDuration = now - breakStartTime;
 
       setSessionData((prevData) => ({
@@ -336,48 +387,48 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     }
   };
 
-  useEffect(() => {
-    const handleTaskStateChange = (data: {
-      taskId: string;
-      state: "stopped" | "running" | "paused";
-      elapsedTime?: number;
-    }) => {
-      if (data.taskId === tasks[activeTaskIndex]?._id) {
-        if (data.elapsedTime !== undefined) {
-          lastEmitRef.current[data.taskId] = {
-            state: data.state,
-            elapsedTime: data.elapsedTime,
-          };
-        }
+  // useEffect(() => {
+  //   const handleTaskStateChange = (data: {
+  //     taskId: string;
+  //     state: "stopped" | "running" | "paused";
+  //     elapsedTime?: number;
+  //   }) => {
+  //     if (data.taskId === tasks[activeTaskIndex]?._id) {
+  //       if (data.elapsedTime !== undefined) {
+  //         lastEmitRef.current[data.taskId] = {
+  //           state: data.state,
+  //           elapsedTime: data.elapsedTime,
+  //         };
+  //       }
 
-        if (data.state === "running") {
-          setTimerState("running");
-          if (data.elapsedTime !== undefined) {
-            setElapsedTime(data.elapsedTime);
-          }
-          console.log("Received timerStarted event in homescreen");
-        } else if (data.state === "paused") {
-          console.log("Received timerStarted event in homescreen");
-          setTimerState("paused");
-          if (data.elapsedTime !== undefined) {
-            setElapsedTime(data.elapsedTime);
-          }
-        } else if (data.state === "stopped") {
-          setTimerState("stopped");
-          console.log("Received timerStarted event in homescreen");
-          if (data.elapsedTime !== undefined) {
-            setElapsedTime(data.elapsedTime);
-          }
-        }
-      }
-    };
+  //       if (data.state === "running") {
+  //         setTimerState("running");
+  //         if (data.elapsedTime !== undefined) {
+  //           setElapsedTime(data.elapsedTime);
+  //         }
+  //         console.log("Received timerStarted event in homescreen");
+  //       } else if (data.state === "paused") {
+  //         console.log("Received timerStarted event in homescreen");
+  //         setTimerState("paused");
+  //         if (data.elapsedTime !== undefined) {
+  //           setElapsedTime(data.elapsedTime);
+  //         }
+  //       } else if (data.state === "stopped") {
+  //         setTimerState("stopped");
+  //         console.log("Received timerStarted event in homescreen");
+  //         if (data.elapsedTime !== undefined) {
+  //           setElapsedTime(data.elapsedTime);
+  //         }
+  //       }
+  //     }
+  //   };
 
-    taskEventEmitter.on("multipleTaskStateChanged", handleTaskStateChange);
+  //   taskEventEmitter.on("multipleTaskStateChanged", handleTaskStateChange);
 
-    return () => {
-      taskEventEmitter.off("multipleTaskStateChanged", handleTaskStateChange);
-    };
-  }, [tasks]);
+  //   return () => {
+  //     taskEventEmitter.off("multipleTaskStateChanged", handleTaskStateChange);
+  //   };
+  // }, [tasks]);
 
   const changeTaskAction = (index: any) => {
     if (index !== undefined) {
@@ -394,6 +445,105 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
       }
     }
   };
+
+  // useEffect(() => {
+  //   const handleAppStateChange = async (nextAppState: any) => {
+  //     if (nextAppState === "background") {
+  //       // Save the current state only if the timer is running
+  //       if (timerState === "running") {
+  //         const now = Date.now();
+  //         const elapsed = now - sessionData.startTime;
+  //         await AsyncStorage.setItem(
+  //           "timerState",
+  //           JSON.stringify({ startTime: now, elapsedTime: elapsed })
+  //         );
+  //       }
+  //     } else if (nextAppState === "active") {
+  //       const savedState = await AsyncStorage.getItem("timerState");
+  //       if (savedState) {
+  //         const { startTime, elapsedTime: savedElapsedTime } =
+  //           JSON.parse(savedState);
+  //         setElapsedTime(savedElapsedTime);
+  //         setSessionData((prev) => ({ ...prev, startTime: Date.now() }));
+  //       }
+  //     }
+  //   };
+
+  //   const appStateSubscription = AppState.addEventListener(
+  //     "change",
+  //     handleAppStateChange
+  //   );
+  //   return () => appStateSubscription.remove();
+  // }, [timerState, sessionData.startTime]);
+
+  // ... (all initial imports and other code remain unchanged)
+
+  // ... (existing state and variable declarations remain unchanged)
+
+  // Function to calculate elapsed time based on the start time
+  const getElapsedTime = (start: any) => {
+    return Date.now() - start;
+  };
+
+  // UseEffect for handling AppState changes
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: any) => {
+      if (nextAppState.match(/inactive|background/)) {
+        // Save only the start time
+        await AsyncStorage.setItem(
+          "startTime",
+          JSON.stringify(sessionData.startTime)
+        );
+      } else if (nextAppState === "active") {
+        // Restore the start time and update elapsed time
+        const savedStartTime = await AsyncStorage.getItem("startTime");
+        if (savedStartTime) {
+          const startTime = JSON.parse(savedStartTime);
+          setSessionData((prevData) => ({
+            ...prevData,
+            startTime: startTime,
+          }));
+          setElapsedTime(getElapsedTime(startTime));
+        }
+      }
+    };
+
+    // Subscribe to AppState changes
+    const appStateSubscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    // Cleanup on unmount
+    return () => {
+      appStateSubscription.remove();
+    };
+  }, [sessionData.startTime]);
+
+  // Timer update logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (sessionData.status === "running") {
+      interval = setInterval(() => {
+        setElapsedTime(getElapsedTime(sessionData.startTime));
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [sessionData.startTime, sessionData.status]);
+
+  // ... (rest of the code remains unchanged)
+
+  // Display logic
+  const minutes = formatNumber(Math.floor(elapsedTime / 60000));
+  const seconds = formatNumber(Math.floor((elapsedTime % 60000) / 1000));
+
+  const milliseconds = formatNumber(Math.floor((elapsedTime % 1000) / 10));
+
+  const percentage = Math.min((elapsedTime / goalTime) * 100, 100);
+
+  const strokeDashoffset = 314 * (1 - percentage / 100);
 
   return (
     <Layout style={styles.container}>
@@ -562,10 +712,10 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                           if (timerState === "running") {
                             handleLap();
                           } else {
-                            taskEventEmitter.emit("taskStateChanged", {
-                              taskId: tasks[activeTaskIndex]._id,
-                              state: "stopped",
-                            });
+                            // taskEventEmitter.emit("taskStateChanged", {
+                            //   taskId: tasks[activeTaskIndex]._id,
+                            //   state: "stopped",
+                            // });
                             setElapsedTime(0); // Reset the timer
                             setTimerState("stopped");
                             handleEndSession();
@@ -583,25 +733,25 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                         title={timerState === "running" ? "Stop" : "Start"}
                         onPress={() => {
                           if (timerState === "stopped") {
-                            taskEventEmitter.emit("taskStateChanged", {
-                              taskId: tasks[activeTaskIndex]._id,
-                              state: "running",
-                            });
+                            // taskEventEmitter.emit("taskStateChanged", {
+                            //   taskId: tasks[activeTaskIndex]._id,
+                            //   state: "running",
+                            // });
                             handleStart();
                             setTimerState("running");
                           } else if (timerState === "running") {
-                            taskEventEmitter.emit("taskStateChanged", {
-                              taskId: tasks[activeTaskIndex]._id,
-                              state: "paused",
-                            });
+                            // taskEventEmitter.emit("taskStateChanged", {
+                            //   taskId: tasks[activeTaskIndex]._id,
+                            //   state: "paused",
+                            // });
                             handlePause();
                             handleStartBreak();
                             setTimerState("paused");
                           } else if (timerState === "paused") {
-                            taskEventEmitter.emit("taskStateChanged", {
-                              taskId: tasks[activeTaskIndex]?._id,
-                              state: "running",
-                            });
+                            // taskEventEmitter.emit("taskStateChanged", {
+                            //   taskId: tasks[activeTaskIndex]?._id,
+                            //   state: "running",
+                            // });
                             handleEndBreak();
                             setTimerState("running");
                           }
