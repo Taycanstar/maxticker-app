@@ -19,6 +19,7 @@ import React, {
   useCallback,
   useLayoutEffect,
   useRef,
+  useMemo,
 } from "react";
 import Colors from "../constants/Colors";
 import { Layout, useTheme } from "@ui-kitten/components";
@@ -61,7 +62,7 @@ type HomeProps = {
 const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   const theme = useTheme();
   const [fontLoaded, setFontLoaded] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  // const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [timerState, setTimerState] = useState<
     "stopped" | "running" | "paused"
   >("stopped");
@@ -77,6 +78,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   const [contextMenuVisible, setContextMenuVisible] = useState<boolean>(false);
   const [isDeleteVisible, setIsDeleteVisible] = useState<boolean>(false);
   const [activeTaskIndex, setActiveTaskIndex] = useState<number>(0);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [goalTime, setGoalTime] = useState<number>(
     tasks && tasks[activeTaskIndex] ? tasks[activeTaskIndex].goal : 0
   );
@@ -87,11 +89,24 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     };
   }>({});
 
-  const backgroundTask = async (): Promise<void> => {
-    while (BackgroundService.isRunning()) {
-      console.log("Running in background");
-      await new Promise((r) => setTimeout(r, 1000));
-    }
+  const [startTime, setStartTime] = useState<number>(0);
+  const [totalDuration, setTotalDuration] = useState<number>(0);
+
+  const handleStart = () => {
+    setStartTime(Date.now());
+    setTimerState("running");
+  };
+
+  const handlePause = () => {
+    const now = Date.now();
+    setTotalDuration((prevDuration) => prevDuration + (now - startTime));
+    setTimerState("paused");
+    setStartTime(0); // Reset start time
+  };
+
+  const handleResume = () => {
+    setStartTime(Date.now());
+    setTimerState("running");
   };
 
   // Define the local state
@@ -127,96 +142,83 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
   //     }));
   //   }
   // };
-
   const handleEndSession = async () => {
     const now = Date.now();
 
-    // If the session is currently running, calculate the current duration
-    const currentDuration =
-      timerState === "running" && typeof sessionData.startTime === "number"
-        ? now - sessionData.startTime
-        : 0;
+    let currentDuration = 0;
+    if (timerState === "running" && startTime) {
+      currentDuration = now - startTime;
+    }
 
-    // If a break is ongoing, calculate the current break duration
-    const currentBreakDuration = breakStartTime ? now - breakStartTime : 0;
+    const finalTotalDuration = totalDuration + currentDuration;
 
     try {
-      if (
-        tasks[activeTaskIndex] &&
-        tasks[activeTaskIndex]._id &&
-        typeof sessionData.startTime === "number"
-      ) {
-        // Prepare finalSessionData with a valid startTime
-        const finalSessionData = {
-          ...sessionData,
-          totalDuration: sessionData.totalDuration + currentDuration,
-          timeSpentOnBreaks:
-            sessionData.timeSpentOnBreaks + currentBreakDuration,
-          startTime: sessionData.startTime, // startTime is guaranteed to be a number here
+      if (tasks[activeTaskIndex] && tasks[activeTaskIndex]._id) {
+        // Prepare finalSessionData with all required fields
+        const finalSessionData: SessionData = {
+          ...sessionData, // Include existing session data
+          totalDuration: finalTotalDuration, // Update totalDuration
+          status: "stopped", // Update status
+          // Include any other fields that need updating
         };
 
         await endSession(tasks[activeTaskIndex]._id, finalSessionData);
         await BackgroundService.stop();
       } else {
-        console.error(
-          "Cannot end session: Invalid task or session start time."
-        );
+        console.error("Cannot end session: Invalid task.");
       }
     } catch (error) {
       console.error("Error ending session:", error);
     }
 
     // Reset local state
-    setSessionData({
-      startTime: 0, // Reset startTime to null or an initial value
-      totalDuration: 0,
-      status: "stopped",
-      laps: [],
-      history: [],
-      breaks: 0,
-      timeSpentOnBreaks: 0,
-    });
-
-    setLaps([]); // Reset laps state
+    setTotalDuration(0);
+    setStartTime(0);
+    setTimerState("stopped");
+    // ... reset other relevant states
   };
+  // const handleStart = () => {
+  //   setSessionData((prevData) => ({
+  //     ...prevData,
+  //     status: "running",
+  //     startTime: Date.now(),
+  //     totalDuration: 0,
+  //   }));
+  //   setElapsedTime(0); // Reset elapsed time
+  //   setTimerState("running");
+  // };
 
-  const handleStart = async () => {
-    setSessionData((prevData) => ({
-      ...prevData,
-      status: "running",
-      startTime: Date.now(), // Start time is set to current time
-    }));
-    setTimerState("running");
+  // const handleResume = () => {
+  //   const now = Date.now();
 
-    try {
-      await BackgroundService.start(backgroundTask, {
-        taskName: "Timer",
-        taskTitle: "Timer is running",
-        taskDesc: "The timer is now running in the background",
-        taskIcon: {
-          name: "ic_launcher",
-          type: "mipmap",
-        },
-        color: "#ff00ff",
-        parameters: { delay: 1000 },
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  //   // Update startTime to now since we're resuming
+  //   setSessionData((prevData) => ({
+  //     ...prevData,
+  //     startTime: now,
+  //   }));
 
-  const handlePause = async () => {
-    const now = Date.now();
-    const duration = now - sessionData.startTime;
-    setSessionData((prevData) => ({
-      ...prevData,
-      status: "paused",
-      totalDuration: prevData.totalDuration + duration,
-    }));
-    setTimerState("paused");
-    setElapsedTime((prevElapsedTime) => prevElapsedTime + duration);
-    await BackgroundService.stop();
-  };
+  //   // Resume the timer without altering totalDuration or elapsedTime
+  //   setTimerState("running");
+  // };
+
+  // const handlePause = async () => {
+  //   const now = Date.now();
+  //   const duration = now - sessionData.startTime; // Duration since the last start
+
+  //   // Update the session data with the new total duration
+  //   setSessionData((prevData) => ({
+  //     ...prevData,
+  //     status: "paused",
+  //     totalDuration: prevData.totalDuration + duration,
+  //   }));
+
+  //   // Update elapsedTime to reflect the new total duration
+  //   setElapsedTime(sessionData.totalDuration + duration);
+  //   setTimerState("paused");
+
+  //   // Stop any background service if applicable
+  //   // await BackgroundService.stop();
+  // };
 
   // setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
 
@@ -240,24 +242,6 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
       fetchData();
     }, [fetchTasks])
   );
-
-  //old start
-  // useEffect(() => {
-  //   let interval: NodeJS.Timeout;
-  //   let startTime: number;
-
-  //   if (timerState === "running") {
-  //     startTime = Date.now() - elapsedTime;
-  //     interval = setInterval(() => {
-  //       setElapsedTime(Date.now() - startTime);
-  //     }, 1000);
-  //   } else if (timerState === "stopped") {
-  //     setElapsedTime(0);
-  //   }
-
-  //   return () => clearInterval(interval);
-  // }, [timerState]);
-  //old end
 
   const onAddPress = () => {
     navigate("Add");
@@ -371,7 +355,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
       await deleteTask(tasks[activeTaskIndex]._id);
 
       // Resetting the state
-      setElapsedTime(0);
+      // setElapsedTime(0);
       setTimerState("stopped");
       setLaps([]);
 
@@ -437,74 +421,57 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
       setIsModalVisible(false);
       if (lastEmitRef.current[taskId]) {
         setTimerState(lastEmitRef.current[taskId].state);
-        // If you're maintaining elapsedTime on this screen:
-        // Check if elapsedTime is defined before setting it
+
         if (lastEmitRef.current[taskId].elapsedTime !== undefined) {
-          setElapsedTime(lastEmitRef.current[taskId].elapsedTime);
+          // setElapsedTime(lastEmitRef.current[taskId].elapsedTime);
         }
       }
     }
   };
 
-  // useEffect(() => {
-  //   const handleAppStateChange = async (nextAppState: any) => {
-  //     if (nextAppState === "background") {
-  //       // Save the current state only if the timer is running
-  //       if (timerState === "running") {
-  //         const now = Date.now();
-  //         const elapsed = now - sessionData.startTime;
-  //         await AsyncStorage.setItem(
-  //           "timerState",
-  //           JSON.stringify({ startTime: now, elapsedTime: elapsed })
-  //         );
-  //       }
-  //     } else if (nextAppState === "active") {
-  //       const savedState = await AsyncStorage.getItem("timerState");
-  //       if (savedState) {
-  //         const { startTime, elapsedTime: savedElapsedTime } =
-  //           JSON.parse(savedState);
-  //         setElapsedTime(savedElapsedTime);
-  //         setSessionData((prev) => ({ ...prev, startTime: Date.now() }));
-  //       }
-  //     }
-  //   };
-
-  //   const appStateSubscription = AppState.addEventListener(
-  //     "change",
-  //     handleAppStateChange
-  //   );
-  //   return () => appStateSubscription.remove();
-  // }, [timerState, sessionData.startTime]);
-
-  // ... (all initial imports and other code remain unchanged)
-
-  // ... (existing state and variable declarations remain unchanged)
-
-  // Function to calculate elapsed time based on the start time
-  const getElapsedTime = (start: any) => {
-    return Date.now() - start;
-  };
-
-  // UseEffect for handling AppState changes
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: any) => {
+      const currentTime = Date.now();
+
       if (nextAppState.match(/inactive|background/)) {
-        // Save only the start time
+        // Save the current state and totalDuration
+        await AsyncStorage.setItem("timerState", JSON.stringify(timerState));
         await AsyncStorage.setItem(
-          "startTime",
-          JSON.stringify(sessionData.startTime)
+          "totalDuration",
+          JSON.stringify(totalDuration)
         );
-      } else if (nextAppState === "active") {
-        // Restore the start time and update elapsed time
-        const savedStartTime = await AsyncStorage.getItem("startTime");
-        if (savedStartTime) {
-          const startTime = JSON.parse(savedStartTime);
-          setSessionData((prevData) => ({
-            ...prevData,
-            startTime: startTime,
-          }));
-          setElapsedTime(getElapsedTime(startTime));
+
+        if (timerState === "running") {
+          // If the timer is running, save the current timestamp
+          await AsyncStorage.setItem(
+            "backgroundTimestamp",
+            JSON.stringify(currentTime)
+          );
         }
+      } else if (nextAppState === "active") {
+        // Restore the timer state
+        // const savedTimerState = await AsyncStorage.getItem("timerState");
+        // const savedTotalDuration = await AsyncStorage.getItem("totalDuration");
+        // const backgroundTimestamp = await AsyncStorage.getItem(
+        //   "backgroundTimestamp"
+        // );
+        // if (savedTimerState !== null && savedTotalDuration !== null) {
+        //   const restoredTimerState = JSON.parse(savedTimerState);
+        //   let newTotalDuration = JSON.parse(savedTotalDuration);
+        //   if (
+        //     restoredTimerState === "running" &&
+        //     backgroundTimestamp !== null
+        //   ) {
+        //     const timeInBackground =
+        //       currentTime - JSON.parse(backgroundTimestamp);
+        //     newTotalDuration += timeInBackground;
+        //   }
+        //   setTotalDuration(newTotalDuration);
+        //   setTimerState(restoredTimerState);
+        //   if (restoredTimerState === "running") {
+        //     setStartTime(currentTime);
+        //   }
+        // }
       }
     };
 
@@ -518,28 +485,39 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     return () => {
       appStateSubscription.remove();
     };
-  }, [sessionData.startTime]);
+  }, [totalDuration, timerState]);
 
-  // Timer update logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (sessionData.status === "running") {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (timerState === "running") {
       interval = setInterval(() => {
-        setElapsedTime(getElapsedTime(sessionData.startTime));
-      }, 1000);
+        const currentTime = Date.now();
+        const newElapsedTime = currentTime - startTime + totalDuration;
+        setElapsedTime(newElapsedTime);
+      }, 50);
     }
+
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        clearInterval(interval);
+      }
     };
-  }, [sessionData.startTime, sessionData.status]);
+  }, [timerState, startTime, totalDuration]);
 
-  // ... (rest of the code remains unchanged)
+  const { minutes, seconds, milliseconds } = useMemo(() => {
+    let elapsedTime;
+    if (timerState === "running") {
+      elapsedTime = Date.now() - startTime + totalDuration;
+    } else {
+      elapsedTime = totalDuration;
+    }
 
-  // Display logic
-  const minutes = formatNumber(Math.floor(elapsedTime / 60000));
-  const seconds = formatNumber(Math.floor((elapsedTime % 60000) / 1000));
-
-  const milliseconds = formatNumber(Math.floor((elapsedTime % 1000) / 10));
+    const mins = formatNumber(Math.floor(elapsedTime / 60000));
+    const secs = formatNumber(Math.floor((elapsedTime % 60000) / 1000));
+    const millisecs = formatNumber(Math.floor((elapsedTime % 1000) / 10));
+    return { minutes: mins, seconds: secs, milliseconds: millisecs };
+  }, [totalDuration, startTime, timerState, elapsedTime]);
 
   const percentage = Math.min((elapsedTime / goalTime) * 100, 100);
 
@@ -716,7 +694,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                             //   taskId: tasks[activeTaskIndex]._id,
                             //   state: "stopped",
                             // });
-                            setElapsedTime(0); // Reset the timer
+
                             setTimerState("stopped");
                             handleEndSession();
                           }
@@ -752,6 +730,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                             //   taskId: tasks[activeTaskIndex]?._id,
                             //   state: "running",
                             // });
+                            handleResume();
                             handleEndBreak();
                             setTimerState("running");
                           }
