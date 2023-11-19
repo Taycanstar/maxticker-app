@@ -121,27 +121,6 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     // ... any other fields you need
   });
 
-  // Update the local state based on user actions
-  // const handleStart = () => {
-  //   setSessionData((prevData) => ({
-  //     ...prevData,
-  //     status: "running",
-  //     startTime: Date.now(),
-  //   }));
-  // };
-
-  // const handlePause = () => {
-  //   if (sessionData.startTime !== null) {
-  //     const now = Date.now();
-  //     const duration = now - sessionData.startTime;
-
-  //     setSessionData((prevData) => ({
-  //       ...prevData,
-  //       status: "paused",
-  //       totalDuration: prevData.totalDuration + duration,
-  //     }));
-  //   }
-  // };
   const handleEndSession = async () => {
     const now = Date.now();
 
@@ -328,48 +307,48 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     }
   };
 
-  // useEffect(() => {
-  //   const handleTaskStateChange = (data: {
-  //     taskId: string;
-  //     state: "stopped" | "running" | "paused";
-  //     elapsedTime?: number;
-  //   }) => {
-  //     if (data.taskId === tasks[activeTaskIndex]?._id) {
-  //       if (data.elapsedTime !== undefined) {
-  //         lastEmitRef.current[data.taskId] = {
-  //           state: data.state,
-  //           elapsedTime: data.elapsedTime,
-  //         };
-  //       }
+  useEffect(() => {
+    const handleTaskStateChange = (data: {
+      taskId: string;
+      state: "stopped" | "running" | "paused";
+      elapsedTime?: number;
+    }) => {
+      if (data.taskId === tasks[activeTaskIndex]?._id) {
+        if (data.elapsedTime !== undefined) {
+          lastEmitRef.current[data.taskId] = {
+            state: data.state,
+            elapsedTime: data.elapsedTime,
+          };
+        }
 
-  //       if (data.state === "running") {
-  //         setTimerState("running");
-  //         if (data.elapsedTime !== undefined) {
-  //           setElapsedTime(data.elapsedTime);
-  //         }
-  //         console.log("Received timerStarted event in homescreen");
-  //       } else if (data.state === "paused") {
-  //         console.log("Received timerStarted event in homescreen");
-  //         setTimerState("paused");
-  //         if (data.elapsedTime !== undefined) {
-  //           setElapsedTime(data.elapsedTime);
-  //         }
-  //       } else if (data.state === "stopped") {
-  //         setTimerState("stopped");
-  //         console.log("Received timerStarted event in homescreen");
-  //         if (data.elapsedTime !== undefined) {
-  //           setElapsedTime(data.elapsedTime);
-  //         }
-  //       }
-  //     }
-  //   };
+        if (data.state === "running") {
+          setTimerState("running");
+          if (data.elapsedTime !== undefined) {
+            setElapsedTime(data.elapsedTime);
+          }
+          console.log("Received timerStarted event in homescreen");
+        } else if (data.state === "paused") {
+          console.log("Received timerStarted event in homescreen");
+          setTimerState("paused");
+          if (data.elapsedTime !== undefined) {
+            setElapsedTime(data.elapsedTime);
+          }
+        } else if (data.state === "stopped") {
+          setTimerState("stopped");
+          console.log("Received timerStarted event in homescreen");
+          if (data.elapsedTime !== undefined) {
+            setElapsedTime(data.elapsedTime);
+          }
+        }
+      }
+    };
 
-  //   taskEventEmitter.on("multipleTaskStateChanged", handleTaskStateChange);
+    taskEventEmitter.on("multipleTaskStateChanged", handleTaskStateChange);
 
-  //   return () => {
-  //     taskEventEmitter.off("multipleTaskStateChanged", handleTaskStateChange);
-  //   };
-  // }, [tasks]);
+    return () => {
+      taskEventEmitter.off("multipleTaskStateChanged", handleTaskStateChange);
+    };
+  }, [tasks]);
 
   const changeTaskAction = (index: any) => {
     if (index !== undefined) {
@@ -647,10 +626,10 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                           if (timerState === "running") {
                             handleLap();
                           } else {
-                            // taskEventEmitter.emit("taskStateChanged", {
-                            //   taskId: tasks[activeTaskIndex]._id,
-                            //   state: "stopped",
-                            // });
+                            taskEventEmitter.emit("taskStateChanged", {
+                              taskId: tasks[activeTaskIndex]._id,
+                              state: "stopped",
+                            });
 
                             setTimerState("stopped");
                             handleEndSession();
@@ -668,25 +647,25 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                         title={timerState === "running" ? "Stop" : "Start"}
                         onPress={() => {
                           if (timerState === "stopped") {
-                            // taskEventEmitter.emit("taskStateChanged", {
-                            //   taskId: tasks[activeTaskIndex]._id,
-                            //   state: "running",
-                            // });
+                            taskEventEmitter.emit("taskStateChanged", {
+                              taskId: tasks[activeTaskIndex]._id,
+                              state: "running",
+                            });
                             handleStart();
                             setTimerState("running");
                           } else if (timerState === "running") {
-                            // taskEventEmitter.emit("taskStateChanged", {
-                            //   taskId: tasks[activeTaskIndex]._id,
-                            //   state: "paused",
-                            // });
+                            taskEventEmitter.emit("taskStateChanged", {
+                              taskId: tasks[activeTaskIndex]._id,
+                              state: "paused",
+                            });
                             handlePause();
                             handleStartBreak();
                             setTimerState("paused");
                           } else if (timerState === "paused") {
-                            // taskEventEmitter.emit("taskStateChanged", {
-                            //   taskId: tasks[activeTaskIndex]?._id,
-                            //   state: "running",
-                            // });
+                            taskEventEmitter.emit("taskStateChanged", {
+                              taskId: tasks[activeTaskIndex]?._id,
+                              state: "running",
+                            });
                             handleResume();
                             handleEndBreak();
                             setTimerState("running");

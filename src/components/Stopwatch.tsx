@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Button, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  Button,
+  StyleSheet,
+  TouchableOpacity,
+  AppState,
+} from "react-native";
 import { Circle, Svg } from "react-native-svg";
 import { Layout, useTheme } from "@ui-kitten/components";
 import Feather from "@expo/vector-icons/Feather";
 import Colors from "../constants/Colors";
 import { taskEventEmitter } from "../utils/eventEmitter";
 import { useTasks } from "../contexts/TaskContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type props = {
   name: string;
@@ -38,7 +46,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
   const [breakStartTime, setBreakStartTime] = useState<number | null>(null);
 
   const [sessionData, setSessionData] = useState<SessionData>({
-    startTime: performance.now(),
+    startTime: Date.now(),
     totalDuration: 0,
     status: "stopped",
     laps: [],
@@ -47,23 +55,35 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
     timeSpentOnBreaks: 0,
   });
 
+  const [startTime, setStartTime] = useState<number>(0);
+  const [totalDuration, setTotalDuration] = useState<number>(0);
+
   const handleStart = () => {
-    setSessionData((prevData) => ({
-      ...prevData,
-      status: "running",
-      startTime: performance.now(),
-    }));
+    setStartTime(Date.now());
+    setTimerState("running");
+    // setSessionData((prevData) => ({
+    //   ...prevData,
+    //   status: "running",
+    //   startTime: Date.now(),
+    // }));
   };
 
   const handlePause = () => {
-    const now = performance.now();
-    const duration = now - sessionData.startTime;
+    const now = Date.now();
+    setTotalDuration((prevDuration) => prevDuration + (now - startTime));
+    setTimerState("paused");
+    setStartTime(0);
 
-    setSessionData((prevData) => ({
-      ...prevData,
-      status: "paused",
-      totalDuration: prevData.totalDuration + duration,
-    }));
+    // setSessionData((prevData) => ({
+    //   ...prevData,
+    //   status: "paused",
+    //   totalDuration: prevData.totalDuration + duration,
+    // }));
+  };
+
+  const handleResume = () => {
+    setStartTime(Date.now());
+    setTimerState("running");
   };
 
   useEffect(() => {
@@ -82,7 +102,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
     return () => {
       taskEventEmitter.off("taskStateChanged", handleTaskStateChange);
     };
-  }, []); // Empty dependency array to ensure it runs only on mount and unmount
+  }, []);
 
   useEffect(() => {
     // Ensure tasks is available before setting up the event listener
@@ -112,23 +132,40 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
     };
   }, [tasks]);
 
+  // useEffect(() => {
+  //   let interval: NodeJS.Timeout;
+  //   let startTime: number;
+
+  //   if (timerState === "running") {
+  //     startTime = Date.now() - elapsedTime;
+  //     interval = setInterval(() => {
+  //       setElapsedTime(Date.now() - startTime);
+  //     }, 10);
+  //   } else if (timerState === "stopped") {
+  //     setElapsedTime(0);
+  //   }
+
+  //   return () => clearInterval(interval);
+  // }, [timerState]);
+
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    let startTime: number;
+    let interval: NodeJS.Timeout | null = null;
 
     if (timerState === "running") {
-      startTime = performance.now() - elapsedTime;
       interval = setInterval(() => {
-        setElapsedTime(performance.now() - startTime);
-      }, 10);
-    } else if (timerState === "stopped") {
-      setElapsedTime(0);
+        const currentTime = Date.now();
+        const newElapsedTime = currentTime - startTime + totalDuration;
+        setElapsedTime(newElapsedTime);
+      }, 50);
     }
 
-    return () => clearInterval(interval);
-  }, [timerState]);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [timerState, startTime, totalDuration]);
 
-  const onAddPress = () => {};
   const formatNumber = (num: number): string => {
     return num.toString().padStart(2, "0");
   };
@@ -154,7 +191,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
   const handleEndSession = async () => {
     let finalSessionData = { ...sessionData };
 
-    const now = performance.now();
+    const now = Date.now();
 
     if (timerState === "running") {
       const currentDuration = now - sessionData.startTime;
@@ -175,7 +212,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
 
       // Reset the local state
       setSessionData({
-        startTime: performance.now(),
+        startTime: Date.now(),
         totalDuration: 0,
         status: "stopped",
         laps: [],
@@ -212,13 +249,13 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
       handlePause(); // Pause the timer if it's running
     }
 
-    setBreakStartTime(performance.now());
+    setBreakStartTime(Date.now());
   };
 
   const handleEndBreak = () => {
     if (breakStartTime) {
       // Check if breakStartTime is not null
-      const now = performance.now();
+      const now = Date.now();
       const breakDuration = now - breakStartTime;
 
       setSessionData((prevData) => ({
@@ -235,6 +272,64 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
     setIsReady(true);
     return () => setIsReady(false); // clean up on unmount
   }, []);
+
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: any) => {
+      const currentTime = Date.now();
+
+      if (nextAppState.match(/inactive|background/)) {
+        // Save the current state and totalDuration
+        await AsyncStorage.setItem("timerState", JSON.stringify(timerState));
+        await AsyncStorage.setItem(
+          "totalDuration",
+          JSON.stringify(totalDuration)
+        );
+
+        if (timerState === "running") {
+          // If the timer is running, save the current timestamp
+          await AsyncStorage.setItem(
+            "backgroundTimestamp",
+            JSON.stringify(currentTime)
+          );
+        }
+      } else if (nextAppState === "active") {
+        // Restore the timer state
+        // const savedTimerState = await AsyncStorage.getItem("timerState");
+        // const savedTotalDuration = await AsyncStorage.getItem("totalDuration");
+        // const backgroundTimestamp = await AsyncStorage.getItem(
+        //   "backgroundTimestamp"
+        // );
+        // if (savedTimerState !== null && savedTotalDuration !== null) {
+        //   const restoredTimerState = JSON.parse(savedTimerState);
+        //   let newTotalDuration = JSON.parse(savedTotalDuration);
+        //   if (
+        //     restoredTimerState === "running" &&
+        //     backgroundTimestamp !== null
+        //   ) {
+        //     const timeInBackground =
+        //       currentTime - JSON.parse(backgroundTimestamp);
+        //     newTotalDuration += timeInBackground;
+        //   }
+        //   setTotalDuration(newTotalDuration);
+        //   setTimerState(restoredTimerState);
+        //   if (restoredTimerState === "running") {
+        //     setStartTime(currentTime);
+        //   }
+        // }
+      }
+    };
+
+    // Subscribe to AppState changes
+    const appStateSubscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    // Cleanup on unmount
+    return () => {
+      appStateSubscription.remove();
+    };
+  }, [totalDuration, timerState]);
 
   return (
     <View style={styles.container}>
@@ -416,6 +511,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
                     state: "running",
                     elapsedTime: elapsedTime,
                   });
+                  handleResume();
                   handleEndBreak();
                   setTimerState("running");
                 }
