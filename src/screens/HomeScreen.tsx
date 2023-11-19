@@ -174,53 +174,10 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
     // Reset local state
     setTotalDuration(0);
     setStartTime(0);
+    setElapsedTime(0);
     setTimerState("stopped");
     // ... reset other relevant states
   };
-  // const handleStart = () => {
-  //   setSessionData((prevData) => ({
-  //     ...prevData,
-  //     status: "running",
-  //     startTime: Date.now(),
-  //     totalDuration: 0,
-  //   }));
-  //   setElapsedTime(0); // Reset elapsed time
-  //   setTimerState("running");
-  // };
-
-  // const handleResume = () => {
-  //   const now = Date.now();
-
-  //   // Update startTime to now since we're resuming
-  //   setSessionData((prevData) => ({
-  //     ...prevData,
-  //     startTime: now,
-  //   }));
-
-  //   // Resume the timer without altering totalDuration or elapsedTime
-  //   setTimerState("running");
-  // };
-
-  // const handlePause = async () => {
-  //   const now = Date.now();
-  //   const duration = now - sessionData.startTime; // Duration since the last start
-
-  //   // Update the session data with the new total duration
-  //   setSessionData((prevData) => ({
-  //     ...prevData,
-  //     status: "paused",
-  //     totalDuration: prevData.totalDuration + duration,
-  //   }));
-
-  //   // Update elapsedTime to reflect the new total duration
-  //   setElapsedTime(sessionData.totalDuration + duration);
-  //   setTimerState("paused");
-
-  //   // Stop any background service if applicable
-  //   // await BackgroundService.stop();
-  // };
-
-  // setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
 
   useEffect(() => {
     if (tasks[activeTaskIndex]) {
