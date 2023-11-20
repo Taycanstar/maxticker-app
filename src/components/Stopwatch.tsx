@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -32,6 +32,8 @@ interface SessionData {
   timeSpentOnBreaks: number;
 }
 
+type IntervalID = NodeJS.Timeout | number | null;
+
 const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
   const [isReady, setIsReady] = useState<boolean>(false);
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(true);
@@ -59,6 +61,7 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
   const [totalDuration, setTotalDuration] = useState<number>(0);
 
   const handleStart = () => {
+    setElapsedTime(0);
     setStartTime(Date.now());
     setTimerState("running");
     // setSessionData((prevData) => ({
@@ -74,6 +77,9 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
     setTimerState("paused");
     setStartTime(0);
 
+    // In handlePause
+    console.log("Pausing timer. Total Duration:", totalDuration);
+
     // setSessionData((prevData) => ({
     //   ...prevData,
     //   status: "paused",
@@ -86,51 +92,51 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
     setTimerState("running");
   };
 
-  useEffect(() => {
-    const handleTaskStateChange = (data: { taskId: string; state: string }) => {
-      if (!tasks) return; // Ensure tasks is available inside the handler
+  // useEffect(() => {
+  //   const handleTaskStateChange = (data: { taskId: string; state: string }) => {
+  //     if (!tasks) return; // Ensure tasks is available inside the handler
 
-      if (data.taskId === id) {
-        console.log(data.state, "received current State");
-        // ... rest of the code
-      }
-    };
+  //     if (data.taskId === id) {
+  //       console.log(data.state, "received current State");
+  //       // ... rest of the code
+  //     }
+  //   };
 
-    taskEventEmitter.on("taskStateChanged", handleTaskStateChange);
+  //   taskEventEmitter.on("taskStateChanged", handleTaskStateChange);
 
-    // Cleanup the listener when the component unmounts
-    return () => {
-      taskEventEmitter.off("taskStateChanged", handleTaskStateChange);
-    };
-  }, []);
+  //   // Cleanup the listener when the component unmounts
+  //   return () => {
+  //     taskEventEmitter.off("taskStateChanged", handleTaskStateChange);
+  //   };
+  // }, []);
 
-  useEffect(() => {
-    // Ensure tasks is available before setting up the event listener
-    if (!tasks) return;
+  // useEffect(() => {
+  //   // Ensure tasks is available before setting up the event listener
+  //   if (!tasks) return;
 
-    const handleTaskStateChange = (data: { taskId: string; state: string }) => {
-      if (data.taskId === id) {
-        console.log(data.state, "received current State");
-        if (data.state === "running") {
-          setTimerState("running");
-          console.log("Received timerStarted event in Stopwatch");
-        } else if (data.state === "paused") {
-          setTimerState("paused");
-          console.log("Received timerStarted event in Stopwatch");
-        } else if (data.state === "stopped") {
-          setTimerState("stopped");
-          console.log("Received timerStarted event in Stopwatch");
-        }
-      }
-    };
+  //   const handleTaskStateChange = (data: { taskId: string; state: string }) => {
+  //     if (data.taskId === id) {
+  //       console.log(data.state, "received current State");
+  //       if (data.state === "running") {
+  //         setTimerState("running");
+  //         console.log("Received timerStarted event in Stopwatch");
+  //       } else if (data.state === "paused") {
+  //         setTimerState("paused");
+  //         console.log("Received timerStarted event in Stopwatch");
+  //       } else if (data.state === "stopped") {
+  //         setTimerState("stopped");
+  //         console.log("Received timerStarted event in Stopwatch");
+  //       }
+  //     }
+  //   };
 
-    taskEventEmitter.on("taskStateChanged", handleTaskStateChange);
+  //   taskEventEmitter.on("taskStateChanged", handleTaskStateChange);
 
-    // Cleanup the listener when the component unmounts or when tasks changes
-    return () => {
-      taskEventEmitter.off("taskStateChanged", handleTaskStateChange);
-    };
-  }, [tasks]);
+  //   // Cleanup the listener when the component unmounts or when tasks changes
+  //   return () => {
+  //     taskEventEmitter.off("taskStateChanged", handleTaskStateChange);
+  //   };
+  // }, [tasks]);
 
   // useEffect(() => {
   //   let interval: NodeJS.Timeout;
@@ -157,9 +163,14 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
         const newElapsedTime = currentTime - startTime + totalDuration;
         setElapsedTime(newElapsedTime);
       }, 50);
+    } else if (interval) {
+      clearInterval(interval);
     }
-
+    // In useEffect's setInterval
+    console.log("Interval running. Timer State:", timerState);
     return () => {
+      // Before clearing interval
+      console.log("Clearing interval. Timer State:", timerState);
       if (interval) {
         clearInterval(interval);
       }
@@ -169,14 +180,6 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
   const formatNumber = (num: number): string => {
     return num.toString().padStart(2, "0");
   };
-
-  const minutes = formatNumber(Math.floor(elapsedTime / 60000));
-  const seconds = formatNumber(Math.floor((elapsedTime % 60000) / 1000));
-  const milliseconds = formatNumber(Math.floor((elapsedTime % 1000) / 10));
-  // Divide by 10 to get 2 digits
-
-  const percentage = Math.min((elapsedTime / goalTime) * 100, 100);
-  const strokeDashoffset = 314 * (1 - percentage / 100);
 
   const handleLapOrReset = () => {
     if (timerState === "running") {
@@ -331,6 +334,73 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
     };
   }, [totalDuration, timerState]);
 
+  // Inside Stopwatch component
+
+  useEffect(() => {
+    const handleTaskStateChange = (data: any) => {
+      if (data.taskId === id) {
+        setTimerState(data.state);
+        setElapsedTime(data.elapsedTime);
+
+        if (data.state === "running") {
+          // Adjust startTime based on elapsed time
+          setStartTime(Date.now() - data.elapsedTime);
+        } else if (data.state === "paused" || data.state === "stopped") {
+          // Reset startTime for paused or stopped states
+          setStartTime(0);
+          if (data.state === "stopped") {
+            setTotalDuration(0);
+          }
+        }
+      }
+    };
+
+    taskEventEmitter.on("taskStateChange", handleTaskStateChange);
+
+    return () => {
+      taskEventEmitter.off("taskStateChange", handleTaskStateChange);
+    };
+  }, [id]);
+
+  // useEffect(() => {
+  //   // Emit the current timer state and elapsedTime whenever they change
+  //   taskEventEmitter.emit("stopwatchStateChange", {
+  //     taskId: id,
+  //     state: timerState,
+  //     elapsedTime: elapsedTime,
+  //   });
+  // }, [timerState, elapsedTime, id]);
+
+  const { minutes, seconds, milliseconds } = useMemo(() => {
+    let elapsedTime;
+    if (timerState === "running") {
+      elapsedTime = Date.now() - startTime + totalDuration;
+    } else {
+      elapsedTime = totalDuration;
+    }
+
+    const mins = formatNumber(Math.floor(elapsedTime / 60000));
+    const secs = formatNumber(Math.floor((elapsedTime % 60000) / 1000));
+    const millisecs = formatNumber(Math.floor((elapsedTime % 1000) / 10));
+    return { minutes: mins, seconds: secs, milliseconds: millisecs };
+  }, [totalDuration, startTime, timerState, elapsedTime]);
+
+  const percentage = Math.min((elapsedTime / goalTime) * 100, 100);
+  const strokeDashoffset = 314 * (1 - percentage / 100);
+
+  const emitCurrentState = () => {
+    const currentElapsedTime =
+      timerState === "running"
+        ? Date.now() - startTime + totalDuration
+        : totalDuration;
+
+    taskEventEmitter.emit("stopwatchStateChange", {
+      taskId: id,
+      state: timerState,
+      elapsedTime: currentElapsedTime,
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.circleContainer}>
@@ -473,11 +543,8 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
                   setElapsedTime(0); // Reset the timer
                   setTimerState("stopped");
                   handleEndSession();
-                  taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: id,
-                    state: "stopped",
-                    elapsedTime: elapsedTime,
-                  });
+
+                  emitCurrentState();
                 }
               }}
             />
@@ -489,31 +556,22 @@ const Stopwatch: React.FC<props> = ({ name, goalTime, strokeColor, id }) => {
               name={timerState === "running" ? "pause" : "play"}
               onPress={() => {
                 if (timerState === "stopped") {
-                  taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: id,
-                    state: "running",
-                    elapsedTime: elapsedTime,
-                  });
-                  handleStart();
                   setTimerState("running");
+                  handleStart();
+
+                  emitCurrentState();
                 } else if (timerState === "running") {
                   setTimerState("paused");
-                  taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: id,
-                    state: "paused",
-                    elapsedTime: elapsedTime,
-                  });
                   handlePause();
                   handleStartBreak();
+
+                  emitCurrentState();
                 } else if (timerState === "paused") {
-                  taskEventEmitter.emit("multipleTaskStateChanged", {
-                    taskId: id,
-                    state: "running",
-                    elapsedTime: elapsedTime,
-                  });
+                  setTimerState("running");
                   handleResume();
                   handleEndBreak();
-                  setTimerState("running");
+
+                  emitCurrentState();
                 }
               }}
             />
