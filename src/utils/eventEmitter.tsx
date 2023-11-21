@@ -1,3 +1,3 @@
-import { TinyEmitter } from "tiny-emitter";
+import { DeviceEventEmitter } from 'react-native'
 
-export const taskEventEmitter = new TinyEmitter();
+export const taskEventEmitter = DeviceEventEmitter

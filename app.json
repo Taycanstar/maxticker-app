@@ -1,14 +1,6 @@
 {
   "expo": {
-    "plugins": [
-      [
-        "@stripe/stripe-react-native",
-        {
-          "merchantIdentifier": "merchant.com.maxticker",
-          "enableGooglePay": true
-        }
-      ]
-    ],
+    "plugins": [],
     "scheme": "myapp",
     "name": "Maxticker",
     "slug": "cronoverse",
