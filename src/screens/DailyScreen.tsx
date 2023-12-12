@@ -132,17 +132,36 @@ const DailyScreen: React.FC = () => {
     return monthRanges;
   };
 
-  const generateDayRanges = (signupDate: Date) => {
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    currentDate.setDate(currentDate.getDate() + 1);
+  // const generateDayRanges = (signupDate: Date) => {
+  //   const currentDate = new Date();
+  //   currentDate.setHours(0, 0, 0, 0);
+  //   currentDate.setDate(currentDate.getDate() + 1);
 
-    let startDate = new Date(signupDate);
+  //   let startDate = new Date(signupDate);
+  //   // startDate.setDate(endDate.getDate() - 9);
+  //   startDate.setHours(0, 0, 0, 0);
+
+  //   const dayRanges: string[] = [];
+
+  //   while (startDate <= currentDate) {
+  //     dayRanges.push(startDate.toISOString().split("T")[0]);
+  //     startDate.setDate(startDate.getDate() + 1);
+  //   }
+
+  //   return dayRanges;
+  // };
+
+  const generateDayRanges = () => {
+    let endDate = new Date();
+    endDate.setHours(0, 0, 0, 0);
+
+    let startDate = new Date();
+    startDate.setDate(endDate.getDate() - 9); // Set to 10 days ago, including today
     startDate.setHours(0, 0, 0, 0);
 
     const dayRanges: string[] = [];
 
-    while (startDate <= currentDate) {
+    for (let i = 0; i < 10; i++) {
       dayRanges.push(startDate.toISOString().split("T")[0]);
       startDate.setDate(startDate.getDate() + 1);
     }
@@ -150,7 +169,7 @@ const DailyScreen: React.FC = () => {
     return dayRanges;
   };
 
-  const dayRanges = generateDayRanges(userSignupDate);
+  const dayRanges = generateDayRanges();
 
   const monthRanges = generateMonthRanges(userSignupDate);
 
@@ -182,6 +201,40 @@ const DailyScreen: React.FC = () => {
     dayRangesWithDummy[currentDayIndex]
   );
 
+  // Gets today's date in YYYY-MM-DD format
+
+  // Today's date range
+  const today = new Date();
+  const startOfDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    0,
+    0,
+    0
+  );
+  const endOfDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    23,
+    59,
+    59
+  );
+
+  // Calculate total time spent on tasks today
+  const totalToday = tasks.reduce((sum, task) => {
+    const todaySessions = task.sessions
+      ? task.sessions.filter((session) => {
+          const startTime = new Date(session.createdAt);
+          return startTime >= startOfDay && startTime <= endOfDay;
+        })
+      : [];
+    return (
+      sum +
+      todaySessions.reduce((sum, session) => sum + session.totalDuration, 0)
+    );
+  }, 0);
   return (
     <View
       style={[
@@ -189,7 +242,7 @@ const DailyScreen: React.FC = () => {
         { backgroundColor: theme["background-basic-color-1"] },
       ]}
     >
-      <FlatList
+      {/* <FlatList
         horizontal
         snapToInterval={DAY_WIDTH}
         ref={flatListRef}
@@ -216,7 +269,7 @@ const DailyScreen: React.FC = () => {
             });
           }, 100)
         }
-      />
+      /> */}
       <ScrollView
         style={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
@@ -226,40 +279,40 @@ const DailyScreen: React.FC = () => {
           title={"Total"}
           colors={colors}
           type={"dailyTotal"}
-          start={dayStart}
-          end={dayEnd}
+          start={startOfDay}
+          end={endOfDay}
         />
         <GeneralCard
           tasks={tasks}
           title={"Avg Session"}
           colors={colors}
           type={"dailyAvgSession"}
-          start={dayStart}
-          end={dayEnd}
+          start={startOfDay}
+          end={endOfDay}
         />
         <GeneralCard
           tasks={tasks}
           title={"Goal Completion Rate"}
           colors={colors}
           type={"dailyGoalCompletionRate"}
-          start={dayStart}
-          end={dayEnd}
+          start={startOfDay}
+          end={endOfDay}
         />
         <GeneralCard
           tasks={tasks}
           title={"Avg Breaks / Session"}
           colors={colors}
           type={"dailyAvgBreaksPerSession"}
-          start={dayStart}
-          end={dayEnd}
+          start={startOfDay}
+          end={endOfDay}
         />
         <GeneralCard
           tasks={tasks}
           title={"Time Spent on Breaks"}
           colors={colors}
           type={"dailyTimeSpentOnBreaks"}
-          start={dayStart}
-          end={dayEnd}
+          start={startOfDay}
+          end={endOfDay}
         />
       </ScrollView>
     </View>

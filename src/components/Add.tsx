@@ -28,6 +28,7 @@ import { type StackNavigation } from "../navigation/AppNavigator";
 import { TaskContext } from "../contexts/TaskContext";
 import uuid from "react-native-uuid";
 import { useSubscription } from "../contexts/SubscriptionContext";
+import { useSelector } from "react-redux";
 
 type Props = {};
 
@@ -37,7 +38,7 @@ interface Color {
 }
 
 const Add: React.FC = ({ navigation }: any) => {
-  const { subscription, setSubscription } = useSubscription();
+  const { subscription, setSubscription, isLoading } = useSubscription();
   const theme = useTheme();
   const initialTime = new Date();
   initialTime.setHours(0);
@@ -56,6 +57,7 @@ const Add: React.FC = ({ navigation }: any) => {
   const { navigate } = useNavigation<StackNavigation>();
   const [isStrokeVisible, setIsStrokeVisible] = useState<boolean>(false);
   const context = useContext(TaskContext);
+  const userData = useSelector((state: any) => state.user);
 
   if (!context) {
     throw new Error("AddScreen must be used within a TaskProvider");
@@ -181,10 +183,15 @@ const Add: React.FC = ({ navigation }: any) => {
     return (hours * 60 * 60 + minutes * 60) * 1000;
   };
 
+  const effectiveSubscription =
+    isLoading || subscription === null
+      ? userData?.data?.user?.subscription
+      : subscription;
+
   const handleColor = () => {
-    if (subscription == "standard") {
+    if (effectiveSubscription == "standard") {
       navigation.navigate("Subscription");
-    } else if (subscription == "plus") {
+    } else if (effectiveSubscription == "plus") {
       setIsStrokeVisible(!isStrokeVisible);
     }
   };
@@ -317,7 +324,7 @@ const Add: React.FC = ({ navigation }: any) => {
               >
                 {color}
               </Text>
-              {subscription === "standard" ? (
+              {effectiveSubscription === "standard" ? (
                 <View style={{ flexDirection: "row" }}>
                   <View
                     style={{

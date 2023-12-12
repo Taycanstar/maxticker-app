@@ -92,35 +92,68 @@ const WeeklyScreen: React.FC = () => {
     theme["text-basic-color"],
   ];
 
-  const generateWeekRanges = (signupDate: Date) => {
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
+  // const generateWeekRanges = (signupDate: Date) => {
+  //   const currentDate = new Date();
+  //   currentDate.setHours(0, 0, 0, 0);
+  //   const weekRanges: string[] = [];
+
+  //   // Adjust the signupDate to the closest previous Sunday
+  //   let startDate = new Date(signupDate);
+  //   while (startDate.getDay() !== 0) {
+  //     // 0 represents Sunday
+  //     startDate.setDate(startDate.getDate() - 1);
+  //   }
+  //   startDate.setHours(0, 0, 0, 0);
+
+  //   while (startDate <= currentDate) {
+  //     const endDate = new Date(startDate);
+  //     endDate.setDate(startDate.getDate() + 6);
+
+  //     const startMonth = monthNames[startDate.getMonth()];
+  //     const endMonth = monthNames[endDate.getMonth()];
+  //     const startDay = startDate.getDate();
+  //     const endDay = endDate.getDate();
+
+  //     let weekRange =
+  //       startMonth === endMonth
+  //         ? `${startMonth} ${startDay} - ${endDay}`
+  //         : `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+
+  //     weekRanges.push(weekRange);
+  //     startDate.setDate(startDate.getDate() + 7);
+  //   }
+
+  //   return weekRanges;
+  // };
+
+  const generateWeekRanges = () => {
     const weekRanges: string[] = [];
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
 
-    // Adjust the signupDate to the closest previous Sunday
-    let startDate = new Date(signupDate);
-    while (startDate.getDay() !== 0) {
-      // 0 represents Sunday
-      startDate.setDate(startDate.getDate() - 1);
+    // Find the start of the current week (Sunday)
+    while (currentDate.getDay() !== 0) {
+      currentDate.setDate(currentDate.getDate() - 1);
     }
-    startDate.setHours(0, 0, 0, 0);
 
-    while (startDate <= currentDate) {
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
+    // Generate ranges for the last 10 weeks
+    for (let i = 0; i < 10; i++) {
+      const endDate = new Date(currentDate);
+      endDate.setDate(currentDate.getDate() + 6); // Add 6 days to get the end of the week
 
-      const startMonth = monthNames[startDate.getMonth()];
+      const startMonth = monthNames[currentDate.getMonth()];
       const endMonth = monthNames[endDate.getMonth()];
-      const startDay = startDate.getDate();
+      const startDay = currentDate.getDate();
       const endDay = endDate.getDate();
+      const year = currentDate.getFullYear();
 
       let weekRange =
         startMonth === endMonth
-          ? `${startMonth} ${startDay} - ${endDay}`
-          : `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+          ? `${startMonth} ${startDay}-${endDay}, ${year}`
+          : `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
 
-      weekRanges.push(weekRange);
-      startDate.setDate(startDate.getDate() + 7);
+      weekRanges.unshift(weekRange);
+      currentDate.setDate(currentDate.getDate() - 7); // Move to the previous week
     }
 
     return weekRanges;
@@ -147,7 +180,7 @@ const WeeklyScreen: React.FC = () => {
     return { start, end };
   };
 
-  const weekRanges = generateWeekRanges(userSignupDate);
+  const weekRanges = generateWeekRanges();
 
   const weekRangesWithDummy = ["", ...weekRanges, ""];
 
@@ -189,14 +222,30 @@ const WeeklyScreen: React.FC = () => {
   const handleWeekScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
     const currentIndex = Math.round(scrollPosition / WEEK_WIDTH);
-    // setDayScrollPosition(scrollPosition);
-    setWeekScrollPosition(scrollPosition);
-    setCurrentWeekIndex(currentIndex + 1);
+
+    if (currentIndex !== currentWeekIndex) {
+      setCurrentWeekIndex(currentIndex);
+    }
   };
   const { start, end } = getStartAndEndDatesForWeek(
     weekRangesWithDummy[currentWeekIndex]
   );
 
+  // Calculate the start and end dates of the current week
+  const currentDate = new Date();
+  const firstDayOfWeek = currentDate.getDate() - currentDate.getDay(); // Sunday is the first day
+  const lastDayOfWeek = firstDayOfWeek + 6; // Saturday is the last day
+
+  const weekStart = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    firstDayOfWeek
+  );
+  const weekEnd = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    lastDayOfWeek
+  );
   return (
     <View
       style={[
@@ -204,14 +253,10 @@ const WeeklyScreen: React.FC = () => {
         { backgroundColor: theme["background-basic-color-1"] },
       ]}
     >
-      <FlatList
+      {/* <FlatList
         horizontal
         snapToInterval={WEEK_WIDTH}
-        contentContainerStyle={
-          {
-            /*maxHeight: 64*/
-          }
-        }
+       
         ref={flatListRef}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
@@ -223,6 +268,11 @@ const WeeklyScreen: React.FC = () => {
         renderItem={({ item, index }) => (
           <Week week={item} isActive={index === currentWeekIndex} />
         )}
+        getItemLayout={(data, index) => ({
+          length: WEEK_WIDTH,
+          offset: WEEK_WIDTH * index,
+          index,
+        })}
         onLayout={() =>
           setTimeout(() => {
             flatListRef.current?.scrollToIndex({
@@ -231,7 +281,7 @@ const WeeklyScreen: React.FC = () => {
             });
           }, 100)
         }
-      />
+      /> */}
       <ScrollView
         style={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
@@ -241,40 +291,40 @@ const WeeklyScreen: React.FC = () => {
           title={"Total"}
           colors={colors}
           type={"weeklyTotal"}
-          start={start}
-          end={end}
+          start={weekStart}
+          end={weekEnd}
         />
         <GeneralCard
           tasks={tasks}
           title={"Avg Session"}
           colors={colors}
           type={"weeklyAvgSession"}
-          start={start}
-          end={end}
+          start={weekStart}
+          end={weekEnd}
         />
         <GeneralCard
           tasks={tasks}
           title={"Goal Completion Rate"}
           colors={colors}
           type={"weeklyGoalCompletionRate"}
-          start={start}
-          end={end}
+          start={weekStart}
+          end={weekEnd}
         />
         <GeneralCard
           tasks={tasks}
           title={"Avg Breaks / Session"}
           colors={colors}
           type={"weeklyAvgBreaksPerSession"}
-          start={start}
-          end={end}
+          start={weekStart}
+          end={weekEnd}
         />
         <GeneralCard
           tasks={tasks}
           title={"Time Spent on Breaks"}
           colors={colors}
           type={"weeklyTimeSpentOnBreaks"}
-          start={start}
-          end={end}
+          start={weekStart}
+          end={weekEnd}
         />
       </ScrollView>
     </View>

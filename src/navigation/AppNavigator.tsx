@@ -384,15 +384,21 @@ const items: NavigationItem[] = [
 ];
 
 const AnalyticsStack = ({ navigation }: any) => {
-  const { subscription, setSubscription } = useSubscription();
   const theme = useTheme();
+  const { subscription, setSubscription, fetchSubscription, isLoading } =
+    useSubscription();
+  const userData = useSelector((state: any) => state.user);
   // const navigation = useNavigation();
+  const effectiveSubscription =
+    isLoading || subscription === null
+      ? userData?.data?.user?.subscription
+      : subscription;
 
   const [currentItem, setCurrentItem] = useState<string>("General");
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
   const handleItemPress = (selectedItem: NavigationItem) => {
-    if (subscription === "plus") {
+    if (effectiveSubscription === "plus") {
       setCurrentItem(selectedItem.name);
       setIsModalVisible(!isModalVisible);
       navigation.navigate(selectedItem.nav);
@@ -849,14 +855,7 @@ const MainStack = () => {
           },
         }}
       />
-      {/* <Drawer.Screen
-        name="Notifications"
-        component={NotificationsScreen}
-        initialParams={{ iconName: "bell" }}
-        options={{
-          headerShown: false,
-        }}
-      /> */}
+
       <Drawer.Screen
         name="Color Scheme"
         component={ColorScheme}
@@ -865,14 +864,7 @@ const MainStack = () => {
           headerShown: false,
         }}
       />
-      {/* <Drawer.Screen
-        name="Send feedback"
-        component={SendFeedbackScreen}
-        initialParams={{ iconName: "message-square" }}
-        options={{
-          headerShown: false,
-        }}
-      /> */}
+
       <Drawer.Screen
         name="About "
         component={AboutStack}

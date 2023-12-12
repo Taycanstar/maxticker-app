@@ -175,6 +175,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({
             "Content-Type": "application/json",
             // Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify({ deviceId: token }),
         }
       );
       setTasks((prevTasks) =>

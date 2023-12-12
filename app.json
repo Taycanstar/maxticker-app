@@ -4,7 +4,7 @@
     "scheme": "myapp",
     "name": "Maxticker",
     "slug": "cronoverse",
-    "version": "1.0.6",
+    "version": "1.1.2",
     "orientation": "portrait",
     "icon": "./assets/app/Assets.xcassets/AppIcon.appiconset/1024.png",
     "splash": {

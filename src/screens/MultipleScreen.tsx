@@ -9,18 +9,20 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import PlusTimer from "../components/PlusTimer";
+import { useSelector } from "react-redux";
+import { useSubscription } from "../contexts/SubscriptionContext";
 
 const screenWidth = Dimensions.get("window").width;
 
 const MultipleScreen: React.FC = () => {
   const { tasks, fetchTasks } = useTasks();
   // Assuming useTasks is your context hook
-
+  const userData = useSelector((state: any) => state.user);
   const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false);
   const [activeStopwatchId, setActiveStopwatchId] = useState<string | null>(
     null
   );
-
+  const { subscription, setSubscription, isLoading } = useSubscription();
   const theme = useTheme();
 
   const navigation =
@@ -29,6 +31,11 @@ const MultipleScreen: React.FC = () => {
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  const effectiveSubscription =
+    isLoading || subscription === null
+      ? userData?.data?.user?.subscription
+      : subscription;
 
   return (
     <Layout
@@ -49,13 +56,13 @@ const MultipleScreen: React.FC = () => {
               />
             </View>
           ))}
-          {tasks.length < 4 ? (
+          {tasks.length >= 4 && effectiveSubscription === "standard" ? (
             <View style={styles.watch1}>
-              <AddTimer onPress={() => navigation.navigate("Add")} />
+              <PlusTimer onPress={() => navigation.navigate("Subscription")} />
             </View>
           ) : (
             <View style={styles.watch1}>
-              <PlusTimer onPress={() => navigation.navigate("Subscription")} />
+              <AddTimer onPress={() => navigation.navigate("Add")} />
             </View>
           )}
         </View>

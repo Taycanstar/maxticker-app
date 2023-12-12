@@ -52,7 +52,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const [oldPrice, setOldPrice] = useState<string>("$59.99");
   const dispatch = useDispatch<AppDispatch>();
   const [loading, setLoading] = useState<boolean>(false);
-  const { subscription, setSubscription, fetchSubscription } =
+  const { subscription, setSubscription, fetchSubscription, isLoading } =
     useSubscription();
   const userData = useSelector((state: any) => state.user);
   const userId = userData?.data?.user?._id;
@@ -63,7 +63,10 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
   const [errorText, setErrorText] = useState("");
   const [item, setItem] = useState("");
 
-  console.log(userId, "idd");
+  const effectiveSubscription =
+    isLoading || subscription === null
+      ? userData?.data?.user?.subscription
+      : subscription;
 
   async function createCheckoutSession() {
     try {
@@ -115,8 +118,6 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
       mounted = false;
     };
   }, []);
-
-  console.log(data, "datta");
 
   const handleCancelPress = async () => {
     let action = await dispatch(cancelSubscription(userId));
@@ -259,6 +260,10 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
     fetchSubscription();
   };
 
+  console.log(effectiveSubscription, "datta");
+
+  console.log(isLoading, "loading");
+
   return (
     <Layout
       style={{
@@ -284,7 +289,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
                 fontWeight: "700",
               }}
             >
-              {subscription === "standard"
+              {effectiveSubscription === "standard"
                 ? "You have now access to premium tools, limitless customization and expanded possibilities."
                 : "Unlock Maxticker Plus for premium tools, limitless customization and expanded possibilities."}
             </Text>
@@ -306,7 +311,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
         </View>
 
         <View style={{ marginVertical: 20 }}>
-          {subscription === "standard" && (
+          {effectiveSubscription === "standard" && (
             <View
               style={{
                 flexDirection: "row",
@@ -462,7 +467,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
             </View>
           </View>
         </View>
-        {subscription === "plus" && (
+        {effectiveSubscription === "plus" && (
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
@@ -513,7 +518,7 @@ const Plus: React.FC<PlusProps> = ({ navigation }) => {
         {/* <TouchableOpacity onPress={fetchSubscription}>
           <Text style={{ color: "#fff" }}> PRESS ME</Text>
         </TouchableOpacity> */}
-        {subscription === "standard" ? (
+        {effectiveSubscription === "standard" ? (
           <TouchableOpacity
             onPress={handleSub}
             style={{

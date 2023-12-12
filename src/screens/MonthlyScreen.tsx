@@ -93,49 +93,87 @@ const MonthlyScreen: React.FC = () => {
     theme["text-basic-color"],
   ];
 
-  const generateMonthRanges = (signupDate: Date) => {
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
+  // const generateMonthRanges = (signupDate: Date) => {
+  //   const currentDate = new Date();
+  //   currentDate.setHours(0, 0, 0, 0);
+  //   const monthRanges: string[] = [];
+
+  //   // Ensure signupDate is a Date object
+  //   let startDate = new Date(signupDate);
+  //   // Adjust the signupDate to the first of the month
+  //   startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+
+  //   while (startDate <= currentDate) {
+  //     const startMonth = monthNames[startDate.getMonth()];
+
+  //     let monthRange = `${startMonth} ${startDate.getFullYear()}`;
+
+  //     monthRanges.push(monthRange);
+  //     startDate.setMonth(startDate.getMonth() + 1);
+  //   }
+
+  //   return monthRanges;
+  // };
+
+  const generateMonthRanges = () => {
     const monthRanges: string[] = [];
+    let currentDate = new Date();
 
-    // Ensure signupDate is a Date object
-    let startDate = new Date(signupDate);
-    // Adjust the signupDate to the first of the month
-    startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    // Adjusting the date to the first of the current month
+    currentDate = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
 
-    while (startDate <= currentDate) {
-      const startMonth = monthNames[startDate.getMonth()];
-
-      let monthRange = `${startMonth} ${startDate.getFullYear()}`;
-
-      monthRanges.push(monthRange);
-      startDate.setMonth(startDate.getMonth() + 1);
+    for (let i = 0; i <= 11; i++) {
+      const year = currentDate.getFullYear();
+      const monthIndex = currentDate.getMonth();
+      const month = monthNames[monthIndex];
+      monthRanges.unshift(`${month} ${year}`);
+      // Moving to the previous month
+      currentDate.setMonth(monthIndex - 1);
     }
 
     return monthRanges;
   };
+
+  const monthRanges = generateMonthRanges();
 
   const getStartAndEndDatesForMonth = (monthRange: string) => {
     const splitRange = monthRange.split(" ");
     const month = monthMapping[splitRange[0]];
     const year = parseInt(splitRange[1], 10);
 
-    const monthStart = new Date(year, month, 1);
-    const monthEnd = new Date(year, month + 1, 0); // last day of the month
+    const monthStartt = new Date(year, month, 1);
+    const monthEndd = new Date(year, month + 1, 0); // last day of the month
 
-    return { monthStart, monthEnd };
+    return { monthStartt, monthEndd };
   };
 
-  const monthRanges = generateMonthRanges(userSignupDate);
+  // const monthRanges = generateMonthRanges(userSignupDate);
 
   const monthRangesWithDummy = ["", ...monthRanges, ""];
 
+  // const findCurrentMonthIndex = () => {
+  //   const currentMonthStr = new Date().toISOString().slice(0, 7);
+
+  //   if (Array.isArray(monthRanges)) {
+  //     const index = monthRanges.indexOf(currentMonthStr);
+  //     return index === -1 ? monthRanges.length - 1 : index;
+  //   }
+
+  //   return -1;
+  // };
   const findCurrentMonthIndex = () => {
-    const currentMonthStr = new Date().toISOString().slice(0, 7);
+    const currentDate = new Date();
+    const currentMonthStr = `${
+      monthNames[currentDate.getMonth()]
+    } ${currentDate.getFullYear()}`;
 
     if (Array.isArray(monthRanges)) {
-      const index = monthRanges.indexOf(currentMonthStr);
-      return index === -1 ? monthRanges.length - 1 : index;
+      const index = monthRangesWithDummy.indexOf(currentMonthStr);
+      return index === -1 ? monthRangesWithDummy.length - 1 : index;
     }
 
     return -1;
@@ -145,17 +183,33 @@ const MonthlyScreen: React.FC = () => {
     realLifeCurrentMonthIndex
   );
 
+  // const { monthStart, monthEnd } = getStartAndEndDatesForMonth(
+  //   monthRangesWithDummy[currentMonthIndex]
+  // );
+
   const handleMonthScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
     const currentIndex = Math.round(scrollPosition / MONTH_WIDTH);
-    // setDayScrollPosition(scrollPosition);
     setMonthScrollPosition(scrollPosition);
-    setCurrentMonthIndex(currentIndex + 1);
-  };
-  const { monthStart, monthEnd } = getStartAndEndDatesForMonth(
-    monthRangesWithDummy[currentMonthIndex]
-  );
 
+    // This logic should match how you're updating the index in DailyScreen
+    if (currentIndex >= 0 && currentIndex < monthRangesWithDummy.length) {
+      setCurrentMonthIndex(currentIndex);
+    }
+  };
+
+  // Current month's date range
+  const currentDate = new Date();
+  const monthStart = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    1
+  );
+  const monthEnd = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0
+  );
   return (
     <View
       style={[
@@ -163,14 +217,15 @@ const MonthlyScreen: React.FC = () => {
         { backgroundColor: theme["background-basic-color-1"] },
       ]}
     >
-      <FlatList
+      {/* <FlatList
         horizontal
         snapToInterval={MONTH_WIDTH}
-        contentContainerStyle={
-          {
-            /*maxHeight: 64*/
-          }
-        }
+        contentContainerStyle={{ paddingRight: MONTH_WIDTH }}
+        getItemLayout={(data, index) => ({
+          length: MONTH_WIDTH,
+          offset: MONTH_WIDTH * index,
+          index,
+        })}
         ref={flatListRef}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
@@ -185,12 +240,12 @@ const MonthlyScreen: React.FC = () => {
         onLayout={() =>
           setTimeout(() => {
             flatListRef.current?.scrollToIndex({
-              index: monthRangesWithDummy.length - 1,
+              index: currentMonthIndex,
               animated: false,
             });
           }, 100)
         }
-      />
+      /> */}
       <ScrollView
         style={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}

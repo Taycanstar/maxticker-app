@@ -11,7 +11,7 @@ import {
   Dimensions,
   Image,
   AppState,
-} from 'react-native'
+} from "react-native";
 import React, {
   useState,
   useEffect,
@@ -19,295 +19,297 @@ import React, {
   useCallback,
   useLayoutEffect,
   useRef,
-} from 'react'
-import Colors from '../constants/Colors'
-import { Layout, useTheme } from '@ui-kitten/components'
-import AppLoading from 'expo-app-loading'
-import * as Font from 'expo-font'
-import Feather from '@expo/vector-icons/Feather'
-import { Canvas, Path, Skia } from '@shopify/react-native-skia'
-import { Circle, Svg, Line } from 'react-native-svg'
-import { ScrollView } from 'react-native-gesture-handler'
-import { ActivityIndicator } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+} from "react";
+import Colors from "../constants/Colors";
+import { Layout, useTheme } from "@ui-kitten/components";
+import AppLoading from "expo-app-loading";
+import * as Font from "expo-font";
+import Feather from "@expo/vector-icons/Feather";
+import { Canvas, Path, Skia } from "@shopify/react-native-skia";
+import { Circle, Svg, Line } from "react-native-svg";
+import { ScrollView } from "react-native-gesture-handler";
+import { ActivityIndicator } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   HomeScreenRouteProp,
   type StackNavigation,
-} from '../navigation/AppNavigator'
-import { useTasks, Task } from '../contexts/TaskContext'
-import { useFocusEffect } from '@react-navigation/native'
-import { blackLogo } from '../images/ImageAssets'
-import { taskEventEmitter } from '../utils/eventEmitter'
+} from "../navigation/AppNavigator";
+import { useTasks, Task } from "../contexts/TaskContext";
+import { useFocusEffect } from "@react-navigation/native";
+import { blackLogo } from "../images/ImageAssets";
+import { taskEventEmitter } from "../utils/eventEmitter";
+import BackgroundTimer from "react-native-background-timer";
+import { useSubscription } from "../contexts/SubscriptionContext";
 
-type Props = {}
+type Props = {};
 
 interface SessionData {
-  startTime: number
-  totalDuration: number
-  status: string
-  laps: { time: number; name: string }[]
-  history: any[]
-  breaks: number
-  timeSpentOnBreaks: number
+  startTime: number;
+  totalDuration: number;
+  status: string;
+  laps: { time: number; name: string }[];
+  history: any[];
+  breaks: number;
+  timeSpentOnBreaks: number;
 }
 
 type HomeProps = {
-  route: HomeScreenRouteProp
-}
+  route: HomeScreenRouteProp;
+};
 
 const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
-  const theme = useTheme()
-  const intervalRef = useRef<any>(null)
-  const appStateSubscriptionRef = useRef<any>(null)
-  const [fontLoaded, setFontLoaded] = useState(false)
-  const [elapsedTime, setElapsedTime] = useState<number>(0)
+  const theme = useTheme();
+  const intervalRef = useRef<any>(null);
+  const appStateSubscriptionRef = useRef<any>(null);
+  const [fontLoaded, setFontLoaded] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [timerState, setTimerState] = useState<
-    'stopped' | 'running' | 'paused'
-  >('stopped')
+    "stopped" | "running" | "paused"
+  >("stopped");
   // const [currentTask, setCurrentTask] = useState<Task | null>(null);
-  const [breakStartTime, setBreakStartTime] = useState<number | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
-  const [laps, setLaps] = useState<{ time: number; name: string }[]>([])
-  const { navigate } = useNavigation<StackNavigation>()
-  const { tasks, fetchTasks, endSession, deleteTask } = useTasks()
+  const [breakStartTime, setBreakStartTime] = useState<number | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [laps, setLaps] = useState<{ time: number; name: string }[]>([]);
+  const { navigate } = useNavigation<StackNavigation>();
+  const { tasks, fetchTasks, endSession, deleteTask } = useTasks();
 
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false)
-  const [isMoreVisible, setIsMoreVisible] = useState<boolean>(false)
-  const [contextMenuVisible, setContextMenuVisible] = useState<boolean>(false)
-  const [isDeleteVisible, setIsDeleteVisible] = useState<boolean>(false)
-  const [activeTaskIndex, setActiveTaskIndex] = useState<number>(0)
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [isMoreVisible, setIsMoreVisible] = useState<boolean>(false);
+  const [contextMenuVisible, setContextMenuVisible] = useState<boolean>(false);
+  const [isDeleteVisible, setIsDeleteVisible] = useState<boolean>(false);
+  const [activeTaskIndex, setActiveTaskIndex] = useState<number>(0);
   const [goalTime, setGoalTime] = useState<number>(
     tasks && tasks[activeTaskIndex] ? tasks[activeTaskIndex].goal : 0
-  )
+  );
   const lastEmitRef = useRef<{
     [taskId: string]: {
-      state: 'stopped' | 'running' | 'paused'
-      elapsedTime: number
-    }
-  }>({})
-
-  const toggleContextMenu = () => {
-    setContextMenuVisible(!contextMenuVisible)
-  }
+      state: "stopped" | "running" | "paused";
+      elapsedTime: number;
+    };
+  }>({});
+  const { subscription, setSubscription, fetchSubscription } =
+    useSubscription();
 
   // Define the local state
   const [sessionData, setSessionData] = useState<SessionData>({
-    startTime: performance.now(),
+    startTime: Date.now(),
     totalDuration: 0,
-    status: 'stopped',
+    status: "stopped",
     laps: [],
     history: [],
     breaks: 0,
     timeSpentOnBreaks: 0,
     // ... any other fields you need
-  })
+  });
 
   // Update the local state based on user actions
   const handleStart = () => {
     setSessionData((prevData) => ({
       ...prevData,
-      status: 'running',
-      startTime: performance.now(),
-    }))
-  }
+      status: "running",
+      startTime: Date.now(),
+    }));
+  };
 
   const handlePause = () => {
-    const now = performance.now()
-    const duration = now - sessionData.startTime
+    const now = Date.now();
+    const duration = now - sessionData.startTime;
 
     setSessionData((prevData) => ({
       ...prevData,
-      status: 'paused',
+      status: "paused",
       totalDuration: prevData.totalDuration + duration,
-    }))
-  }
+    }));
+  };
 
   const handleEndSession = async () => {
-    let finalSessionData = { ...sessionData }
+    let finalSessionData = { ...sessionData };
 
-    const now = performance.now()
+    const now = Date.now();
 
     // If the session is currently running, add the current duration to totalDuration
-    if (timerState === 'running') {
-      const currentDuration = now - sessionData.startTime
-      finalSessionData.totalDuration += currentDuration
+    if (timerState === "running") {
+      const currentDuration = now - sessionData.startTime;
+      finalSessionData.totalDuration += currentDuration;
     }
 
     // If a break is currently ongoing, add its duration to timeSpentOnBreaks
     if (breakStartTime) {
-      const currentBreakDuration = now - breakStartTime
-      finalSessionData.timeSpentOnBreaks += currentBreakDuration
+      const currentBreakDuration = now - breakStartTime;
+      finalSessionData.timeSpentOnBreaks += currentBreakDuration;
     }
 
     try {
       if (tasks[activeTaskIndex] && tasks[activeTaskIndex]._id) {
-        await endSession(tasks[activeTaskIndex]._id, finalSessionData) // Send the taskId and final data to the backend
+        await endSession(tasks[activeTaskIndex]._id, finalSessionData); // Send the taskId and final data to the backend
       } else {
-        console.error('No current task found')
+        console.error("No current task found");
       }
 
       // Reset the local state
       setSessionData({
-        startTime: performance.now(),
+        startTime: Date.now(),
         totalDuration: 0,
-        status: 'stopped',
+        status: "stopped",
         laps: [],
         history: [],
         breaks: 0,
         timeSpentOnBreaks: 0,
-      })
+      });
 
       // Reset the local laps state
-      setLaps([])
+      setLaps([]);
     } catch (error) {
-      console.error('Error ending session:', error)
+      console.error("Error ending session:", error);
     }
-  }
+  };
 
   useEffect(() => {
-    const handleAppStateChange = (nextAppState) => {
+    const handleAppStateChange = (nextAppState: any) => {
       if (nextAppState.match(/inactive|background/)) {
-        clearInterval(intervalRef.current)
+        clearInterval(intervalRef.current);
 
         // Stop the taskEventEmitter when the app goes to the background
-        taskEventEmitter.removeAllListeners(
-          'taskStateChanged',
-          handleTaskStateChange
-        )
-      } else if (nextAppState === 'active') {
+        // taskEventEmitter.removeAllListeners(
+        //   'taskStateChanged',
+        //   handleTaskStateChange
+        // )
+        taskEventEmitter.removeAllListeners("taskStateChanged");
+      } else if (nextAppState === "active") {
         // Resume the taskEventEmitter when the app comes back to the foreground
-        taskEventEmitter.addListener('taskStateChanged', handleTaskStateChange)
+        taskEventEmitter.addListener("taskStateChanged", handleTaskStateChange);
       }
-    }
+    };
 
     // Subscribe to AppState
     appStateSubscriptionRef.current = AppState.addEventListener(
-      'change',
+      "change",
       handleAppStateChange
-    )
+    );
 
     return () => {
       // Remove the app state change listener on unmount
-      taskEventEmitter.removeAllListeners(
-        'taskStateChanged',
-        handleTaskStateChange
-      )
-    }
-  }, [])
+      // taskEventEmitter.removeAllListeners(
+      //   'taskStateChanged',
+      //   handleTaskStateChange
+      // )
+      taskEventEmitter.removeAllListeners("taskStateChanged");
+    };
+  }, []);
 
   // setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
 
   useEffect(() => {
     if (tasks[activeTaskIndex]) {
-      setGoalTime(tasks[activeTaskIndex].goal ?? 0)
+      setGoalTime(tasks[activeTaskIndex].goal ?? 0);
     }
-  }, [tasks, activeTaskIndex])
+  }, [tasks, activeTaskIndex]);
 
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
-        await fetchTasks()
+        await fetchTasks();
         // Use a local variable to check the tasks immediately after fetching
-        const fetchedTasks = tasks
+        const fetchedTasks = tasks;
         // if (fetchedTasks && fetchedTasks.length > 0) {
         //   setActiveTaskIndex(activeTaskIndex); // Set the first task as the active task after fetching
         // }
-      }
+      };
 
-      fetchData()
+      fetchData();
     }, [fetchTasks])
-  )
+  );
 
   useEffect(() => {
     // let interval: NodeJS.Timeout
-    let startTime: number
+    let startTime: number;
 
-    if (timerState === 'running') {
-      startTime = performance.now() - elapsedTime
+    if (timerState === "running") {
+      startTime = Date.now() - elapsedTime;
       intervalRef.current = setInterval(() => {
-        setElapsedTime(performance.now() - startTime)
-      }, 10)
-    } else if (timerState === 'stopped') {
-      setElapsedTime(0)
+        setElapsedTime(Date.now() - startTime);
+      }, 75);
+    } else if (timerState === "stopped") {
+      setElapsedTime(0);
     }
 
-    return () => clearInterval(intervalRef.current)
-  }, [timerState])
+    return () => clearInterval(intervalRef.current);
+  }, [timerState]);
 
   useEffect(() => {
     const emitCurrentState = () => {
-      taskEventEmitter.emit('taskStateChange', {
+      taskEventEmitter.emit("taskStateChange", {
         taskId: tasks[activeTaskIndex]?._id,
         state: timerState,
         elapsedTime: elapsedTime,
-      })
-    }
+      });
+    };
 
-    emitCurrentState()
-  }, [timerState, elapsedTime, tasks, activeTaskIndex])
+    emitCurrentState();
+  }, [timerState, elapsedTime, tasks, activeTaskIndex]);
 
   const onAddPress = () => {
-    navigate('Add')
-  }
+    navigate("Add");
+  };
   const formatNumber = (num: number): string => {
-    return num.toString().padStart(2, '0')
-  }
+    return num.toString().padStart(2, "0");
+  };
 
-  const minutes = formatNumber(Math.floor(elapsedTime / 60000))
-  const seconds = formatNumber(Math.floor((elapsedTime % 60000) / 1000))
-  const milliseconds = formatNumber(Math.floor((elapsedTime % 1000) / 10))
+  const minutes = formatNumber(Math.floor(elapsedTime / 60000));
+  const seconds = formatNumber(Math.floor((elapsedTime % 60000) / 1000));
+  const milliseconds = formatNumber(Math.floor((elapsedTime % 1000) / 10));
 
-  const percentage = Math.min((elapsedTime / goalTime) * 100, 100)
+  const percentage = Math.min((elapsedTime / goalTime) * 100, 100);
 
-  const strokeDashoffset = 314 * (1 - percentage / 100)
+  const strokeDashoffset = 314 * (1 - percentage / 100);
 
   const handleLap = () => {
     const newLap = {
       time: elapsedTime,
       name: `Lap ${sessionData.laps.length + 1}`,
-    }
+    };
 
     // Update the local laps state
-    setLaps((prevLaps) => [...prevLaps, newLap])
+    setLaps((prevLaps) => [...prevLaps, newLap]);
 
     // Update the sessionData.laps
     setSessionData((prevData) => ({
       ...prevData,
       laps: [...prevData.laps, newLap],
-    }))
-  }
+    }));
+  };
 
   const handleStartBreak = () => {
-    if (sessionData.status === 'running') {
-      handlePause() // Pause the timer if it's running
+    if (sessionData.status === "running") {
+      handlePause(); // Pause the timer if it's running
     }
 
-    setBreakStartTime(performance.now())
-  }
+    setBreakStartTime(Date.now());
+  };
 
   const handleEndBreak = () => {
     if (breakStartTime) {
       // Check if breakStartTime is not null
-      const now = performance.now()
-      const breakDuration = now - breakStartTime
+      const now = Date.now();
+      const breakDuration = now - breakStartTime;
 
       setSessionData((prevData) => ({
         ...prevData,
         breaks: prevData.breaks + 1,
         timeSpentOnBreaks: prevData.timeSpentOnBreaks + breakDuration,
-      }))
+      }));
 
-      setBreakStartTime(null) // reset the break start time
+      setBreakStartTime(null); // reset the break start time
     }
-  }
+  };
   useLayoutEffect(() => {
     if (tasks[activeTaskIndex]) {
       navigation.setOptions({
         headerTitle: tasks[activeTaskIndex].name,
 
         headerTitleStyle: {
-          color: theme['text-basic-color'],
+          color: theme["text-basic-color"],
           fontSize: 20,
         },
         headerRight: () => (
@@ -318,19 +320,19 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
               borderRadius: 10,
               height: 35,
               width: 35,
-              justifyContent: 'center',
-              alignItems: 'center',
+              justifyContent: "center",
+              alignItems: "center",
             }}
             onPress={() => setIsMoreVisible(true)}
           >
             <Feather
               name="more-horizontal"
               size={23}
-              color={theme['text-basic-color']}
+              color={theme["text-basic-color"]}
             />
           </TouchableOpacity>
         ),
-      })
+      });
     } else {
       navigation.setOptions({
         headerTitle: () => (
@@ -343,76 +345,76 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
           </>
         ),
         headerRight: null,
-      })
+      });
     }
-  }, [tasks, navigation, activeTaskIndex])
+  }, [tasks, navigation, activeTaskIndex]);
 
   const handleChangeTask = () => {
-    setContextMenuVisible(false)
-    setIsModalVisible(true)
-  }
+    setContextMenuVisible(false);
+    setIsModalVisible(true);
+  };
 
   const handleEditPress = () => {
-    setIsMoreVisible(false)
-    navigation.navigate('Edit', {
+    setIsMoreVisible(false);
+    navigation.navigate("Edit", {
       name: tasks[activeTaskIndex]?.name,
       goal: tasks[activeTaskIndex]?.goal,
       color: tasks[activeTaskIndex]?.color,
       taskId: tasks[activeTaskIndex]?._id,
-    })
-  }
+    });
+  };
 
   const handleDeletePress = async () => {
     if (tasks[activeTaskIndex]) {
-      await deleteTask(tasks[activeTaskIndex]._id)
+      await deleteTask(tasks[activeTaskIndex]._id);
 
       // Resetting the state
-      setElapsedTime(0)
-      setTimerState('stopped')
-      setLaps([])
+      setElapsedTime(0);
+      setTimerState("stopped");
+      setLaps([]);
 
       if (activeTaskIndex === tasks.length - 1 && tasks.length > 1) {
-        setActiveTaskIndex(tasks.length - 2)
+        setActiveTaskIndex(tasks.length - 2);
       } else if (tasks.length <= 1) {
-        setActiveTaskIndex(0)
+        setActiveTaskIndex(0);
       }
 
       setTimeout(() => {
-        setIsDeleteVisible(false)
-      }, 100)
+        setIsDeleteVisible(false);
+      }, 100);
     }
-  }
+  };
 
   function handleTaskStateChange(data: {
-    taskId: string
-    state: 'stopped' | 'running' | 'paused'
-    elapsedTime?: number
+    taskId: string;
+    state: "stopped" | "running" | "paused";
+    elapsedTime?: number;
   }) {
     if (data.taskId === tasks[activeTaskIndex]?._id) {
       if (data.elapsedTime !== undefined) {
         lastEmitRef.current[data.taskId] = {
           state: data.state,
           elapsedTime: data.elapsedTime,
-        }
+        };
       }
 
-      if (data.state === 'running') {
-        setTimerState('running')
+      if (data.state === "running") {
+        setTimerState("running");
         if (data.elapsedTime !== undefined) {
-          setElapsedTime(data.elapsedTime)
+          setElapsedTime(data.elapsedTime);
         }
-        console.log('Received timerStarted event in homescreen')
-      } else if (data.state === 'paused') {
-        console.log('Received timerStarted event in homescreen')
-        setTimerState('paused')
+        // console.log("Received timerStarted event in homescreen");
+      } else if (data.state === "paused") {
+        // console.log("Received timerStarted event in homescreen");
+        setTimerState("paused");
         if (data.elapsedTime !== undefined) {
-          setElapsedTime(data.elapsedTime)
+          setElapsedTime(data.elapsedTime);
         }
-      } else if (data.state === 'stopped') {
-        setTimerState('stopped')
-        console.log('Received timerStarted event in homescreen')
+      } else if (data.state === "stopped") {
+        setTimerState("stopped");
+        // console.log("Received timerStarted event in homescreen");
         if (data.elapsedTime !== undefined) {
-          setElapsedTime(data.elapsedTime)
+          setElapsedTime(data.elapsedTime);
         }
       }
     }
@@ -420,35 +422,39 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
 
   useEffect(() => {
     taskEventEmitter.addListener(
-      'multipleTaskStateChanged',
+      "multipleTaskStateChanged",
       handleTaskStateChange
-    )
+    );
 
     return () => {
-      taskEventEmitter.removeAllListeners('multipleTaskStateChanged')
-    }
-  }, [tasks])
+      taskEventEmitter.removeAllListeners("multipleTaskStateChanged");
+    };
+  }, [tasks]);
 
   const changeTaskAction = (index: any) => {
     if (index !== undefined) {
-      setActiveTaskIndex(index)
-      const taskId = tasks[activeTaskIndex]._id
-      setIsModalVisible(false)
+      setActiveTaskIndex(index);
+      const taskId = tasks[activeTaskIndex]._id;
+      setIsModalVisible(false);
       if (lastEmitRef.current[taskId]) {
-        setTimerState(lastEmitRef.current[taskId].state)
+        setTimerState(lastEmitRef.current[taskId].state);
         // If you're maintaining elapsedTime on this screen:
         // Check if elapsedTime is defined before setting it
         if (lastEmitRef.current[taskId].elapsedTime !== undefined) {
-          setElapsedTime(lastEmitRef.current[taskId].elapsedTime)
+          setElapsedTime(lastEmitRef.current[taskId].elapsedTime);
         }
       }
     }
-  }
+  };
+
+  useEffect(() => {
+    fetchSubscription();
+  }, []);
 
   return (
     <Layout style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="small" color={theme['ios-blue']} />
+        <ActivityIndicator size="small" color={theme["ios-blue"]} />
       ) : (
         <>
           <View style={styles.contentContainer}>
@@ -488,7 +494,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                       <Text
                         style={[
                           styles.digit,
-                          { color: theme['text-basic-color'] },
+                          { color: theme["text-basic-color"] },
                         ]}
                       >
                         {minutes.slice(0, 1)}
@@ -496,7 +502,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                       <Text
                         style={[
                           styles.digit,
-                          { color: theme['text-basic-color'] },
+                          { color: theme["text-basic-color"] },
                         ]}
                       >
                         {minutes.slice(1)}
@@ -504,7 +510,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                       <Text
                         style={[
                           styles.digit,
-                          { color: theme['text-basic-color'] },
+                          { color: theme["text-basic-color"] },
                         ]}
                       >
                         :
@@ -512,7 +518,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                       <Text
                         style={[
                           styles.digit,
-                          { color: theme['text-basic-color'] },
+                          { color: theme["text-basic-color"] },
                         ]}
                       >
                         {seconds.slice(0, 1)}
@@ -520,7 +526,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                       <Text
                         style={[
                           styles.digit,
-                          { color: theme['text-basic-color'] },
+                          { color: theme["text-basic-color"] },
                         ]}
                       >
                         {seconds.slice(1)}
@@ -528,7 +534,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                       <Text
                         style={[
                           styles.digit,
-                          { color: theme['text-basic-color'] },
+                          { color: theme["text-basic-color"] },
                         ]}
                       >
                         .
@@ -536,7 +542,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                       <Text
                         style={[
                           styles.digit,
-                          { color: theme['text-basic-color'] },
+                          { color: theme["text-basic-color"] },
                         ]}
                       >
                         {milliseconds.slice(0, 1)}
@@ -544,7 +550,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                       <Text
                         style={[
                           styles.digit,
-                          { color: theme['text-basic-color'] },
+                          { color: theme["text-basic-color"] },
                         ]}
                         ellipsizeMode="clip"
                         numberOfLines={1}
@@ -555,22 +561,22 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   ) : (
                     <View
                       style={{
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
                       <TouchableOpacity
                         onPress={onAddPress}
                         style={{
                           padding: 7,
-                          justifyContent: 'center',
-                          alignItems: 'center',
+                          justifyContent: "center",
+                          alignItems: "center",
                           margin: 7,
                         }}
                       >
                         <Feather
-                          color={theme['text-basic-color']}
+                          color={theme["text-basic-color"]}
                           size={35}
                           name="plus-square"
                         />
@@ -578,17 +584,17 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
 
                       <View
                         style={{
-                          position: 'absolute',
+                          position: "absolute",
                           top: 58,
                           width: 100,
-                          justifyContent: 'center',
-                          alignItems: 'center',
+                          justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
                         <Text
                           style={{
                             fontSize: 17,
-                            color: theme['text-basic-color'],
+                            color: theme["text-basic-color"],
                           }}
                         >
                           New task
@@ -606,19 +612,19 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   <View style={styles.buttonContainer}>
                     <View style={styles.buttonWrapper}>
                       <Button
-                        color={theme['text-basic-color']}
-                        title={timerState === 'running' ? 'Lap' : 'Reset'}
+                        color={theme["text-basic-color"]}
+                        title={timerState === "running" ? "Lap" : "Reset"}
                         onPress={() => {
-                          if (timerState === 'running') {
-                            handleLap()
+                          if (timerState === "running") {
+                            handleLap();
                           } else {
-                            taskEventEmitter.emit('taskStateChanged', {
+                            taskEventEmitter.emit("taskStateChanged", {
                               taskId: tasks[activeTaskIndex]._id,
-                              state: 'stopped',
-                            })
-                            setElapsedTime(0) // Reset the timer
-                            setTimerState('stopped')
-                            handleEndSession()
+                              state: "stopped",
+                            });
+                            setElapsedTime(0); // Reset the timer
+                            setTimerState("stopped");
+                            handleEndSession();
                           }
                         }}
                       />
@@ -626,34 +632,34 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                     <View style={styles.buttonWrapper}>
                       <Button
                         color={
-                          timerState === 'running'
-                            ? theme['ios-red']
-                            : theme['ios-blue']
+                          timerState === "running"
+                            ? theme["ios-red"]
+                            : theme["ios-blue"]
                         }
-                        title={timerState === 'running' ? 'Stop' : 'Start'}
+                        title={timerState === "running" ? "Stop" : "Start"}
                         onPress={() => {
-                          if (timerState === 'stopped') {
-                            taskEventEmitter.emit('taskStateChanged', {
+                          if (timerState === "stopped") {
+                            taskEventEmitter.emit("taskStateChanged", {
                               taskId: tasks[activeTaskIndex]._id,
-                              state: 'running',
-                            })
-                            handleStart()
-                            setTimerState('running')
-                          } else if (timerState === 'running') {
-                            taskEventEmitter.emit('taskStateChanged', {
+                              state: "running",
+                            });
+                            handleStart();
+                            setTimerState("running");
+                          } else if (timerState === "running") {
+                            taskEventEmitter.emit("taskStateChanged", {
                               taskId: tasks[activeTaskIndex]._id,
-                              state: 'paused',
-                            })
-                            handlePause()
-                            handleStartBreak()
-                            setTimerState('paused')
-                          } else if (timerState === 'paused') {
-                            taskEventEmitter.emit('taskStateChanged', {
+                              state: "paused",
+                            });
+                            handlePause();
+                            handleStartBreak();
+                            setTimerState("paused");
+                          } else if (timerState === "paused") {
+                            taskEventEmitter.emit("taskStateChanged", {
                               taskId: tasks[activeTaskIndex]?._id,
-                              state: 'running',
-                            })
-                            handleEndBreak()
-                            setTimerState('running')
+                              state: "running",
+                            });
+                            handleEndBreak();
+                            setTimerState("running");
                           }
                         }}
                       />
@@ -667,48 +673,48 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
               showsVerticalScrollIndicator={false}
             >
               {laps.map((lap, index) => {
-                const lapMinutes = formatNumber(Math.floor(lap.time / 60000))
+                const lapMinutes = formatNumber(Math.floor(lap.time / 60000));
                 const lapSeconds = formatNumber(
                   Math.floor((lap.time % 60000) / 1000)
-                )
+                );
                 const lapMilliseconds = formatNumber(
                   Math.floor((lap.time % 1000) / 10)
-                )
+                );
 
                 return (
                   <View key={index} style={styles.lap}>
                     <TextInput
                       style={{
-                        color: theme['text-basic-color'],
+                        color: theme["text-basic-color"],
                         fontSize: 15,
                         borderBottomWidth: 0,
-                        borderColor: theme['text-basic-color'],
+                        borderColor: theme["text-basic-color"],
                       }}
                       value={lap.name}
                       onChangeText={(text) => {
                         // Update the local laps state
-                        const updatedLaps = [...laps]
-                        updatedLaps[index].name = text
-                        setLaps(updatedLaps)
+                        const updatedLaps = [...laps];
+                        updatedLaps[index].name = text;
+                        setLaps(updatedLaps);
 
                         // Update the sessionData.laps
                         setSessionData((prevData) => {
-                          const updatedSessionLaps = [...prevData.laps]
-                          updatedSessionLaps[index].name = text
+                          const updatedSessionLaps = [...prevData.laps];
+                          updatedSessionLaps[index].name = text;
                           return {
                             ...prevData,
                             laps: updatedSessionLaps,
-                          }
-                        })
+                          };
+                        });
                       }}
                     />
                     <Text
-                      style={{ color: theme['text-basic-color'], fontSize: 15 }}
+                      style={{ color: theme["text-basic-color"], fontSize: 15 }}
                     >
                       {lapMinutes}:{lapSeconds}.{lapMilliseconds}
                     </Text>
                   </View>
-                )
+                );
               })}
             </ScrollView>
           </View>
@@ -719,7 +725,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
         transparent={true}
         visible={isModalVisible}
         onRequestClose={() => {
-          setIsModalVisible(!isModalVisible)
+          setIsModalVisible(!isModalVisible);
         }}
       >
         <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
@@ -727,8 +733,8 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
             <TouchableWithoutFeedback>
               <View
                 style={{
-                  justifyContent: 'space-between',
-                  backgroundColor: theme['box-bg'],
+                  justifyContent: "space-between",
+                  backgroundColor: theme["box-bg"],
                   borderTopLeftRadius: 20,
                   borderTopRightRadius: 20,
                 }}
@@ -737,7 +743,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   style={[
                     styles.modalView2,
                     {
-                      backgroundColor: theme['input-bg'],
+                      backgroundColor: theme["input-bg"],
                       paddingHorizontal: 15,
                       // backgroundColor: Colors.metagray,
                     },
@@ -747,16 +753,16 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                     style={{
                       borderBottomWidth: 0,
                       paddingBottom: 15,
-                      borderBottomColor: theme['border-gray'],
+                      borderBottomColor: theme["border-gray"],
                     }}
                   >
                     <Text
                       style={{
-                        color: theme['text-basic-color'],
+                        color: theme["text-basic-color"],
                         fontSize: 22,
-                        fontWeight: '600',
+                        fontWeight: "600",
 
-                        textAlign: 'center',
+                        textAlign: "center",
                       }}
                     >
                       Select task
@@ -771,26 +777,26 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                           key={index}
                           onPress={() => changeTaskAction(index)}
                           style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            width: '100%',
+                            flexDirection: "row",
+                            alignItems: "center",
+                            width: "100%",
                             paddingVertical: 15,
-                            backgroundColor: theme['box-bg'],
+                            backgroundColor: theme["box-bg"],
                             marginBottom: 10,
                             paddingHorizontal: 10,
                             borderRadius: 8,
                           }}
                         >
                           <Feather
-                            color={task.color ? task.color : theme['ios-blue']}
+                            color={task.color ? task.color : theme["ios-blue"]}
                             size={20}
                             name="circle"
                           />
                           <Text
                             style={{
-                              color: theme['text-basic-color'],
+                              color: theme["text-basic-color"],
                               fontSize: 18,
-                              fontWeight: '400',
+                              fontWeight: "400",
                               // paddingHorizontal: 15,
                               marginLeft: 15,
                             }}
@@ -798,7 +804,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                             {task.name}
                           </Text>
                         </TouchableOpacity>
-                      )
+                      );
                     })}
                 </View>
               </View>
@@ -811,7 +817,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
         transparent={true}
         visible={isMoreVisible}
         onRequestClose={() => {
-          setIsModalVisible(!isMoreVisible)
+          setIsModalVisible(!isMoreVisible);
         }}
       >
         <TouchableWithoutFeedback onPress={() => setIsMoreVisible(false)}>
@@ -819,8 +825,8 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
             <TouchableWithoutFeedback>
               <View
                 style={{
-                  justifyContent: 'space-between',
-                  backgroundColor: theme['card-bg'],
+                  justifyContent: "space-between",
+                  backgroundColor: theme["card-bg"],
                   borderTopLeftRadius: 20,
                   borderTopRightRadius: 20,
                 }}
@@ -829,7 +835,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   style={[
                     styles.modalView3,
                     {
-                      backgroundColor: theme['card-bg'],
+                      backgroundColor: theme["card-bg"],
                       paddingHorizontal: 15,
                       // backgroundColor: Colors.metagray,
                     },
@@ -837,30 +843,30 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                 >
                   <TouchableOpacity
                     onPress={() => {
-                      setIsMoreVisible(false)
-                      setIsModalVisible(true) // Close the modal
+                      setIsMoreVisible(false);
+                      setIsModalVisible(true); // Close the modal
                     }}
                     style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      width: '100%',
+                      flexDirection: "row",
+                      alignItems: "center",
+                      width: "100%",
                       paddingVertical: 15,
-                      backgroundColor: theme['btn-bg'],
+                      backgroundColor: theme["btn-bg"],
                       marginBottom: 15,
                       paddingHorizontal: 15,
                       borderRadius: 8,
                     }}
                   >
                     <Feather
-                      color={theme['text-basic-color']}
+                      color={theme["text-basic-color"]}
                       size={18}
                       name="refresh-ccw"
                     />
                     <Text
                       style={{
-                        color: theme['text-basic-color'],
+                        color: theme["text-basic-color"],
                         fontSize: 16,
-                        fontWeight: '400',
+                        fontWeight: "400",
                         // paddingHorizontal: 15,
                         marginLeft: 15,
                       }}
@@ -871,26 +877,26 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   <TouchableOpacity
                     onPress={handleEditPress}
                     style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      width: '100%',
+                      flexDirection: "row",
+                      alignItems: "center",
+                      width: "100%",
                       paddingVertical: 15,
-                      backgroundColor: theme['btn-bg'],
+                      backgroundColor: theme["btn-bg"],
                       marginBottom: 15,
                       paddingHorizontal: 15,
                       borderRadius: 8,
                     }}
                   >
                     <Feather
-                      color={theme['text-basic-color']}
+                      color={theme["text-basic-color"]}
                       size={18}
                       name="edit"
                     />
                     <Text
                       style={{
-                        color: theme['text-basic-color'],
+                        color: theme["text-basic-color"],
                         fontSize: 16,
-                        fontWeight: '400',
+                        fontWeight: "400",
                         // paddingHorizontal: 15,
                         marginLeft: 15,
                       }}
@@ -900,27 +906,26 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
-                      console.log('del pressed')
-                      setIsMoreVisible(false)
-                      setIsDeleteVisible(true)
+                      setIsMoreVisible(false);
+                      setIsDeleteVisible(true);
                     }}
                     style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      width: '100%',
+                      flexDirection: "row",
+                      alignItems: "center",
+                      width: "100%",
                       paddingVertical: 15,
-                      backgroundColor: theme['btn-bg'],
+                      backgroundColor: theme["btn-bg"],
                       marginBottom: 15,
                       paddingHorizontal: 15,
                       borderRadius: 8,
                     }}
                   >
-                    <Feather color={theme['meta-red']} size={18} name="trash" />
+                    <Feather color={theme["meta-red"]} size={18} name="trash" />
                     <Text
                       style={{
-                        color: theme['meta-red'],
+                        color: theme["meta-red"],
                         fontSize: 16,
-                        fontWeight: '400',
+                        fontWeight: "400",
                         // paddingHorizontal: 15,
                         marginLeft: 15,
                       }}
@@ -963,7 +968,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
         transparent={true}
         visible={isDeleteVisible}
         onRequestClose={() => {
-          setIsDeleteVisible(!isDeleteVisible)
+          setIsDeleteVisible(!isDeleteVisible);
         }}
       >
         <TouchableWithoutFeedback onPress={() => setIsDeleteVisible(false)}>
@@ -972,15 +977,15 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
               <View
                 style={[
                   styles.modalViewDel,
-                  { backgroundColor: theme['btn-bg'] },
+                  { backgroundColor: theme["btn-bg"] },
                 ]}
               >
                 <Text
                   style={[
                     styles.textStyle,
                     {
-                      color: theme['text-basic-color'],
-                      textAlign: 'center',
+                      color: theme["text-basic-color"],
+                      textAlign: "center",
                       marginVertical: 15,
                     },
                   ]}
@@ -991,8 +996,8 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   style={[
                     styles.textStyle,
                     {
-                      color: theme['text-basic-color'],
-                      fontWeight: '400',
+                      color: theme["text-basic-color"],
+                      fontWeight: "400",
                       paddingHorizontal: 30,
                       fontSize: 14,
                       marginBottom: 15,
@@ -1007,13 +1012,13 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   style={[
                     styles.button,
                     {
-                      backgroundColor: theme['btn-bg'],
-                      borderColor: theme['border-gray'],
+                      backgroundColor: theme["btn-bg"],
+                      borderColor: theme["border-gray"],
                     },
                   ]}
                 >
                   <Text
-                    style={[styles.textStyle, { color: theme['meta-red'] }]}
+                    style={[styles.textStyle, { color: theme["meta-red"] }]}
                   >
                     Delete
                   </Text>
@@ -1022,8 +1027,8 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   style={[
                     styles.button,
                     {
-                      backgroundColor: theme['btn-bg'],
-                      borderColor: theme['border-gray'],
+                      backgroundColor: theme["btn-bg"],
+                      borderColor: theme["border-gray"],
                       paddingBottom: 0,
                     },
                   ]}
@@ -1032,7 +1037,7 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
                   <Text
                     style={[
                       styles.textStyle,
-                      { color: theme['text-basic-color'], fontWeight: '400' },
+                      { color: theme["text-basic-color"], fontWeight: "400" },
                     ]}
                   >
                     Cancel
@@ -1044,73 +1049,73 @@ const HomeScreen: React.FC<HomeProps> = ({ navigation, route }: any) => {
         </TouchableWithoutFeedback>
       </Modal>
     </Layout>
-  )
-}
+  );
+};
 
-export default HomeScreen
+export default HomeScreen;
 
 const styles = StyleSheet.create({
   time: {
     fontSize: 30,
 
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   digit: {
     fontSize: 40,
     lineHeight: 40,
-    textAlign: 'center',
+    textAlign: "center",
     width: 24,
   },
   resetButton: {
-    backgroundColor: 'rgba(230, 53, 43,0.3)',
+    backgroundColor: "rgba(230, 53, 43,0.3)",
     padding: 10,
     borderRadius: 100,
     width: 70,
     height: 70, // fixed width to ensure all buttons have the same width
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     margin: 5,
   },
   stopButton: {
-    backgroundColor: '#2196F3', // any color of your choice
+    backgroundColor: "#2196F3", // any color of your choice
     padding: 10,
     borderRadius: 100,
     width: 70,
     height: 70, // fixed width to ensure all buttons have the same width
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     margin: 5,
   },
   startButton: {
-    backgroundColor: '#2196F3', // any color of your choice
+    backgroundColor: "#2196F3", // any color of your choice
     padding: 10,
     borderRadius: 100,
     width: 70,
     height: 70, // fixed width to ensure all buttons have the same width
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     margin: 5,
   },
 
   resetTxt: {
-    color: '#e6352b', // or any color of your choice
-    fontWeight: '500',
+    color: "#e6352b", // or any color of your choice
+    fontWeight: "500",
     fontSize: 16,
   },
   stopTxt: {
-    color: 'white', // or any color of your choice
-    fontWeight: 'bold',
+    color: "white", // or any color of your choice
+    fontWeight: "bold",
   },
   startTxt: {
-    color: 'white', // or any color of your choice
-    fontWeight: 'bold',
+    color: "white", // or any color of your choice
+    fontWeight: "bold",
   },
   buttonWrapper: {
     width: 65, // adjust this width value as necessary
 
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   container: {
@@ -1127,25 +1132,25 @@ const styles = StyleSheet.create({
 
   middleContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    position: 'relative',
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    position: "relative",
   },
 
   circleContainer: {
-    width: '80%',
+    width: "80%",
     aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     // position: "relative",
   },
 
   timeContainer: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "absolute",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     top: 0,
     right: 0,
     bottom: 0,
@@ -1153,16 +1158,16 @@ const styles = StyleSheet.create({
   },
 
   buttonContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 20,
     marginBottom: 0,
 
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    width: '100%',
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: "100%",
   },
   lapsContainer: {
-    width: '100%',
+    width: "100%",
     maxHeight: 200, // Adjust this value based on your preference
     paddingHorizontal: 20,
     marginBottom: 58,
@@ -1170,31 +1175,31 @@ const styles = StyleSheet.create({
   },
 
   lap: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
   },
   contentContainer: {
     flex: 1,
-    width: '100%',
-    justifyContent: 'center',
+    width: "100%",
+    justifyContent: "center",
   },
   centeredView: {
     flex: 1,
-    justifyContent: 'flex-end', // Aligns the modal to the bottom
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: "flex-end", // Aligns the modal to the bottom
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalView: {
-    width: '100%', // Full width
-    height: Dimensions.get('window').height * 0.4, // 65% height
+    width: "100%", // Full width
+    height: Dimensions.get("window").height * 0.4, // 65% height
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 25,
     paddingVertical: 35,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1205,13 +1210,13 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalView2: {
-    width: '100%', // Full width
-    height: Dimensions.get('window').height * 0.6, // 65% height
+    width: "100%", // Full width
+    height: Dimensions.get("window").height * 0.6, // 65% height
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     // paddingHorizontal: 25,
     paddingVertical: 35,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1222,13 +1227,13 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalView3: {
-    width: '100%', // Full width
-    height: Dimensions.get('window').height * 0.35, // 65% height
+    width: "100%", // Full width
+    height: Dimensions.get("window").height * 0.35, // 65% height
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     // paddingHorizontal: 25,
     paddingVertical: 35,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1241,15 +1246,15 @@ const styles = StyleSheet.create({
   contextMenuOverlay: {
     flex: 1,
     // justifyContent: "center",
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.2)', // semi-transparent background
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.2)", // semi-transparent background
   },
   contextMenu: {
     width: 200,
     top: 80,
     right: -90,
     borderRadius: 10,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 10,
   },
   contextMenuItem: {
@@ -1259,17 +1264,17 @@ const styles = StyleSheet.create({
 
   centeredViewDel: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 0,
   },
   modalViewDel: {
-    width: '80%',
+    width: "80%",
 
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1280,28 +1285,28 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   button: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 15,
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingVertical: 15,
     borderTopWidth: 0.5,
   },
   textStyle: {
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     fontSize: 16,
   },
   textStyle2: {
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     fontSize: 16,
   },
   deleteOverlay: {
     flex: 1,
     // justifyContent: "center",
     // alignItems: "center",
-    backgroundColor: 'rgba(0,0,0,0.2)', // semi-transparent background
+    backgroundColor: "rgba(0,0,0,0.2)", // semi-transparent background
   },
-})
+});
